@@ -1,5 +1,8 @@
-import Koa from 'koa';
+import express from 'express';
 
-const app = new Koa();
+import config from 'config/app';
+
+const app = express();
+config(app);
 
 export default app;

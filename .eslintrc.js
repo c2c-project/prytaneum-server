@@ -22,6 +22,7 @@ module.exports = {
         'no-underscore-dangle': 'off',
         'func-names': 'off',
         '@typescript-eslint/naming-convention': 'off',
+        '@typescript-eslint/explicit-module-boundary-types': 'off'
     },
     env: {
         node: true,
