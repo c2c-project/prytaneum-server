@@ -1,4 +1,5 @@
 import { ObjectID } from 'mongodb';
+import createError from 'http-errors';
 
 import emitter from 'lib/events';
 import { useCollection } from 'db';
@@ -31,17 +32,19 @@ export async function createTownhall(form: TownhallForm, user: User) {
 
 export async function updateTownhall(
     form: TownhallForm,
-    townhallId: string
-    // user: User, // TODO: fix
+    townhallId: string,
+    user: User
 ) {
-    return useCollection('Townhalls', (Townhalls) =>
+    const { modifiedCount } = await useCollection('Townhalls', (Townhalls) =>
         Townhalls.updateOne(
-            { _id: new ObjectID(townhallId) },
+            {
+                _id: new ObjectID(townhallId),
+                'meta.createdBy._id': new ObjectID(user._id),
+            },
             {
                 $set: {
-                    // TODO: fix meta
-                    // 'meta.updatedAt': new Date(),
-                    // 'meta.updatedBy': user,
+                    'meta.updatedAt': new Date(),
+                    'meta.updatedBy': user,
                     form,
                 },
             },
@@ -50,6 +53,11 @@ export async function updateTownhall(
             }
         )
     );
+    // assumption is that there is a valid townhall id, but if the request fails,
+    // then it was probably due to the person not owning that townhall
+    // but this could still fail due to an invalid townhall id, it is just much less likely
+    if (modifiedCount === 0)
+        throw createError(401, 'You must be the creator in order to modify');
 }
 
 // TODO: extend this to write to a trash collection rather than actually delete

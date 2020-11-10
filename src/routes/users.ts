@@ -4,12 +4,7 @@ import passport from 'passport';
 
 import jwt from 'lib/jwt';
 import { User, RegisterForm } from 'prytaneum-typings';
-import {
-    makeJoiMiddleware,
-    makeEndpoint,
-    requireLogin,
-    requireRoles,
-} from 'middlewares';
+import { makeJoiMiddleware, makeEndpoint, requireRoles } from 'middlewares';
 import {
     registerUser,
     filterSensitiveData,
@@ -17,6 +12,11 @@ import {
     sendPasswordResetEmail,
     updatePassword,
 } from 'modules/user';
+import {
+    registerValidationObject,
+    emailValidationObject,
+    passwordValidationObject,
+} from 'modules/user/validators';
 import { getUsers, getUser } from 'modules/admin';
 import { useCollection } from 'db';
 import { ObjectID } from 'mongodb';
@@ -59,19 +59,7 @@ router.post(
 router.post(
     '/register',
     makeJoiMiddleware({
-        body: Joi.object({
-            firstName: Joi.string().required(),
-            lastName: Joi.string().required(),
-            email: Joi.string().email().required().messages({
-                'any.required': 'E-mail is required',
-                'string.email': 'Invalid e-mail provided',
-            }),
-            password: Joi.string().min(8).max(32).required().messages({
-                'any.required': 'Password is required',
-                'string.ref': 'Password must be between 8 and 32 characters',
-            }),
-            confirmPassword: Joi.ref('password'),
-        }),
+        body: Joi.object(registerValidationObject),
     }),
     makeEndpoint(async (req, res) => {
         await registerUser(req.body as RegisterForm);
@@ -104,12 +92,7 @@ router.post(
 router.post(
     '/forgot-password',
     makeJoiMiddleware({
-        body: Joi.object({
-            email: Joi.string().email().required().messages({
-                'any.required': 'E-mail is required',
-                'string.email': 'Invalid e-mail provided',
-            }),
-        }),
+        body: Joi.object(emailValidationObject),
     }),
     makeEndpoint(async (req, res) => {
         const { email } = req.body as { email: string };
@@ -126,14 +109,7 @@ router.post(
     makeJoiMiddleware({
         body: Joi.object({
             token: Joi.string().required(),
-            form: Joi.object({
-                password: Joi.string().min(8).max(32).required().messages({
-                    'any.required': 'Password is required',
-                    'string.ref':
-                        'Password must be between 8 and 32 characters',
-                }),
-                confirmPassword: Joi.ref('password'),
-            }),
+            form: Joi.object(passwordValidationObject),
         }),
     }),
     makeEndpoint(async (req, res) => {
@@ -156,7 +132,7 @@ router.post(
  */
 router.get(
     '/me',
-    requireLogin(),
+    passport.authenticate('jwt', { session: false }),
     makeEndpoint(async (req, res) => {
         const cookies = req.signedCookies as { jwt: string }; // because of requireLogin() this is safe
         const { jwt: jwtCookie } = cookies;
@@ -176,6 +152,7 @@ router.get(
  */
 router.get(
     '/',
+    passport.authenticate('jwt', { session: false }),
     requireRoles(['admin']),
     makeEndpoint(async (req, res) => {
         const users = await getUsers();
@@ -188,6 +165,7 @@ router.get(
  */
 router.get(
     '/:userId',
+    passport.authenticate('jwt', { session: false }),
     requireRoles(['admin']),
     makeJoiMiddleware({
         body: Joi.object({

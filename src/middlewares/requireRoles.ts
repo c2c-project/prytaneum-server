@@ -1,40 +1,26 @@
 import { RequestHandler } from 'express';
 import createError from 'http-errors';
-import { ObjectID } from 'mongodb';
 
-import { useCollection } from 'db';
-import JWT from 'lib/jwt';
-import { Roles } from 'prytaneum-typings';
-import requireLogin from './requireLogin';
+import { Roles, User } from 'prytaneum-typings';
 
 /**
- * the requiredRoles array is logically AND'd, so all must be present on the users's database document to pass
+ * The requiredRoles array is logically OR'd, so any of the ones present may be used
+ * NOTE: expects the req.user object to hold the current user which is usually done by
+ * Example:
+ * ```js
+ * router.all('/',
+ *  passport.authenticate('jwt', { session: false }),
+ *  requireRoles(['admin']),
+ * )
+ *
+ *```
  */
-export default function requireRoles(
-    requiredRoles: Roles[],
-    optionalRoles?: Roles[]
-): RequestHandler[] {
-    return [
-        requireLogin(),
-        async (req, res, next) => {
-            const cookies = req.signedCookies as { jwt: string };
-            const { jwt } = cookies;
-            const { _id } = (await JWT.verify(jwt)) as { _id: string };
-            const requiredRolesQuery = requiredRoles.map((role) => ({
-                roles: role,
-            }));
-            const optionalRolesQuery = optionalRoles?.map((role) => ({
-                roles: role,
-            }));
-            const user = await useCollection('Users', (Users) =>
-                Users.findOne({
-                    _id: new ObjectID(_id),
-                    $and: requiredRolesQuery, // TODO: fix bug
-                    $or: optionalRolesQuery,
-                })
-            );
-            if (!user) next(createError(401, 'Insufficient Permissions'));
-            else next();
-        },
-    ];
+export default function requireRoles(requiredRoles: Roles[]): RequestHandler {
+    return (req, res, next) => {
+        const { roles } = req.user as User;
+        const userRoleSet = new Set(roles);
+        const found = requiredRoles.find((role) => userRoleSet.has(role));
+        if (!found) next(createError(401, 'Insufficient Permissions'));
+        else next();
+    };
 }
