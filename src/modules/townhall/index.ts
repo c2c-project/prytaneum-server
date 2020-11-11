@@ -35,6 +35,8 @@ export async function updateTownhall(
     townhallId: string,
     user: User
 ) {
+    if (!ObjectID.isValid(townhallId))
+        throw createError(400, 'Invalid townhall id provided');
     const { modifiedCount } = await useCollection('Townhalls', (Townhalls) =>
         Townhalls.updateOne(
             {
@@ -61,15 +63,20 @@ export async function updateTownhall(
 }
 
 // TODO: extend this to write to a trash collection rather than actually delete
-export function deleteTownhall(townhallId: string) {
-    return useCollection('Townhalls', (Townhalls) =>
+export async function deleteTownhall(townhallId: string) {
+    if (!ObjectID.isValid(townhallId))
+        throw createError(400, 'Invalid townhall id provided');
+    const { deletedCount } = await useCollection('Townhalls', (Townhalls) =>
         Townhalls.deleteOne({
             _id: new ObjectID(townhallId),
         })
     );
+    if (deletedCount === 0) throw createError(404, 'Townhall not found');
 }
 
 export function getTownhall(townhallId: string) {
+    if (!ObjectID.isValid(townhallId))
+        throw createError(400, 'Invalid townhall id provided');
     return useCollection('Townhalls', (Townhalls) =>
         Townhalls.findOne({ _id: new ObjectID(townhallId) })
     );
@@ -78,7 +85,9 @@ export function getTownhall(townhallId: string) {
 // TODO: limit this so it doesn't show all townhalls?
 // TODO: queries
 export function getTownhalls() {
-    return useCollection('Townhalls', (Townhalls) => Townhalls.find({}));
+    return useCollection('Townhalls', (Townhalls) =>
+        Townhalls.find({}).toArray()
+    );
 }
 
 export async function getBillInfo(townhallId: string) {

@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/indent */
 import { Router } from 'express';
 import Joi from 'joi';
-import passport from 'passport';
 
 import {
     createTownhall,
@@ -12,7 +11,12 @@ import {
 } from 'modules/townhall';
 import { getQuestions } from 'modules/questions';
 import { townhallValidationObject } from 'modules/townhall/validators';
-import { makeJoiMiddleware, requireRoles, makeEndpoint } from 'middlewares';
+import {
+    makeJoiMiddleware,
+    requireRoles,
+    makeEndpoint,
+    requireLogin,
+} from 'middlewares';
 import { TownhallForm, User } from 'prytaneum-typings';
 
 const router = Router();
@@ -22,7 +26,7 @@ const router = Router();
  */
 router.get(
     '/',
-    passport.authenticate('jwt', { session: false }),
+    requireLogin(),
     requireRoles(['organizer']),
     // TODO: pagination middleware that does joi + extracts query to a mongodb query + any other validation needed
     makeEndpoint(async (req, res) => {
@@ -35,7 +39,7 @@ router.get(
  */
 router.post(
     '/',
-    passport.authenticate('jwt', { session: false }),
+    requireLogin(),
     requireRoles(['organizer', 'admin']),
     makeJoiMiddleware({
         body: Joi.object(townhallValidationObject),
@@ -76,7 +80,7 @@ router.get(
  */
 router.put(
     '/:townhallId',
-    passport.authenticate('jwt', { session: false }),
+    requireLogin(),
     requireRoles(['organizer', 'admin']),
     makeJoiMiddleware({
         body: Joi.object(townhallValidationObject),
@@ -85,7 +89,7 @@ router.put(
     makeEndpoint(async (req, res) => {
         const townhallForm = req.body as TownhallForm;
         const { townhallId } = req.params as { townhallId: string };
-        const { user } = req as { user: User };
+        const user = req.user as User;
         await updateTownhall(townhallForm, townhallId, user);
         res.sendStatus(200);
     })
@@ -95,7 +99,7 @@ router.put(
  */
 router.delete(
     '/:townhallId',
-    passport.authenticate('jwt', { session: false }),
+    requireLogin(),
     requireRoles(['organizer', 'admin']),
     makeEndpoint(async (req, res) => {
         const { townhallId } = req.params as { townhallId: string };
