@@ -26,7 +26,7 @@ export async function createTownhall(form: TownhallForm, user: User) {
     if (insertedCount === 1) {
         emitter.emit('create-townhall', insertedId);
     } else {
-        throw new Error('Unable to create townhall');
+        throw createError(400, 'Unable to create townhall');
     }
 }
 

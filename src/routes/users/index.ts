@@ -23,6 +23,7 @@ import {
     passwordValidationObject,
 } from 'modules/user/validators';
 import { getUsers, getUser } from 'modules/admin';
+import { makeObjectIdValidationObject } from 'utils/validators';
 
 const router = Router();
 
@@ -76,11 +77,11 @@ router.post(
 router.post(
     '/verify-email',
     makeJoiMiddleware({
-        body: Joi.object({
-            userId: Joi.string()
-                .required()
-                .messages({ 'any.required': 'Invalid link' }),
-        }),
+        body: Joi.object(
+            makeObjectIdValidationObject('userId', {
+                'any.required': 'Invalid Link',
+            })
+        ),
     }),
     makeEndpoint(async (req, res) => {
         const { userId } = req.body as { userId: string };
@@ -171,11 +172,11 @@ router.get(
     requireLogin(),
     requireRoles(['admin']),
     makeJoiMiddleware({
-        params: Joi.object({
-            userId: Joi.string().alphanum().required().messages({
+        params: Joi.object(
+            makeObjectIdValidationObject('userId', {
                 'any.required': 'No user id provided',
-            }),
-        }),
+            })
+        ),
     }),
     makeEndpoint(async (req, res) => {
         const { userId } = req.params as { userId: string };
