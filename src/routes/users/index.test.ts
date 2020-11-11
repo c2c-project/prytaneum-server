@@ -4,6 +4,7 @@ import faker from 'faker';
 import { ObjectID } from 'mongodb';
 import { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
+import { User, RegisterForm } from 'prytaneum-typings';
 
 import * as DB from 'db/mongo';
 import * as Users from 'modules/user';
@@ -11,7 +12,6 @@ import Emails from 'lib/emails';
 import jwt from 'lib/jwt';
 import config from 'config/app';
 import { errorHandler } from 'middlewares';
-import { User, RegisterForm } from 'prytaneum-typings';
 import routes from './index';
 
 const app = express();
@@ -39,8 +39,8 @@ const user: Partial<User> = {
         last: faker.name.lastName(),
     },
 };
-describe('user routes', () => {
-    describe('/login', () => {
+describe('/users', () => {
+    describe('POST /login', () => {
         it('should have status 200', async () => {
             // spy and mock useCollection
             const collectionSpy = jest.spyOn(DB, 'useCollection');
@@ -143,7 +143,7 @@ describe('user routes', () => {
             expect(status).toStrictEqual(500);
         });
     });
-    describe('/logout', () => {
+    describe('POST /logout', () => {
         it('should have status 200', async () => {
             // make the request
             const { status } = await request(app).post('/logout');
@@ -152,7 +152,7 @@ describe('user routes', () => {
             expect(status).toStrictEqual(200);
         });
     });
-    describe('/register', () => {
+    describe('POST /register', () => {
         // setup for all tests
         const pass = faker.internet.password();
         const form: RegisterForm = {
@@ -219,7 +219,7 @@ describe('user routes', () => {
         });
     });
 
-    describe('/verify-email', () => {
+    describe('POST /verify-email', () => {
         // setup for all tests
         // on client, the object id will be a string
         const userId = new ObjectID().toHexString();
@@ -269,7 +269,7 @@ describe('user routes', () => {
             expect(status).toStrictEqual(404);
         });
     });
-    describe('/forgot-password', () => {
+    describe('POST /forgot-password', () => {
         // setup
         const email = faker.internet.email();
 
@@ -311,7 +311,7 @@ describe('user routes', () => {
         });
     });
 
-    describe('/reset-password', () => {
+    describe('POST /reset-password', () => {
         const token = faker.random.alphaNumeric(6);
         const password = faker.internet.password(10);
         const form = {
@@ -427,7 +427,7 @@ describe('user routes', () => {
         });
     });
 
-    describe('/me', () => {
+    describe('GET /me', () => {
         it('should have status 200', async () => {
             // spy and mock useCollection
             const collectionSpy = jest.spyOn(DB, 'useCollection');
@@ -468,7 +468,7 @@ describe('user routes', () => {
         });
     });
 
-    describe('/', () => {
+    describe('GET /', () => {
         it('should have status 200', async () => {
             // spy and mock useCollection
             const collectionSpy = jest.spyOn(DB, 'useCollection');
@@ -505,7 +505,7 @@ describe('user routes', () => {
         });
     });
 
-    describe('/:userId', () => {
+    describe('GET /:userId', () => {
         it('should have status 200', async () => {
             // spy and mock useCollection
             const collectionSpy = jest.spyOn(DB, 'useCollection');
