@@ -12,14 +12,14 @@ import jwt from 'lib/jwt';
 import config from 'config/app';
 import { errorHandler } from 'middlewares';
 import { User, RegisterForm } from 'prytaneum-typings';
-import makeRoutes from './index';
+import routes from './index';
 
 const app = express();
 
 beforeAll(() => {
     jest.mock('mongodb');
     config(app);
-    app.use(makeRoutes());
+    app.use(routes);
     app.use(errorHandler());
 });
 

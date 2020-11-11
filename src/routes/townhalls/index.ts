@@ -10,7 +10,7 @@ import {
     updateTownhall,
     deleteTownhall,
 } from 'modules/townhall';
-import { getQuestions, getQuestion } from 'modules/questions';
+import { getQuestions } from 'modules/questions';
 import { townhallValidationObject } from 'modules/townhall/validators';
 import { makeJoiMiddleware, requireRoles, makeEndpoint } from 'middlewares';
 import { TownhallForm, User } from 'prytaneum-typings';
