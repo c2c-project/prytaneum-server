@@ -1,4 +1,5 @@
 import { RequestHandler } from 'express';
+import createError from 'http-errors';
 import Joi from 'joi';
 
 type JoiObject = Joi.ObjectSchema<Record<string, unknown>>;
@@ -31,8 +32,10 @@ export default function makeJoiMiddleware(
             if (paramsSchema) Joi.assert(params, paramsSchema);
             if (querySchema) Joi.assert(query, querySchema);
             next();
-        } catch (e) {
-            next(e);
+        } catch (err) {
+            if (err instanceof Joi.ValidationError) {
+                next(createError(400, err.message));
+            } else next(err);
         }
     };
 }

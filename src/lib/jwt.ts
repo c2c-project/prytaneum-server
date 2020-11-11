@@ -2,6 +2,8 @@ import jwt from 'jsonwebtoken';
 
 import env from 'config/env';
 
+// TODO: set issuer using env.origin
+
 /**
  * @description wrapper to jsonwebtoken.verify
  * @arg {string} token

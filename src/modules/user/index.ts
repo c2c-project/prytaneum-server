@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 import { ObjectID } from 'mongodb';
+import createError from 'http-errors';
 
 import jwt from 'lib/jwt';
 import Emails from 'lib/emails';
@@ -60,6 +61,8 @@ export async function registerUser(form: RegisterForm) {
  * @returns MongoDB Cursor Promise
  */
 export const confirmUserEmail = async (userId: string) => {
+    if (!ObjectID.isValid(userId))
+        throw createError(400, 'Invalid user id provided -- check the link');
     const objectUserId = new ObjectID(userId);
     const result = await useCollection('Users', (Users) =>
         Users.updateOne(
@@ -67,8 +70,7 @@ export const confirmUserEmail = async (userId: string) => {
             { $set: { 'email.verified': true } }
         )
     );
-    if (result.modifiedCount === 0)
-        throw new Error('The user navigated to an invalid link');
+    if (result.modifiedCount === 0) throw createError(404, 'User not found');
 };
 
 /**
@@ -81,7 +83,7 @@ export const sendPasswordResetEmail = async (email: string) => {
     const doc = await useCollection('Users', (Users) =>
         Users.findOne({ 'email.address': email })
     );
-    if (!doc) throw new Error('Invalid E-mail');
+    if (!doc) throw createError(404, 'User not found');
 
     const { _id } = doc;
     const token = await jwt.sign({ _id }, { expiresIn: '30m' });
@@ -96,6 +98,8 @@ export const sendPasswordResetEmail = async (email: string) => {
  * @throws Unknown user, try logging in and out again
  */
 export const updatePassword = async (userId: string, password: string) => {
+    if (!ObjectID.isValid(userId))
+        throw createError(400, 'Invalid user id provided');
     const encryptedPw = await bcrypt.hash(password, SALT_ROUNDS);
     const updatedPassword = {
         $set: { password: encryptedPw },
@@ -105,7 +109,7 @@ export const updatePassword = async (userId: string, password: string) => {
     );
     if (result.modifiedCount === 0)
         // shouldn't really ever happen, but this isn't a great user experience
-        throw new Error('Unknown user, try logging in and out again');
+        throw createError(404, 'User not found, try logging in and out again');
 };
 
 /**
