@@ -1,26 +1,34 @@
-import { RequestHandler } from 'express';
 import createError from 'http-errors';
 
-import { Roles, User } from 'prytaneum-typings';
+import { Roles } from 'prytaneum-typings';
+import isAllowed from 'utils/isAllowed';
+import { RequireLoginLocals } from './requireLogin';
 
 /**
  * The requiredRoles array is logically OR'd, so any of the ones present may be used
- * NOTE: expects the req.user object to hold the current user which is usually done by
+ * NOTE: expects the req.results.user object to hold the current user which is usually done by
  * Example:
  * ```js
  * router.all('/',
- *  passport.authenticate('jwt', { session: false }),
+ *  requireLogin(),
  *  requireRoles(['admin']),
  * )
  *
  *```
  */
-export default function requireRoles(requiredRoles: Roles[]): RequestHandler {
+export default function requireRoles<
+    Params,
+    ResBody,
+    ReqBody,
+    ReqQuery,
+    MiddlewareResults extends RequireLoginLocals
+>(
+    requiredRoles: Roles[]
+): Express.Middleware<Params, ResBody, ReqBody, ReqQuery, MiddlewareResults> {
     return (req, res, next) => {
-        const { roles } = req.user as User;
-        const userRoleSet = new Set(roles);
-        const found = requiredRoles.find((role) => userRoleSet.has(role));
-        if (!found) next(createError(401, 'Insufficient Permissions'));
+        const { roles } = req.results.user;
+        const found = isAllowed(roles, requiredRoles);
+        if (!found) next(createError(403, 'Insufficient Permissions'));
         else next();
     };
 }

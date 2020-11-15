@@ -5885,9 +5885,9 @@ proxy-addr@~2.0.5:
     forwarded "~0.1.2"
     ipaddr.js "1.9.1"
 
-"prytaneum-typings@https://github.com/c2c-project/prytaneum-typings#v1.0.0-alpha.10":
+"prytaneum-typings@https://github.com/c2c-project/prytaneum-typings#v1.0.0-alpha.14":
   version "1.0.0"
-  resolved "https://github.com/c2c-project/prytaneum-typings#d8ec2b9f54b7d1e3e1f926883f3f7a0d1b4a7c5c"
+  resolved "https://github.com/c2c-project/prytaneum-typings#3aa4f670542786b628a4d2f5d69c4f70b63d0338"
 
 psl@^1.1.28:
   version "1.8.0"

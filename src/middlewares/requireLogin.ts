@@ -1,9 +1,10 @@
-import { RequestHandler, Request } from 'express';
-import { ObjectID } from 'mongodb';
+import { Request } from 'express';
+import { ObjectId, ObjectID } from 'mongodb';
 import createError from 'http-errors';
-import { User } from 'prytaneum-typings';
-import env from 'config/env';
+import { Roles, User } from 'prytaneum-typings';
 
+import isAllowed from 'utils/isAllowed';
+import env from 'config/env';
 import JWT from 'lib/jwt';
 import { useCollection } from 'db';
 
@@ -13,7 +14,10 @@ function getCookies(req: Request): Cookies {
     return req.cookies as Cookies;
 }
 
-export default function requireLogin(): RequestHandler {
+/**
+ * Require that the user is logged in and optionally require which roles they must have
+ */
+export default function requireLogin(roles?: Roles[]): Express.Middleware {
     return async function verify(req, res, next) {
         try {
             // unpacking cookies
@@ -31,7 +35,15 @@ export default function requireLogin(): RequestHandler {
 
             // set user if found
             if (!user) throw createError(404, 'User not found');
-            req.user = user;
+            req.results.user = user;
+
+            // check permissions if needed
+            if (roles) {
+                // technically, this could be done at the query level, but then I don't know if the user was not found
+                // versus an insuficient permission error
+                const result = isAllowed(user.roles, roles);
+                if (!result) throw createError(403, 'Insufficient Permissions');
+            }
 
             // go to next middleware
             next();
@@ -40,3 +52,5 @@ export default function requireLogin(): RequestHandler {
         }
     };
 }
+
+export type RequireLoginLocals = { user: User & { _id: ObjectId } };

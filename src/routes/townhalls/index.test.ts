@@ -70,24 +70,6 @@ describe('/townhall', () => {
             // expectations
             expect(status).toStrictEqual(200);
         });
-        it('should have status 401 if organizer role is not present', async () => {
-            // spy and mock useCollection
-            const collectionSpy = jest.spyOn(DB, 'useCollection');
-            // for the requireLogin middleware
-            collectionSpy.mockResolvedValueOnce(user);
-
-            // jwt spy for requireLogin()
-            const jwtSpy = jest.spyOn(jwt, 'verify');
-            jwtSpy.mockResolvedValueOnce(user);
-
-            // make the request
-            const { status } = await request(app)
-                .get('/')
-                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
-
-            // expectations
-            expect(status).toStrictEqual(401);
-        });
 
         it('should have status 401 if there is no login cookie', async () => {
             // spy and mock useCollection
@@ -104,6 +86,24 @@ describe('/townhall', () => {
 
             // expectations
             expect(status).toStrictEqual(401);
+        });
+        it('should have status 403 if organizer role is not present', async () => {
+            // spy and mock useCollection
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            // for the requireLogin middleware
+            collectionSpy.mockResolvedValueOnce(user);
+
+            // jwt spy for requireLogin()
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+
+            // make the request
+            const { status } = await request(app)
+                .get('/')
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+
+            // expectations
+            expect(status).toStrictEqual(403);
         });
     });
     describe('POST /', () => {
@@ -231,7 +231,7 @@ describe('/townhall', () => {
             expect(status).toStrictEqual(401);
         });
 
-        it('should have status 401 if insufficient permissions', async () => {
+        it('should have status 403 if insufficient permissions', async () => {
             // make form partial
             const copy: Partial<TownhallForm> = { ...townhallForm };
             delete copy.title;
@@ -258,7 +258,7 @@ describe('/townhall', () => {
                 .send(copy);
 
             // expectations
-            expect(status).toStrictEqual(401);
+            expect(status).toStrictEqual(403);
         });
     });
 
@@ -419,28 +419,6 @@ describe('/townhall', () => {
             // expectations
             expect(status).toStrictEqual(401);
         });
-        it('should have status 401 for a user without the necessary roles', async () => {
-            // spy and mock useCollection
-            const collectionSpy = jest.spyOn(DB, 'useCollection');
-            // for the requireLogin middleware
-            collectionSpy.mockResolvedValueOnce(user);
-            // for the townhall modification
-            collectionSpy.mockResolvedValueOnce({ modifiedCount: 1 });
-
-            // jwt spy for requireLogin()
-            const jwtSpy = jest.spyOn(jwt, 'verify');
-            jwtSpy.mockResolvedValueOnce(user);
-
-            // make the request
-            const { status } = await request(app)
-                .put(`/${new ObjectID().toHexString()}`)
-                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
-                .type('form')
-                .send(townhallForm);
-
-            // expectations
-            expect(status).toStrictEqual(401);
-        });
         it('should have status 401 for a non-owner', async () => {
             // spy and mock useCollection
             const collectionSpy = jest.spyOn(DB, 'useCollection');
@@ -462,6 +440,28 @@ describe('/townhall', () => {
 
             // expectations
             expect(status).toStrictEqual(401);
+        });
+        it('should have status 403 for a user without the necessary roles', async () => {
+            // spy and mock useCollection
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            // for the requireLogin middleware
+            collectionSpy.mockResolvedValueOnce(user);
+            // for the townhall modification
+            collectionSpy.mockResolvedValueOnce({ modifiedCount: 1 });
+
+            // jwt spy for requireLogin()
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+
+            // make the request
+            const { status } = await request(app)
+                .put(`/${new ObjectID().toHexString()}`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
+                .type('form')
+                .send(townhallForm);
+
+            // expectations
+            expect(status).toStrictEqual(403);
         });
     });
 

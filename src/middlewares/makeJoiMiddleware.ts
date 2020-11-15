@@ -1,4 +1,3 @@
-import { RequestHandler } from 'express';
 import createError from 'http-errors';
 import Joi from 'joi';
 
@@ -11,7 +10,7 @@ interface RequestValidations {
 
 export default function makeJoiMiddleware(
     schema: RequestValidations
-): RequestHandler {
+): Express.Middleware {
     return (req, res, next) => {
         try {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment

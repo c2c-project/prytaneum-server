@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/indent */
 import { Router } from 'express';
 import Joi from 'joi';
+import {
+    TownhallForm,
+    QuestionForm,
+    Question,
+    Townhall,
+} from 'prytaneum-typings';
 
 import {
     createTownhall,
@@ -9,25 +15,31 @@ import {
     updateTownhall,
     deleteTownhall,
 } from 'modules/townhall';
-import { getQuestions } from 'modules/questions';
+import {
+    getQuestions,
+    createQuestion,
+    getQuestion,
+    updateQuestion,
+    deleteQuestion,
+} from 'modules/questions';
 import { townhallValidationObject } from 'modules/townhall/validators';
+import { questionFormValidationObject } from 'modules/questions/validators';
+import { makeObjectIdValidationObject } from 'utils/validators';
 import {
     makeJoiMiddleware,
-    requireRoles,
     makeEndpoint,
     requireLogin,
+    RequireLoginLocals,
 } from 'middlewares';
-import { TownhallForm, User } from 'prytaneum-typings';
 
 const router = Router();
 
 /**
  * gets the list of townhalls owned by the user
  */
-router.get(
+router.get<Express.EmptyParams, Townhall[]>(
     '/',
-    requireLogin(),
-    requireRoles(['organizer']),
+    requireLogin(['organizer']),
     // TODO: pagination middleware that does joi + extracts query to a mongodb query + any other validation needed
     makeEndpoint(async (req, res) => {
         const townhalls = await getTownhalls();
@@ -37,19 +49,20 @@ router.get(
 /**
  * creates a new townhall by the user
  */
-router.post(
+router.post<Express.EmptyParams, void, TownhallForm, void, RequireLoginLocals>(
     '/',
-    requireLogin(),
-    requireRoles(['organizer', 'admin']),
+    requireLogin(['organizer', 'admin']),
     makeJoiMiddleware({
         body: Joi.object(townhallValidationObject),
     }),
     makeEndpoint(async (req, res) => {
-        const townhallForm = req.body as TownhallForm;
-        await createTownhall(townhallForm, req.user as User);
+        const townhallForm = req.body;
+        await createTownhall(townhallForm, req.results.user);
         res.sendStatus(200);
     })
 );
+
+type TownhallParams = { townhallId: string };
 
 /**
  * validates all townhall id params
@@ -57,9 +70,7 @@ router.post(
 router.all(
     '/:townhallId',
     makeJoiMiddleware({
-        params: Joi.object({
-            townhallId: Joi.string().required(),
-        }),
+        params: Joi.object(makeObjectIdValidationObject('townhallId')),
     })
 );
 
@@ -67,10 +78,10 @@ router.all(
  * gets a particular townhall, there's no private data, so all data is sent to the client
  * TODO: check if all of the data is actually not sensitive
  */
-router.get(
+router.get<TownhallParams, Townhall>(
     '/:townhallId',
     makeEndpoint(async (req, res) => {
-        const { townhallId } = req.params as { townhallId: string };
+        const { townhallId } = req.params;
         const townhall = await getTownhall(townhallId);
         res.status(200).send(townhall);
     })
@@ -78,18 +89,17 @@ router.get(
 /**
  * updates a particular townhall (only the form fields)
  */
-router.put(
+router.put<TownhallParams, void, TownhallForm, void, RequireLoginLocals>(
     '/:townhallId',
-    requireLogin(),
-    requireRoles(['organizer', 'admin']),
+    requireLogin(['organizer', 'admin']),
     makeJoiMiddleware({
         body: Joi.object(townhallValidationObject),
         // NOTE: params should already be validated from the router.all above
     }),
     makeEndpoint(async (req, res) => {
-        const townhallForm = req.body as TownhallForm;
-        const { townhallId } = req.params as { townhallId: string };
-        const user = req.user as User;
+        const townhallForm = req.body;
+        const { townhallId } = req.params;
+        const { user } = req.results;
         await updateTownhall(townhallForm, townhallId, user);
         res.sendStatus(200);
     })
@@ -97,12 +107,11 @@ router.put(
 /**
  * deletes a particular townhall
  */
-router.delete(
+router.delete<TownhallParams>(
     '/:townhallId',
-    requireLogin(),
-    requireRoles(['organizer', 'admin']),
+    requireLogin(['organizer', 'admin']),
     makeEndpoint(async (req, res) => {
-        const { townhallId } = req.params as { townhallId: string };
+        const { townhallId } = req.params;
         await deleteTownhall(townhallId);
         res.sendStatus(200);
     })
@@ -111,42 +120,80 @@ router.delete(
 /**
  * gets questions associated with the townhalls
  */
-router.get(
+router.get<TownhallParams, Question[]>(
     '/:townhallId/questions',
     // TODO: pagination
     makeEndpoint(async (req, res) => {
-        const { townhallId } = req.params as { townhallId: string };
+        const { townhallId } = req.params;
         const questions = await getQuestions(townhallId);
         res.status(200).send(questions);
     })
 );
 /**
  * creates a new question for the townhall
+ * TODO: if townhall is private I will need to gatekeep here
  */
-router.post(
+router.post<TownhallParams, void, QuestionForm, void, RequireLoginLocals>(
     '/:townhallId/questions',
-    makeEndpoint(() => {})
+    requireLogin(),
+    makeJoiMiddleware({
+        body: Joi.object(questionFormValidationObject),
+    }),
+    makeEndpoint(async (req, res) => {
+        const { townhallId } = req.params;
+        await createQuestion(req.body, townhallId, req.results.user);
+        res.sendStatus(200);
+    })
+);
+
+type QuestionParams = { questionId: string } & TownhallParams;
+
+router.all(
+    '/:townhallId/questions/:questionId',
+    makeJoiMiddleware({
+        params: Joi.object(makeObjectIdValidationObject('questionId')),
+    })
 );
 /**
  * gets a particular question
  */
-router.get(
+router.get<QuestionParams, Question, void, void, void>(
     '/:townhallId/questions/:questionId',
-    makeEndpoint(() => {})
+    makeEndpoint(async (req, res) => {
+        const { questionId, townhallId } = req.params;
+        const question = await getQuestion(questionId, townhallId);
+        res.status(200).send(question);
+    })
 );
 /**
  * updates a particular question
  */
-router.put(
+router.put<QuestionParams, void, QuestionForm, void, RequireLoginLocals>(
     '/:townhallId/questions/:questionId',
-    makeEndpoint(() => {})
+    requireLogin(),
+    makeJoiMiddleware({
+        body: Joi.object(questionFormValidationObject),
+    }),
+    makeEndpoint(async (req, res) => {
+        const { questionId, townhallId } = req.params;
+        const { user } = req.results;
+        await updateQuestion(questionId, townhallId, user._id, req.body);
+        res.sendStatus(200);
+    })
 );
+
 /**
  * deletes a particular question
  */
-router.delete(
+router.delete<QuestionParams, void, void, void, RequireLoginLocals>(
     '/:townhallId/questions/:questionId',
-    makeEndpoint(() => {})
+    requireLogin(['organizer']),
+    makeEndpoint(async (req, res) => {
+        const { user } = req.results;
+        const { questionId, townhallId } = req.params;
+        await deleteQuestion(questionId, townhallId, user._id);
+        res.sendStatus(200);
+    })
 );
 
 export default router;

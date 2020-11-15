@@ -3,12 +3,13 @@ import Joi from 'joi';
 import passport from 'passport';
 
 import jwt from 'lib/jwt';
-import { User, RegisterForm } from 'prytaneum-typings';
+import { User, RegisterForm, ClientSafeUser } from 'prytaneum-typings';
 import {
     makeJoiMiddleware,
     makeEndpoint,
     requireRoles,
     requireLogin,
+    RequireLoginLocals,
 } from 'middlewares';
 import {
     registerUser,
@@ -105,6 +106,9 @@ router.post(
     })
 );
 
+type ResetPasswordParams = { token: string };
+type ResetPasswordBody = { password: string; confirmPassword: string };
+
 /**
  * resets a user's password
  * TODO: invalidate token or put some sort of "cooldown" period in the user doc
@@ -112,7 +116,7 @@ router.post(
  * in the user doc that is required to be older than 5 mins ago in order to invoke another reset
  * therefore the link can only be used once
  */
-router.post(
+router.post<ResetPasswordParams, void, ResetPasswordBody>(
     '/reset-password/:token',
     makeJoiMiddleware({
         body: Joi.object(passwordValidationObject),
@@ -121,29 +125,26 @@ router.post(
         }),
     }),
     makeEndpoint(async (req, res) => {
-        const { password } = req.body as {
-            password: string;
-            confirmPassword: string;
-        };
-        const { token } = req.params as {
-            token: string;
-        };
+        const { password } = req.body;
+        const { token } = req.params;
+        // TODO: different jwt verifies?
         const decodedJwt = (await jwt.verify(token)) as User & {
             _id: string;
         };
         await updatePassword(decodedJwt._id, password);
-        res.status(200).send('Password Reset');
+        res.sendStatus(200);
     })
 );
 
+type UserInfo = ClientSafeUser & Pick<User, 'settings'>;
 /**
  * gets a logged in user's own information
  */
-router.get(
+router.get<Express.EmptyParams, UserInfo, void, void, RequireLoginLocals>(
     '/me',
     requireLogin(),
     makeEndpoint((req, res) => {
-        const user = req.user as User;
+        const { user } = req.results;
         res.status(200).send({
             ...filterSensitiveData(user),
             settings: user.settings,
@@ -154,23 +155,23 @@ router.get(
 /**
  * gets a list of users
  */
-router.get(
+router.get<Express.EmptyParams, User[], void, void, RequireLoginLocals>(
     '/',
-    requireLogin(),
-    requireRoles(['admin']),
+    requireLogin(['admin']),
     makeEndpoint(async (req, res) => {
         const users = await getUsers();
         res.status(200).send(users);
     }) // TODO: pagination, filters, sorting, etc
 );
 
+type UserParams = { userId: string };
+
 /**
  * gets a specific user
  */
-router.get(
+router.get<UserParams, ClientSafeUser, void, void, RequireLoginLocals>(
     '/:userId',
-    requireLogin(),
-    requireRoles(['admin']),
+    requireLogin(['admin']),
     makeJoiMiddleware({
         params: Joi.object(
             makeObjectIdValidationObject('userId', {
@@ -179,7 +180,7 @@ router.get(
         ),
     }),
     makeEndpoint(async (req, res) => {
-        const { userId } = req.params as { userId: string };
+        const { userId } = req.params;
         const user = await getUser(userId);
         res.status(200).send(user);
     })

@@ -486,7 +486,7 @@ describe('/users', () => {
             // expectations
             expect(status).toStrictEqual(200);
         });
-        it('should have status 401 without admin permission', async () => {
+        it('should have status 403 without admin permission', async () => {
             // spy and mock useCollection
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             collectionSpy.mockResolvedValueOnce(user);
@@ -501,7 +501,7 @@ describe('/users', () => {
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
 
             // expectations
-            expect(status).toStrictEqual(401);
+            expect(status).toStrictEqual(403);
         });
     });
 
@@ -519,10 +519,9 @@ describe('/users', () => {
             jwtSpy.mockResolvedValueOnce(user);
 
             // make the request
-            const { status } = await request(app)
+            const { status, text } = await request(app)
                 .get(`/${new ObjectID().toHexString()}`)
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
-
             // expectations
             expect(status).toStrictEqual(200);
         });

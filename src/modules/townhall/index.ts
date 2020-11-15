@@ -26,7 +26,7 @@ export async function createTownhall(form: TownhallForm, user: User) {
     if (insertedCount === 1) {
         emitter.emit('create-townhall', insertedId);
     } else {
-        throw createError(400, 'Unable to create townhall');
+        throw new Error('Unable to create townhall');
     }
 }
 
@@ -64,8 +64,6 @@ export async function updateTownhall(
 
 // TODO: extend this to write to a trash collection rather than actually delete
 export async function deleteTownhall(townhallId: string) {
-    if (!ObjectID.isValid(townhallId))
-        throw createError(400, 'Invalid townhall id provided');
     const { deletedCount } = await useCollection('Townhalls', (Townhalls) =>
         Townhalls.deleteOne({
             _id: new ObjectID(townhallId),
@@ -74,12 +72,12 @@ export async function deleteTownhall(townhallId: string) {
     if (deletedCount === 0) throw createError(404, 'Townhall not found');
 }
 
-export function getTownhall(townhallId: string) {
-    if (!ObjectID.isValid(townhallId))
-        throw createError(400, 'Invalid townhall id provided');
-    return useCollection('Townhalls', (Townhalls) =>
+export async function getTownhall(townhallId: string) {
+    const townhall = await useCollection('Townhalls', (Townhalls) =>
         Townhalls.findOne({ _id: new ObjectID(townhallId) })
     );
+    if (!townhall) throw createError(404, 'Townhall not found');
+    return townhall;
 }
 
 // TODO: limit this so it doesn't show all townhalls?

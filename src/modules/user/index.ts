@@ -53,6 +53,8 @@ export async function registerUser(form: RegisterForm) {
     );
     if (result.insertedCount === 1)
         emitter.emit('register-user', result.ops[0]);
+    else if (result.insertedCount === 0)
+        throw new Error('Unable to register new user');
 }
 
 /**
@@ -62,8 +64,6 @@ export async function registerUser(form: RegisterForm) {
  * @returns MongoDB Cursor Promise
  */
 export const confirmUserEmail = async (userId: string) => {
-    if (!ObjectID.isValid(userId))
-        throw createError(400, `${errors[400]} -- check the link`);
     const objectUserId = new ObjectID(userId);
     const result = await useCollection('Users', (Users) =>
         Users.updateOne(
@@ -117,8 +117,7 @@ export const updatePassword = async (userId: string, password: string) => {
  * @arg user target to filter
  * @returns resolves to the userDoc with ONLY whitelisted fields
  */
-export const filterSensitiveData = (user: User): Partial<ClientSafeUser> => {
-    if (!user) return {};
+export const filterSensitiveData = (user: User): ClientSafeUser => {
     const whitelist: (keyof ClientSafeUser)[] = ['_id', 'email', 'name'];
     function reducer(
         accum: Partial<ClientSafeUser>,
@@ -129,5 +128,8 @@ export const filterSensitiveData = (user: User): Partial<ClientSafeUser> => {
         }
         return accum;
     }
-    return whitelist.reduce<Partial<ClientSafeUser>>(reducer, {});
+    return whitelist.reduce<Partial<ClientSafeUser>>(
+        reducer,
+        {}
+    ) as ClientSafeUser;
 };

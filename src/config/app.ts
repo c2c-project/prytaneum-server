@@ -3,6 +3,7 @@ import logger from 'morgan';
 import express, { Express } from 'express';
 import passport from 'passport';
 
+import { init as InitializeMiddlewares } from 'middlewares';
 import env from './env'; // initializes env vars using our configuration
 import configureStrategies from './passport';
 
@@ -14,4 +15,5 @@ export default function (app: Express): void {
     app.use(express.urlencoded({ extended: false }));
     app.use(cookieParser(env.COOKIE_SECRET));
     app.use(passport.initialize());
+    app.use(InitializeMiddlewares);
 }
