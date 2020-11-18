@@ -2,12 +2,12 @@ import http from 'http';
 import { AddressInfo } from 'net';
 import faker from 'faker';
 import { ObjectID } from 'mongodb';
-import { User, ChatMessage } from 'prytaneum-typings';
+import { ChatMessage } from 'prytaneum-typings';
 import { io, Socket } from 'socket.io-client';
 import { Server } from 'socket.io';
 
 import events from 'lib/events';
-import ioServer, { Events } from './socket-io';
+import ioServer, { Events } from '../socket-io';
 
 // must import to properly listen
 import './chat-messages';

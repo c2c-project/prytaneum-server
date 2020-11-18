@@ -2,13 +2,13 @@ import events from 'lib/events';
 import { ChatMessage } from 'prytaneum-typings';
 import { Socket } from 'socket.io';
 
-import io from './socket-io';
+import io from '../socket-io';
 
 type CreatePayload = { type: 'create-chat-message'; payload: ChatMessage };
 type UpdatePayload = { type: 'update-chat-message'; payload: ChatMessage };
 type DeletePayload = { type: 'delete-chat-message'; payload: ChatMessage };
 
-declare module './socket-io' {
+declare module '../socket-io' {
     interface Events {
         'chat-message-state': CreatePayload | UpdatePayload | DeletePayload;
     }

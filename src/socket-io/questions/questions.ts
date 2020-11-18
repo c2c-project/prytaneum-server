@@ -2,13 +2,13 @@ import events from 'lib/events';
 import { Question } from 'prytaneum-typings';
 import { Socket } from 'socket.io';
 
-import io from './socket-io';
+import io from '../socket-io';
 
 type CreatePayload = { type: 'create-question'; payload: Question };
 type UpdatePayload = { type: 'update-question'; payload: Question };
 type DeletePayload = { type: 'delete-question'; payload: Question };
 
-declare module './socket-io' {
+declare module '../socket-io' {
     interface Events {
         'question-state': CreatePayload | UpdatePayload | DeletePayload;
     }
