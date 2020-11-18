@@ -2,7 +2,7 @@ import http from 'http';
 import { AddressInfo } from 'net';
 import faker from 'faker';
 import { ObjectID } from 'mongodb';
-import { ChatMessage } from 'prytaneum-typings';
+import { Question } from 'prytaneum-typings';
 import { io, Socket } from 'socket.io-client';
 import { Server } from 'socket.io';
 
@@ -10,7 +10,7 @@ import events from 'lib/events';
 import ioServer, { Events } from '../socket-io';
 
 // must import to properly listen
-import './chat-messages';
+import './index';
 
 let socket: Socket;
 let httpServer: http.Server;
@@ -39,7 +39,7 @@ beforeEach((done) => {
     if (!httpServerAddr)
         throw new Error('Test initialization for socketio failed');
     socket = io(
-        `http://[${httpServerAddr.address}]:${httpServerAddr.port}/chat-messages`,
+        `http://[${httpServerAddr.address}]:${httpServerAddr.port}/questions`,
         {
             reconnectionDelay: 0,
             forceNew: true,
@@ -65,10 +65,10 @@ afterEach(() => {
  * just a note that if something weird breaks in the future I might need
  * to put the .once/.on's before the .emit
  */
-describe('socket-io /chat-messages', () => {
-    const messageId = new ObjectID();
-    const message: ChatMessage = {
-        _id: messageId,
+describe('socket-io /questions', () => {
+    const questionId = new ObjectID();
+    const question: Question = {
+        _id: questionId,
         meta: {
             townhallId,
             createdAt: new Date(),
@@ -80,48 +80,44 @@ describe('socket-io /chat-messages', () => {
                 },
             },
         },
-        message: faker.lorem.lines(),
+        question: faker.lorem.lines(),
+        state: 'ASKED',
+        likes: [],
+        aiml: {
+            labels: [],
+        },
     };
-    it('should send client new messages', async () => {
-        events.emit('create-chat-message', message);
+    it('should send client new questions', async () => {
+        events.emit('create-question', question);
         await new Promise((resolve) => {
-            socket.once(
-                'chat-message-state',
-                (state: Events['chat-message-state']) => {
-                    const strId = messageId.toHexString();
-                    expect(state.payload._id).toStrictEqual(strId);
-                    expect(state.type).toStrictEqual('create-chat-message');
-                    resolve();
-                }
-            );
+            socket.once('question-state', (state: Events['question-state']) => {
+                const strId = questionId.toHexString();
+                expect(state.payload._id).toStrictEqual(strId);
+                expect(state.type).toStrictEqual('create-question');
+                resolve();
+            });
         });
     });
-    it('should send client updated messages', async () => {
-        events.emit('update-chat-message', message);
+    it('should send client updated questions', async () => {
+        events.emit('update-question', question);
         await new Promise((resolve) => {
-            socket.once(
-                'chat-message-state',
-                (state: Events['chat-message-state']) => {
-                    const strId = messageId.toHexString();
-                    expect(state.payload._id).toStrictEqual(strId);
-                    expect(state.type).toStrictEqual('update-chat-message');
-                    resolve();
-                }
-            );
+            socket.once('question-state', (state: Events['question-state']) => {
+                const strId = questionId.toHexString();
+                expect(state.payload._id).toStrictEqual(strId);
+                expect(state.type).toStrictEqual('update-question');
+                resolve();
+            });
         });
     });
-    it('should send client deleted messages', async () => {
-        events.emit('delete-chat-message', message);
+    it('should send client deleted questions', async () => {
+        events.emit('delete-question', question);
         await new Promise((resolve) => {
-            socket.once(
-                'chat-message-state',
-                (state: Events['chat-message-state']) => {
-                    const strId = messageId.toHexString();
-                    expect(state.payload._id).toStrictEqual(strId);
-                    expect(state.type).toStrictEqual('delete-chat-message');
-                    resolve();
-                }
-            );
+            socket.once('question-state', (state: Events['question-state']) => {
+                const strId = questionId.toHexString();
+                expect(state.payload._id).toStrictEqual(strId);
+                expect(state.type).toStrictEqual('delete-question');
+                resolve();
+            });
         });
     });
 });
