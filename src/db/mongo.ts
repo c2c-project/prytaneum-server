@@ -1,7 +1,7 @@
 import { MongoClient, Db, Collection, ObjectId } from 'mongodb';
 
 import config from 'config/mongo';
-import { User, Townhall, Question } from 'prytaneum-typings';
+import { User, Townhall, Question, ChatMessage } from 'prytaneum-typings';
 
 const { url, dbName } = config;
 
@@ -17,7 +17,11 @@ export async function wrapDb<T>(cb: DbCallback<T>) {
     return cb(db);
 }
 
-export type CollectionNames = 'Users' | 'Townhalls' | 'Questions';
+export type CollectionNames =
+    | 'Users'
+    | 'Townhalls'
+    | 'Questions'
+    | 'ChatMessages';
 export async function useCollection<T, U>(
     name: 'Users',
     cb: (c: Collection<User & { _id: ObjectId }>) => U
@@ -29,6 +33,10 @@ export async function useCollection<T, U>(
 export async function useCollection<T, U>(
     name: 'Questions',
     cb: (c: Collection<Question & { _id: ObjectId }>) => U
+): Promise<U>;
+export async function useCollection<T, U>(
+    name: 'ChatMessages',
+    cb: (c: Collection<ChatMessage & { _id: ObjectId }>) => U
 ): Promise<U>;
 export async function useCollection<T, U>(
     name: CollectionNames,

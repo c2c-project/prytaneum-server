@@ -1,4 +1,4 @@
-import createError from 'http-errors';
+import createHttpError from 'http-errors';
 
 import { Roles } from 'prytaneum-typings';
 import isAllowed from 'utils/isAllowed';
@@ -28,7 +28,7 @@ export default function requireRoles<
     return (req, res, next) => {
         const { roles } = req.results.user;
         const found = isAllowed(roles, requiredRoles);
-        if (!found) next(createError(403, 'Insufficient Permissions'));
+        if (!found) next(createHttpError(403, 'Insufficient Permissions'));
         else next();
     };
 }

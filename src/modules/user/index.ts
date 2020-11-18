@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import { ObjectID } from 'mongodb';
-import createError from 'http-errors';
+import createHttpError from 'http-errors';
 import { RegisterForm, User, ClientSafeUser } from 'prytaneum-typings';
 
 import jwt from 'lib/jwt';
@@ -23,7 +23,7 @@ export async function registerUser(form: RegisterForm) {
     const match = await useCollection('Users', (Users) =>
         Users.findOne({ 'user.email': form.email })
     );
-    if (match) throw createError(409, errors[409]);
+    if (match) throw createHttpError(409, errors[409]);
     const result = await useCollection('Users', (Users) =>
         Users.insertOne({
             meta: {
@@ -71,7 +71,7 @@ export const confirmUserEmail = async (userId: string) => {
             { $set: { 'email.verified': true } }
         )
     );
-    if (result.modifiedCount === 0) throw createError(404, errors[404]);
+    if (result.modifiedCount === 0) throw createHttpError(404, errors[404]);
 };
 
 /**
@@ -84,7 +84,7 @@ export const sendPasswordResetEmail = async (email: string) => {
     const doc = await useCollection('Users', (Users) =>
         Users.findOne({ 'email.address': email })
     );
-    if (!doc) throw createError(404, errors[404]);
+    if (!doc) throw createHttpError(404, errors[404]);
 
     const { _id } = doc;
     const token = await jwt.sign({ _id }, { expiresIn: '30m' });
@@ -99,7 +99,7 @@ export const sendPasswordResetEmail = async (email: string) => {
  * @throws Unknown user, try logging in and out again
  */
 export const updatePassword = async (userId: string, password: string) => {
-    if (!ObjectID.isValid(userId)) throw createError(400, errors[400]);
+    if (!ObjectID.isValid(userId)) throw createHttpError(400, errors[400]);
     const encryptedPw = await bcrypt.hash(password, SALT_ROUNDS);
     const updatedPassword = {
         $set: { password: encryptedPw },
@@ -109,7 +109,7 @@ export const updatePassword = async (userId: string, password: string) => {
     );
     if (result.modifiedCount === 0)
         // shouldn't really ever happen, but this isn't a great user experience
-        throw createError(404, `${errors[404]}, try logging in and out again`);
+        throw createHttpError(404, `${errors[404]}, try logging in and out again`);
 };
 
 /**

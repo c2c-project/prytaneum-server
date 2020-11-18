@@ -1,6 +1,6 @@
 import { Request } from 'express';
 import { ObjectId, ObjectID } from 'mongodb';
-import createError from 'http-errors';
+import createHttpError from 'http-errors';
 import { Roles, User } from 'prytaneum-typings';
 
 import isAllowed from 'utils/isAllowed';
@@ -22,7 +22,7 @@ export default function requireLogin(roles?: Roles[]): Express.Middleware {
         try {
             // unpacking cookies
             const cookies = getCookies(req);
-            if (!cookies.jwt) throw createError(401);
+            if (!cookies.jwt) throw createHttpError(401);
             const { jwt } = cookies;
 
             // finding user
@@ -34,7 +34,7 @@ export default function requireLogin(roles?: Roles[]): Express.Middleware {
             );
 
             // set user if found
-            if (!user) throw createError(404, 'User not found');
+            if (!user) throw createHttpError(404, 'User not found');
             req.results.user = user;
 
             // check permissions if needed
@@ -42,7 +42,7 @@ export default function requireLogin(roles?: Roles[]): Express.Middleware {
                 // technically, this could be done at the query level, but then I don't know if the user was not found
                 // versus an insuficient permission error
                 const result = isAllowed(user.roles, roles);
-                if (!result) throw createError(403, 'Insufficient Permissions');
+                if (!result) throw createHttpError(403, 'Insufficient Permissions');
             }
 
             // go to next middleware

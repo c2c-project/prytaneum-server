@@ -6,6 +6,9 @@ import {
     QuestionForm,
     Question,
     Townhall,
+    TownhallSettings,
+    ChatMessage,
+    ChatMessageForm,
 } from 'prytaneum-typings';
 
 import {
@@ -14,6 +17,7 @@ import {
     getTownhalls,
     updateTownhall,
     deleteTownhall,
+    configure,
 } from 'modules/townhall';
 import {
     getQuestions,
@@ -31,6 +35,12 @@ import {
     requireLogin,
     RequireLoginLocals,
 } from 'middlewares';
+import {
+    createChatMessage,
+    deleteChatMessage,
+    getChatMessages,
+    updateChatMessage,
+} from 'modules/chat';
 
 const router = Router();
 
@@ -116,6 +126,18 @@ router.delete<TownhallParams>(
         res.sendStatus(200);
     })
 );
+/**
+ * updates the townhall configuration the townhall settings
+ */
+router.post<TownhallParams, void, TownhallSettings>(
+    '/:townhallId/configure',
+    requireLogin(),
+    makeEndpoint(async (req, res) => {
+        const { townhallId } = req.params;
+        await configure(req.body, townhallId);
+        res.sendStatus(200);
+    })
+);
 
 /**
  * gets questions associated with the townhalls
@@ -195,5 +217,82 @@ router.delete<QuestionParams, void, void, void, RequireLoginLocals>(
         res.sendStatus(200);
     })
 );
+
+/**
+ * gets all chat messages
+ * TODO: filtering/pagination
+ */
+router.get<TownhallParams, ChatMessage[], void, void, RequireLoginLocals>(
+    '/:townhallId/chat-messages',
+    requireLogin(),
+    makeEndpoint(async (req, res) => {
+        const { townhallId } = req.params;
+        const messages = await getChatMessages(townhallId);
+        res.status(200).send(messages);
+    })
+);
+
+/**
+ * submit a new chat message
+ * TODO: joi
+ */
+router.post<TownhallParams, void, ChatMessageForm, void, RequireLoginLocals>(
+    '/:townhallId/chat-messages',
+    requireLogin(),
+    makeEndpoint(async (req, res) => {
+        const { townhallId } = req.params;
+        const { message } = req.body;
+        const { user } = req.results;
+        await createChatMessage(message, townhallId, user);
+        res.status(200);
+    })
+);
+/**
+ * updates a chat message
+ * TODO: joi
+ */
+router.put<
+    TownhallParams,
+    void,
+    ChatMessageForm & { messageId: string },
+    void,
+    RequireLoginLocals
+>(
+    '/:townhallId/chat-messages/:messageId',
+    requireLogin(),
+    makeEndpoint(async (req, res) => {
+        const { townhallId } = req.params;
+        const { message, messageId } = req.body;
+        const { user } = req.results;
+        await updateChatMessage(message, messageId, townhallId, user);
+        res.status(200);
+    })
+);
+/**
+ * deletes a chat message
+ * TODO: joi
+ */
+router.delete<
+    TownhallParams,
+    void,
+    { messageId: string },
+    void,
+    RequireLoginLocals
+>(
+    '/:townhallId/chat-messages/:messageId',
+    requireLogin(),
+    makeEndpoint(async (req, res) => {
+        const { messageId } = req.body;
+        const { townhallId } = req.params;
+        const { user } = req.results;
+        await deleteChatMessage(messageId, townhallId, user);
+        res.status(200);
+    })
+);
+
+/**
+ * performs a moderator action on a particular chat message
+ */
+router.post('/:townhallId/chat-messages/:messageId/moderate', () => {});
 
 export default router;

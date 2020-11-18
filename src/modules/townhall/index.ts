@@ -1,10 +1,16 @@
-import { ObjectID } from 'mongodb';
-import createError from 'http-errors';
+import { ObjectID, ObjectId } from 'mongodb';
+import createHttpError from 'http-errors';
 
 import emitter from 'lib/events';
 import { useCollection } from 'db';
-import { TownhallForm, User } from 'prytaneum-typings';
+import { TownhallForm, TownhallSettings, User } from 'prytaneum-typings';
 import { defaultSettings } from './defaults';
+
+declare module 'lib/events' {
+    interface EventMap {
+        'create-townhall': ObjectId;
+    }
+}
 
 export async function createTownhall(form: TownhallForm, user: User) {
     const { insertedCount, insertedId } = await useCollection(
@@ -36,7 +42,7 @@ export async function updateTownhall(
     user: User
 ) {
     if (!ObjectID.isValid(townhallId))
-        throw createError(400, 'Invalid townhall id provided');
+        throw createHttpError(400, 'Invalid townhall id provided');
     const { modifiedCount } = await useCollection('Townhalls', (Townhalls) =>
         Townhalls.updateOne(
             {
@@ -59,7 +65,7 @@ export async function updateTownhall(
     // then it was probably due to the person not owning that townhall
     // but this could still fail due to an invalid townhall id, it is just much less likely
     if (modifiedCount === 0)
-        throw createError(401, 'You must be the creator in order to modify');
+        throw createHttpError(401, 'You must be the creator in order to modify');
 }
 
 // TODO: extend this to write to a trash collection rather than actually delete
@@ -69,14 +75,14 @@ export async function deleteTownhall(townhallId: string) {
             _id: new ObjectID(townhallId),
         })
     );
-    if (deletedCount === 0) throw createError(404, 'Townhall not found');
+    if (deletedCount === 0) throw createHttpError(404, 'Townhall not found');
 }
 
 export async function getTownhall(townhallId: string) {
     const townhall = await useCollection('Townhalls', (Townhalls) =>
         Townhalls.findOne({ _id: new ObjectID(townhallId) })
     );
-    if (!townhall) throw createError(404, 'Townhall not found');
+    if (!townhall) throw createHttpError(404, 'Townhall not found');
     return townhall;
 }
 
@@ -98,4 +104,19 @@ export async function getBillInfo(townhallId: string) {
 
     // eventually after doing some other requests
     return {};
+}
+
+export async function configure(
+    settings: TownhallSettings,
+    townhallId: string
+) {
+    // TODO: sanity checks ex. enabled must be true for other things to work
+    const { value } = await useCollection('Townhalls', (Townhalls) =>
+        Townhalls.findOneAndUpdate(
+            { _id: new ObjectID(townhallId) },
+            { $set: { settings } },
+            { returnOriginal: false }
+        )
+    );
+    if (!value) throw createHttpError(404, 'Unable to find townhall');
 }

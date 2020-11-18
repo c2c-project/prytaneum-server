@@ -1,9 +1,19 @@
 import { ObjectId, ObjectID } from 'mongodb';
-import { QuestionForm, User } from 'prytaneum-typings';
-import createError from 'http-errors';
+import { QuestionForm, User, Question } from 'prytaneum-typings';
+import createHttpError from 'http-errors';
 
 import { useCollection } from 'db';
-import eventEmitter from 'lib/events';
+import events from 'lib/events';
+
+// declaration merging
+declare module 'lib/events' {
+    interface EventMap {
+        'create-question': Question;
+        'update-question': Question;
+        'delete-question': Question;
+        'moderate-question': Question;
+    }
+}
 
 // TODO: replies as a subcollection
 
@@ -20,7 +30,7 @@ export async function getQuestion(questionId: string, townhallId: string) {
             'meta.townhallId': new ObjectID(townhallId),
         })
     );
-    if (!doc) throw createError(404, 'Question not found');
+    if (!doc) throw createHttpError(404, 'Question not found');
     return doc;
 }
 
@@ -30,8 +40,8 @@ export async function updateQuestion(
     userId: ObjectId,
     form: QuestionForm
 ) {
-    const { modifiedCount } = await useCollection('Questions', (Questions) =>
-        Questions.updateOne(
+    const { value } = await useCollection('Questions', (Questions) =>
+        Questions.findOneAndUpdate(
             {
                 _id: new ObjectID(questionId),
                 'meta.townhallId': new ObjectID(townhallId),
@@ -41,14 +51,18 @@ export async function updateQuestion(
                 $set: {
                     question: form.question,
                 },
+            },
+            {
+                // this is so that it returns the updated document instead
+                // also means that if no document was found, the value key in the return object
+                // is now null -- assuming upserted is false, which it is by default
+                returnOriginal: false,
             }
         )
     );
-    if (modifiedCount === 0)
-        throw createError(401, 'Unable to update question');
-    // probably because it's not the owner
-    // TODO:
-    // else eventEmitter.emit('update-question');
+    // probably fails if the user is not the owner
+    if (!value) throw createHttpError(401, 'Unable to update question');
+    else events.emit('update-question', value);
 }
 
 export async function deleteQuestion(
@@ -56,14 +70,16 @@ export async function deleteQuestion(
     townhallId: string,
     userId: ObjectId
 ) {
+    const _id = new ObjectId(questionId);
     const { deletedCount } = await useCollection('Questions', (Questions) =>
         Questions.deleteOne({
-            _id: new ObjectId(questionId),
+            _id,
             'meta.townhallId': new ObjectId(townhallId),
             'meta.user._id': userId,
         })
     );
-    if (deletedCount === 0) throw createError(401, 'You must be the owner');
+    if (deletedCount === 0) throw createHttpError(401, 'You must be the owner');
+    else events.emit('delete-question', _id);
 }
 
 export function moderateQuestion(questionId: string) {}
@@ -94,5 +110,5 @@ export async function createQuestion(
             })
     );
     if (insertedCount === 0) throw new Error('Unable to create question');
-    else eventEmitter.emit('create-question', ops[0]);
+    else events.emit('create-question', ops[0]);
 }
