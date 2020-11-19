@@ -36,13 +36,14 @@ export default function requireLogin(roles?: Roles[]): Express.Middleware {
             // set user if found
             if (!user) throw createHttpError(404, 'User not found');
             req.results.user = user;
-
             // check permissions if needed
             if (roles) {
                 // technically, this could be done at the query level, but then I don't know if the user was not found
                 // versus an insuficient permission error
                 const result = isAllowed(user.roles, roles);
-                if (!result) throw createHttpError(403, 'Insufficient Permissions');
+
+                if (!result)
+                    throw createHttpError(403, 'Insufficient Permissions');
             }
 
             // go to next middleware

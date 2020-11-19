@@ -4,7 +4,12 @@ import faker from 'faker';
 import { ObjectID } from 'mongodb';
 import { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
-import { User, RegisterForm } from 'prytaneum-typings';
+import {
+    User,
+    RegisterForm,
+    makeUser,
+    makeRegisterForm,
+} from 'prytaneum-typings';
 
 import * as DB from 'db/mongo';
 import * as Users from 'modules/user';
@@ -31,14 +36,8 @@ afterEach(() => {
     jest.restoreAllMocks();
 });
 
-const user: Partial<User> = {
-    _id: new ObjectID(),
-    email: { address: faker.internet.email(), verified: Math.random() > 0.5 },
-    name: {
-        first: faker.name.firstName(),
-        last: faker.name.lastName(),
-    },
-};
+const user = makeUser();
+
 describe('/users', () => {
     describe('POST /login', () => {
         it('should have status 200', async () => {
@@ -155,13 +154,7 @@ describe('/users', () => {
     describe('POST /register', () => {
         // setup for all tests
         const pass = faker.internet.password();
-        const form: RegisterForm = {
-            firstName: faker.name.firstName(),
-            lastName: faker.name.lastName(),
-            email: faker.internet.email(),
-            password: pass,
-            confirmPassword: pass,
-        };
+        const form = makeRegisterForm();
 
         it('should have status 200', async () => {
             // spy and mock useCollection
@@ -489,11 +482,11 @@ describe('/users', () => {
         it('should have status 403 without admin permission', async () => {
             // spy and mock useCollection
             const collectionSpy = jest.spyOn(DB, 'useCollection');
-            collectionSpy.mockResolvedValueOnce(user);
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: [] });
 
             // jwt spy
             const jwtSpy = jest.spyOn(jwt, 'verify');
-            jwtSpy.mockResolvedValueOnce(user);
+            jwtSpy.mockResolvedValueOnce({ ...user, roles: [] });
 
             // make the request
             const { status } = await request(app)

@@ -2,7 +2,12 @@ import express from 'express';
 import request from 'supertest';
 import faker from 'faker';
 import { ObjectID } from 'mongodb';
-import { User, TownhallForm, Townhall } from 'prytaneum-typings';
+import {
+    TownhallForm,
+    Townhall,
+    makeTownhallForm,
+    makeUser,
+} from 'prytaneum-typings';
 
 import * as DB from 'db/mongo';
 import jwt from 'lib/jwt';
@@ -27,22 +32,9 @@ afterEach(() => {
     jest.restoreAllMocks();
 });
 
-const user: Partial<User> = {
-    _id: new ObjectID(),
-    email: { address: faker.internet.email(), verified: Math.random() > 0.5 },
-    name: {
-        first: faker.name.firstName(),
-        last: faker.name.lastName(),
-    },
-};
+const user = makeUser();
 
-const townhallForm: TownhallForm = {
-    title: faker.company.bsNoun(),
-    date: faker.date.future(),
-    description: faker.lorem.lines(5),
-    private: Math.random() > 0.5,
-    topic: faker.lorem.lines(1),
-};
+const townhallForm = makeTownhallForm();
 
 describe('/townhall', () => {
     describe('GET /', () => {
@@ -91,7 +83,7 @@ describe('/townhall', () => {
             // spy and mock useCollection
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             // for the requireLogin middleware
-            collectionSpy.mockResolvedValueOnce(user);
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: [] });
 
             // jwt spy for requireLogin()
             const jwtSpy = jest.spyOn(jwt, 'verify');
@@ -200,9 +192,6 @@ describe('/townhall', () => {
         });
 
         it('should have status 401 if login cookie missing', async () => {
-            // make form partial
-            const copy: Partial<TownhallForm> = { ...townhallForm };
-            delete copy.title;
             // spy and mock useCollection
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             // for the requireLogin middleware
@@ -225,22 +214,19 @@ describe('/townhall', () => {
             const { status } = await request(app)
                 .post('/')
                 .type('form')
-                .send(copy);
+                .send(townhallForm);
 
             // expectations
             expect(status).toStrictEqual(401);
         });
 
         it('should have status 403 if insufficient permissions', async () => {
-            // make form partial
-            const copy: Partial<TownhallForm> = { ...townhallForm };
-            delete copy.title;
             // spy and mock useCollection
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             // for the requireLogin middleware
-            collectionSpy.mockResolvedValueOnce(user);
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: [] });
 
-            // for the townhall insertion
+            // for the townhall insertion although it should never get to this point in this test
             collectionSpy.mockResolvedValueOnce({
                 insertedCount: 1,
                 insertedId: new ObjectID(),
@@ -255,7 +241,7 @@ describe('/townhall', () => {
                 .post('/')
                 .type('form')
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
-                .send(copy);
+                .send(townhallForm);
 
             // expectations
             expect(status).toStrictEqual(403);
@@ -445,7 +431,7 @@ describe('/townhall', () => {
             // spy and mock useCollection
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             // for the requireLogin middleware
-            collectionSpy.mockResolvedValueOnce(user);
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: [] });
             // for the townhall modification
             collectionSpy.mockResolvedValueOnce({ modifiedCount: 1 });
 

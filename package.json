@@ -23,7 +23,8 @@
         "nodemon": "^2.0.3",
         "passport": "^0.4.1",
         "passport-local": "^1.0.0",
-        "socket.io": "^3.0.1"
+        "socket.io": "^3.0.1",
+        "prytaneum-typings": "https://github.com/c2c-project/prytaneum-typings#v1.0.0-alpha.24"
     },
     "devDependencies": {
         "@babel/cli": "^7.10.1",
@@ -60,7 +61,6 @@
         "faker": "^4.1.0",
         "jest": "^26.0.1",
         "jsdoc": "^3.6.4",
-        "prytaneum-typings": "https://github.com/c2c-project/prytaneum-typings#v1.0.0-alpha.19",
         "socket.io-client": "^3.0.1",
         "superagent": "^5.2.2",
         "supertest": "^4.0.2",
