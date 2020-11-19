@@ -236,11 +236,15 @@ router.get<TownhallParams, ChatMessage[], void, void, RequireLoginLocals>(
 
 /**
  * submit a new chat message
- * TODO: joi
  */
 router.post<TownhallParams, void, ChatMessageForm, void, RequireLoginLocals>(
     '/:townhallId/chat-messages',
     requireLogin(),
+    makeJoiMiddleware({
+        body: Joi.object({
+            message: Joi.string().required(),
+        }),
+    }),
     makeEndpoint(async (req, res) => {
         const { townhallId } = req.params;
         const { message } = req.body;
@@ -249,22 +253,24 @@ router.post<TownhallParams, void, ChatMessageForm, void, RequireLoginLocals>(
         res.status(200);
     })
 );
+
+type MessageParams = { messageId: string } & TownhallParams;
+router.all(
+    '/:townhallId/chat-messages/:messageId',
+    makeJoiMiddleware({
+        params: Joi.object(makeObjectIdValidationObject('messageId')),
+    })
+);
+
 /**
  * updates a chat message
- * TODO: joi
  */
-router.put<
-    TownhallParams,
-    void,
-    ChatMessageForm & { messageId: string },
-    void,
-    RequireLoginLocals
->(
+router.put<MessageParams, void, ChatMessageForm, void, RequireLoginLocals>(
     '/:townhallId/chat-messages/:messageId',
     requireLogin(),
     makeEndpoint(async (req, res) => {
-        const { townhallId } = req.params;
-        const { message, messageId } = req.body;
+        const { townhallId, messageId } = req.params;
+        const { message } = req.body;
         const { user } = req.results;
         await updateChatMessage(message, messageId, townhallId, user);
         res.status(200);
@@ -272,20 +278,12 @@ router.put<
 );
 /**
  * deletes a chat message
- * TODO: joi
  */
-router.delete<
-    TownhallParams,
-    void,
-    { messageId: string },
-    void,
-    RequireLoginLocals
->(
+router.delete<MessageParams, void, void, void, RequireLoginLocals>(
     '/:townhallId/chat-messages/:messageId',
     requireLogin(),
     makeEndpoint(async (req, res) => {
-        const { messageId } = req.body;
-        const { townhallId } = req.params;
+        const { townhallId, messageId } = req.params;
         const { user } = req.results;
         await deleteChatMessage(messageId, townhallId, user);
         res.status(200);
