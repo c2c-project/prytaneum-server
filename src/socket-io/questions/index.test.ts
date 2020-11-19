@@ -7,7 +7,7 @@ import { io, Socket } from 'socket.io-client';
 import { Server } from 'socket.io';
 
 import events from 'lib/events';
-import ioServer, { Events } from '../socket-io';
+import ioServer, { ServerEmits } from '../socket-io';
 
 // must import to properly listen
 import './index';
@@ -90,7 +90,7 @@ describe('socket-io /questions', () => {
     it('should send client new questions', async () => {
         events.emit('create-question', question);
         await new Promise((resolve) => {
-            socket.once('question-state', (state: Events['question-state']) => {
+            socket.once('question-state', (state: ServerEmits['question-state']) => {
                 const strId = questionId.toHexString();
                 expect(state.payload._id).toStrictEqual(strId);
                 expect(state.type).toStrictEqual('create-question');
@@ -101,7 +101,7 @@ describe('socket-io /questions', () => {
     it('should send client updated questions', async () => {
         events.emit('update-question', question);
         await new Promise((resolve) => {
-            socket.once('question-state', (state: Events['question-state']) => {
+            socket.once('question-state', (state: ServerEmits['question-state']) => {
                 const strId = questionId.toHexString();
                 expect(state.payload._id).toStrictEqual(strId);
                 expect(state.type).toStrictEqual('update-question');
@@ -112,7 +112,7 @@ describe('socket-io /questions', () => {
     it('should send client deleted questions', async () => {
         events.emit('delete-question', question);
         await new Promise((resolve) => {
-            socket.once('question-state', (state: Events['question-state']) => {
+            socket.once('question-state', (state: ServerEmits['question-state']) => {
                 const strId = questionId.toHexString();
                 expect(state.payload._id).toStrictEqual(strId);
                 expect(state.type).toStrictEqual('delete-question');

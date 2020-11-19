@@ -9,7 +9,7 @@ type UpdatePayload = { type: 'update-chat-message'; payload: ChatMessage };
 type DeletePayload = { type: 'delete-chat-message'; payload: ChatMessage };
 
 declare module '../socket-io' {
-    interface Events {
+    interface ServerEmits {
         'chat-message-state': CreatePayload | UpdatePayload | DeletePayload;
     }
     interface Namespaces {

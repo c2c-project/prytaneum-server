@@ -7,7 +7,7 @@ import { io, Socket } from 'socket.io-client';
 import { Server } from 'socket.io';
 
 import events from 'lib/events';
-import ioServer, { Events } from '../socket-io';
+import ioServer, { ServerEmits } from '../socket-io';
 
 // must import to properly listen
 import './index';
@@ -87,7 +87,7 @@ describe('socket-io /chat-messages', () => {
         await new Promise((resolve) => {
             socket.once(
                 'chat-message-state',
-                (state: Events['chat-message-state']) => {
+                (state: ServerEmits['chat-message-state']) => {
                     const strId = messageId.toHexString();
                     expect(state.payload._id).toStrictEqual(strId);
                     expect(state.type).toStrictEqual('create-chat-message');
@@ -101,7 +101,7 @@ describe('socket-io /chat-messages', () => {
         await new Promise((resolve) => {
             socket.once(
                 'chat-message-state',
-                (state: Events['chat-message-state']) => {
+                (state: ServerEmits['chat-message-state']) => {
                     const strId = messageId.toHexString();
                     expect(state.payload._id).toStrictEqual(strId);
                     expect(state.type).toStrictEqual('update-chat-message');
@@ -115,7 +115,7 @@ describe('socket-io /chat-messages', () => {
         await new Promise((resolve) => {
             socket.once(
                 'chat-message-state',
-                (state: Events['chat-message-state']) => {
+                (state: ServerEmits['chat-message-state']) => {
                     const strId = messageId.toHexString();
                     expect(state.payload._id).toStrictEqual(strId);
                     expect(state.type).toStrictEqual('delete-chat-message');

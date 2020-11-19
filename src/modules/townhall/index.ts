@@ -1,7 +1,7 @@
 import { ObjectID, ObjectId } from 'mongodb';
 import createHttpError from 'http-errors';
 
-import emitter from 'lib/events';
+import events from 'lib/events';
 import { useCollection } from 'db';
 import { TownhallForm, TownhallSettings, User } from 'prytaneum-typings';
 import { defaultSettings } from './defaults';
@@ -9,6 +9,8 @@ import { defaultSettings } from './defaults';
 declare module 'lib/events' {
     interface EventMap {
         'create-townhall': ObjectId;
+        'start-townhall': string;
+        'end-townhall': string;
     }
 }
 
@@ -30,7 +32,7 @@ export async function createTownhall(form: TownhallForm, user: User) {
     );
 
     if (insertedCount === 1) {
-        emitter.emit('create-townhall', insertedId);
+        events.emit('create-townhall', insertedId);
     } else {
         throw new Error('Unable to create townhall');
     }
@@ -65,7 +67,10 @@ export async function updateTownhall(
     // then it was probably due to the person not owning that townhall
     // but this could still fail due to an invalid townhall id, it is just much less likely
     if (modifiedCount === 0)
-        throw createHttpError(401, 'You must be the creator in order to modify');
+        throw createHttpError(
+            401,
+            'You must be the creator in order to modify'
+        );
 }
 
 // TODO: extend this to write to a trash collection rather than actually delete
@@ -110,7 +115,7 @@ export async function configure(
     settings: TownhallSettings,
     townhallId: string
 ) {
-    // TODO: sanity checks ex. enabled must be true for other things to work
+    // TODO: sanity checks ex. enabled must be true within settings for other things to work even if set to true
     const { value } = await useCollection('Townhalls', (Townhalls) =>
         Townhalls.findOneAndUpdate(
             { _id: new ObjectID(townhallId) },
@@ -119,4 +124,31 @@ export async function configure(
         )
     );
     if (!value) throw createHttpError(404, 'Unable to find townhall');
+}
+
+async function toggleTownhall(townhallId: string, user: User, active: boolean) {
+    const { value } = await useCollection('Townhalls', (Townhalls) =>
+        Townhalls.findOneAndUpdate(
+            {
+                _id: new ObjectID(townhallId),
+                'meta.createdBy._id': user._id,
+            },
+            { $set: { active } },
+            { returnOriginal: false }
+        )
+    );
+    if (!value) throw createHttpError(404, 'Unable to find townhall');
+    return value;
+}
+
+// TODO: add active field to typings
+export async function startTownhall(townhallId: string, user: User) {
+    const { _id } = await toggleTownhall(townhallId, user, true);
+    events.emit('start-townhall', _id.toHexString());
+}
+
+// TODO: add active field to typings
+export async function endTownhall(townhallId: string, user: User) {
+    const { _id } = await toggleTownhall(townhallId, user, false);
+    events.emit('end-townhall', _id.toHexString());
 }

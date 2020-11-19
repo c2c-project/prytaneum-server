@@ -18,6 +18,8 @@ import {
     updateTownhall,
     deleteTownhall,
     configure,
+    startTownhall,
+    endTownhall,
 } from 'modules/townhall';
 import {
     getQuestions,
@@ -294,5 +296,33 @@ router.delete<
  * performs a moderator action on a particular chat message
  */
 router.post('/:townhallId/chat-messages/:messageId/moderate', () => {});
+
+/**
+ * starts a townhall
+ */
+router.post<TownhallParams, void, void, void, RequireLoginLocals>(
+    '/:townhallId/start',
+    requireLogin(['organizer']),
+    makeEndpoint(async (req, res) => {
+        const { townhallId } = req.params;
+        const { user } = req.results;
+        await startTownhall(townhallId, user);
+        res.sendStatus(200);
+    })
+);
+
+/**
+ * ends a townhall
+ */
+router.post<TownhallParams, void, void, void, RequireLoginLocals>(
+    '/:townhallId/end',
+    requireLogin(['organizer']),
+    makeEndpoint(async (req, res) => {
+        const { townhallId } = req.params;
+        const { user } = req.results;
+        await endTownhall(townhallId, user);
+        res.sendStatus(200);
+    })
+);
 
 export default router;

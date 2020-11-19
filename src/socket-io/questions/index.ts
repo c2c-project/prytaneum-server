@@ -9,7 +9,7 @@ type UpdatePayload = { type: 'update-question'; payload: Question };
 type DeletePayload = { type: 'delete-question'; payload: Question };
 
 declare module '../socket-io' {
-    interface Events {
+    interface ServerEmits {
         'question-state': CreatePayload | UpdatePayload | DeletePayload;
     }
     interface Namespaces {
