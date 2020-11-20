@@ -4,12 +4,7 @@ import faker from 'faker';
 import { ObjectID } from 'mongodb';
 import { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
-import {
-    User,
-    RegisterForm,
-    makeUser,
-    makeRegisterForm,
-} from 'prytaneum-typings';
+import { RegisterForm, makeUser, makeRegisterForm } from 'prytaneum-typings';
 
 import * as DB from 'db/mongo';
 import * as Users from 'modules/user';

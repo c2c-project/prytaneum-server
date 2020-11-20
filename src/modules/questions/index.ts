@@ -4,6 +4,7 @@ import createHttpError from 'http-errors';
 
 import { useCollection } from 'db';
 import events from 'lib/events';
+import { makeMeta } from 'modules/common';
 
 // declaration merging
 declare module 'lib/events' {
@@ -71,18 +72,35 @@ export async function deleteQuestion(
     userId: ObjectId
 ) {
     const _id = new ObjectId(questionId);
-    const { deletedCount } = await useCollection('Questions', (Questions) =>
-        Questions.deleteOne({
+    const { value } = await useCollection('Questions', (Questions) =>
+        Questions.findOneAndDelete({
             _id,
             'meta.townhallId': new ObjectId(townhallId),
             'meta.user._id': userId,
         })
     );
-    if (deletedCount === 0) throw createHttpError(401, 'You must be the owner');
-    else events.emit('delete-question', _id);
+    if (!value) throw createHttpError(401, 'You must be the owner');
+    else events.emit('delete-question', value);
 }
 
-export function moderateQuestion(questionId: string) {}
+export async function moderateQuestion(
+    townhallId: string,
+    questionId: string,
+    visibility: VisibilityState
+) {
+    const { value } = await useCollection('Questions', (Questions) =>
+        Questions.findOneAndUpdate(
+            {
+                _id: new ObjectID(questionId),
+                'meta.townhallId': new ObjectID(townhallId),
+            },
+            {
+                $set: { visibility },
+            }
+        )
+    );
+    if (!value) throw createHttpError(404, 'Unable to find question');
+}
 
 export async function createQuestion(
     form: QuestionForm,
@@ -95,11 +113,7 @@ export async function createQuestion(
             Questions.insertOne({
                 meta: {
                     townhallId: new ObjectID(townhallId),
-                    user: {
-                        _id: new ObjectID(user._id),
-                        name: user.name,
-                    },
-                    timestamp: new Date(),
+                    ...makeMeta(user),
                 },
                 question: form.question,
                 state: '', // initial state is always empty
@@ -107,6 +121,7 @@ export async function createQuestion(
                 aiml: {
                     labels: [],
                 },
+                visibility: 'visible',
             })
     );
     if (insertedCount === 0) throw new Error('Unable to create question');

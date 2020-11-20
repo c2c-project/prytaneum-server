@@ -1,9 +1,10 @@
 import { ObjectID, ObjectId } from 'mongodb';
 import createHttpError from 'http-errors';
+import { TownhallForm, TownhallSettings, User } from 'prytaneum-typings';
 
 import events from 'lib/events';
 import { useCollection } from 'db';
-import { TownhallForm, TownhallSettings, User } from 'prytaneum-typings';
+import { makeMeta } from 'modules/common';
 import { defaultSettings } from './defaults';
 
 declare module 'lib/events' {
@@ -20,13 +21,7 @@ export async function createTownhall(form: TownhallForm, user: User) {
         (Townhalls) =>
             Townhalls.insertOne({
                 form,
-                meta: {
-                    createdAt: new Date(),
-                    createdBy: {
-                        _id: user._id,
-                        name: user.name,
-                    },
-                },
+                meta: makeMeta(user),
                 settings: defaultSettings,
             })
     );
@@ -127,13 +122,16 @@ export async function configure(
 }
 
 async function toggleTownhall(townhallId: string, user: User, active: boolean) {
+    let startEndUpdate = {};
+    if (active) startEndUpdate = { 'state.start': new Date() };
+    else startEndUpdate = { 'state.end': new Date() };
     const { value } = await useCollection('Townhalls', (Townhalls) =>
         Townhalls.findOneAndUpdate(
             {
                 _id: new ObjectID(townhallId),
                 'meta.createdBy._id': user._id,
             },
-            { $set: { active } },
+            { $set: { 'state.active': active, ...startEndUpdate } },
             { returnOriginal: false }
         )
     );

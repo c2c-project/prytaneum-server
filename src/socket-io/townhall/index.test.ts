@@ -1,6 +1,6 @@
 import http from 'http';
 import { AddressInfo } from 'net';
-import { makeChatMessage } from 'prytaneum-typings';
+import { makeTownhall } from 'prytaneum-typings';
 import { io, Socket } from 'socket.io-client';
 import { Server } from 'socket.io';
 
@@ -14,11 +14,11 @@ let socket: Socket;
 let httpServer: http.Server;
 let httpServerAddr: AddressInfo;
 let ioServerInstance: Server;
+const townhall = makeTownhall();
 
 beforeAll(() => {
     jest.mock('mongodb');
     httpServer = http.createServer().listen();
-
     // https://nodejs.org/api/net.html#net_server_address
     // this should never be null --
     // "server.address() returns null before the 'listening' event has been emitted or after calling server.close()."
@@ -33,18 +33,16 @@ afterAll(() => {
     httpServer.close();
 });
 
-const message = makeChatMessage();
-
 beforeEach((done) => {
     if (!httpServerAddr)
         throw new Error('Test initialization for socketio failed');
     socket = io(
-        `http://[${httpServerAddr.address}]:${httpServerAddr.port}/chat-messages`,
+        `http://[${httpServerAddr.address}]:${httpServerAddr.port}/townhalls`,
         {
             reconnectionDelay: 0,
             forceNew: true,
             transports: ['websocket'],
-            query: `townhallId=${message.meta.townhallId as string}`, // I know it's a string here
+            query: `townhallId=${townhall._id as string}`,
         }
     );
     socket.on('connect', () => {
@@ -65,41 +63,30 @@ afterEach(() => {
  * just a note that if something weird breaks in the future I might need
  * to put the .once/.on's before the .emit
  */
-describe('socket-io /chat-messages', () => {
-    it('should send client new messages', async () => {
-        events.emit('create-chat-message', message);
+describe('socket-io /questions', () => {
+    it('should send a a message that the townhall has started', async () => {
+        // i know townhall._id is a string here
+        events.emit('start-townhall', townhall._id as string);
         await new Promise((resolve) => {
             socket.once(
-                'chat-message-state',
-                (state: ServerEmits['chat-message-state']) => {
-                    expect(state.payload._id).toStrictEqual(message._id);
-                    expect(state.type).toStrictEqual('create-chat-message');
+                'townhall-state',
+                (state: ServerEmits['townhall-state']) => {
+                    expect(null).toStrictEqual(state.payload);
+                    expect(state.type).toStrictEqual('townhall-start');
                     resolve();
                 }
             );
         });
     });
-    it('should send client updated messages', async () => {
-        events.emit('update-chat-message', message);
+    it('should send a a message that the townhall has ended', async () => {
+        // i know townhall._id is a string here
+        events.emit('end-townhall', townhall._id as string);
         await new Promise((resolve) => {
             socket.once(
-                'chat-message-state',
-                (state: ServerEmits['chat-message-state']) => {
-                    expect(state.payload._id).toStrictEqual(message._id);
-                    expect(state.type).toStrictEqual('update-chat-message');
-                    resolve();
-                }
-            );
-        });
-    });
-    it('should send client deleted messages', async () => {
-        events.emit('delete-chat-message', message);
-        await new Promise((resolve) => {
-            socket.once(
-                'chat-message-state',
-                (state: ServerEmits['chat-message-state']) => {
-                    expect(state.payload._id).toStrictEqual(message._id);
-                    expect(state.type).toStrictEqual('delete-chat-message');
+                'townhall-state',
+                (state: ServerEmits['townhall-state']) => {
+                    expect(null).toStrictEqual(state.payload);
+                    expect(state.type).toStrictEqual('townhall-end');
                     resolve();
                 }
             );

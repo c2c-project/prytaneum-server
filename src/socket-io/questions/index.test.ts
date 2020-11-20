@@ -1,8 +1,6 @@
 import http from 'http';
 import { AddressInfo } from 'net';
-import faker from 'faker';
-import { ObjectID } from 'mongodb';
-import { Question } from 'prytaneum-typings';
+import { makeQuestion } from 'prytaneum-typings';
 import { io, Socket } from 'socket.io-client';
 import { Server } from 'socket.io';
 
@@ -16,7 +14,7 @@ let socket: Socket;
 let httpServer: http.Server;
 let httpServerAddr: AddressInfo;
 let ioServerInstance: Server;
-const townhallId = new ObjectID();
+const question = makeQuestion();
 
 beforeAll(() => {
     jest.mock('mongodb');
@@ -44,7 +42,7 @@ beforeEach((done) => {
             reconnectionDelay: 0,
             forceNew: true,
             transports: ['websocket'],
-            query: `townhallId=${townhallId.toHexString()}`,
+            query: `townhallId=${question.meta.townhallId as string}`,
         }
     );
     socket.on('connect', () => {
@@ -66,58 +64,43 @@ afterEach(() => {
  * to put the .once/.on's before the .emit
  */
 describe('socket-io /questions', () => {
-    const questionId = new ObjectID();
-    const question: Question = {
-        _id: questionId,
-        meta: {
-            townhallId,
-            createdAt: new Date(),
-            createdBy: {
-                _id: new ObjectID(),
-                name: {
-                    first: faker.name.firstName(),
-                    last: faker.name.lastName(),
-                },
-            },
-        },
-        question: faker.lorem.lines(),
-        state: 'ASKED',
-        likes: [],
-        aiml: {
-            labels: [],
-        },
-    };
     it('should send client new questions', async () => {
         events.emit('create-question', question);
         await new Promise((resolve) => {
-            socket.once('question-state', (state: ServerEmits['question-state']) => {
-                const strId = questionId.toHexString();
-                expect(state.payload._id).toStrictEqual(strId);
-                expect(state.type).toStrictEqual('create-question');
-                resolve();
-            });
+            socket.once(
+                'question-state',
+                (state: ServerEmits['question-state']) => {
+                    expect(state.payload._id).toStrictEqual(question._id);
+                    expect(state.type).toStrictEqual('create-question');
+                    resolve();
+                }
+            );
         });
     });
     it('should send client updated questions', async () => {
         events.emit('update-question', question);
         await new Promise((resolve) => {
-            socket.once('question-state', (state: ServerEmits['question-state']) => {
-                const strId = questionId.toHexString();
-                expect(state.payload._id).toStrictEqual(strId);
-                expect(state.type).toStrictEqual('update-question');
-                resolve();
-            });
+            socket.once(
+                'question-state',
+                (state: ServerEmits['question-state']) => {
+                    expect(state.payload._id).toStrictEqual(question._id);
+                    expect(state.type).toStrictEqual('update-question');
+                    resolve();
+                }
+            );
         });
     });
     it('should send client deleted questions', async () => {
         events.emit('delete-question', question);
         await new Promise((resolve) => {
-            socket.once('question-state', (state: ServerEmits['question-state']) => {
-                const strId = questionId.toHexString();
-                expect(state.payload._id).toStrictEqual(strId);
-                expect(state.type).toStrictEqual('delete-question');
-                resolve();
-            });
+            socket.once(
+                'question-state',
+                (state: ServerEmits['question-state']) => {
+                    expect(state.payload._id).toStrictEqual(question._id);
+                    expect(state.type).toStrictEqual('delete-question');
+                    resolve();
+                }
+            );
         });
     });
 });

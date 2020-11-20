@@ -33,7 +33,6 @@ afterEach(() => {
 });
 
 const user = makeUser();
-
 const townhallForm = makeTownhallForm();
 
 describe('/townhall', () => {

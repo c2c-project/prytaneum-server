@@ -41,8 +41,10 @@ import {
     createChatMessage,
     deleteChatMessage,
     getChatMessages,
+    moderateMessage,
     updateChatMessage,
 } from 'modules/chat';
+import requireModerator from 'middlewares/requireModerator';
 
 const router = Router();
 
@@ -106,7 +108,6 @@ router.put<TownhallParams, void, TownhallForm, void, RequireLoginLocals>(
     requireLogin(['organizer', 'admin']),
     makeJoiMiddleware({
         body: Joi.object(townhallValidationObject),
-        // NOTE: params should already be validated from the router.all above
     }),
     makeEndpoint(async (req, res) => {
         const townhallForm = req.body;
@@ -290,10 +291,25 @@ router.delete<MessageParams, void, void, void, RequireLoginLocals>(
     })
 );
 
+type ModBody = {
+    type: 'visibility';
+};
 /**
  * performs a moderator action on a particular chat message
+ * NOTE: right now this is idempotent, but it won't be in the future
+ * ex. logs will get created, but for now it just sets the visibility
  */
-router.post('/:townhallId/chat-messages/:messageId/moderate', () => {});
+router.post<MessageParams, void, ModBody, void, RequireLoginLocals>(
+    '/:townhallId/chat-messages/:messageId/moderate',
+    requireLogin(),
+    requireModerator(),
+    makeEndpoint(async (req, res) => {
+        const { townhallId, messageId } = req.params;
+        const { type } = req.body; // FIXME: i don't know what the shape of this should be right now
+        await moderateMessage(townhallId, messageId, 'hidden');
+        res.sendStatus(200);
+    })
+);
 
 /**
  * starts a townhall

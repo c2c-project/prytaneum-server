@@ -6,8 +6,8 @@ import io from '../socket-io';
 
 type UserAttend = { type: 'user-attend'; payload: ChatMessage };
 type UserLeave = { type: 'user-leave'; payload: ChatMessage };
-type TownhallStart = { type: 'townhall-start'; payload: ChatMessage };
-type TownhallEnd = { type: 'townhall-end'; payload: ChatMessage };
+type TownhallStart = { type: 'townhall-start'; payload: null };
+type TownhallEnd = { type: 'townhall-end'; payload: null };
 
 declare module '../socket-io' {
     interface ServerEmits {
@@ -34,6 +34,16 @@ townhallNamespace.on('connection', (socket: Socket) => {
     void socket.join(townhallId);
 });
 
-// TODO:
-events.on('end-townhall', (chatMessage) => {});
-events.on('start-townhall', () => {});
+events.on('start-townhall', (townhallId) => {
+    townhallNamespace.to(townhallId).emit('townhall-state', {
+        type: 'townhall-start',
+        payload: null,
+    });
+});
+
+events.on('end-townhall', (townhallId) => {
+    townhallNamespace.to(townhallId).emit('townhall-state', {
+        type: 'townhall-end',
+        payload: null,
+    });
+});

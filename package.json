@@ -24,7 +24,7 @@
         "passport": "^0.4.1",
         "passport-local": "^1.0.0",
         "socket.io": "^3.0.1",
-        "prytaneum-typings": "https://github.com/c2c-project/prytaneum-typings#v1.0.0-alpha.24"
+        "prytaneum-typings": "https://github.com/c2c-project/prytaneum-typings#v1.0.0-alpha.26"
     },
     "devDependencies": {
         "@babel/cli": "^7.10.1",

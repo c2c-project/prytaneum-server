@@ -27,9 +27,15 @@ export async function createChatMessage(
                         _id: user._id,
                         name: user.name,
                     },
+                    updatedAt: new Date(),
+                    updatedBy: {
+                        _id: user._id,
+                        name: user.name,
+                    },
                     townhallId: new ObjectID(townhallId),
                 },
                 message,
+                visibility: 'visible',
             })
     );
     if (insertedCount === 0)
@@ -106,6 +112,23 @@ export async function getChatMessage(townhallId: string, messageId: string) {
 }
 
 /**
- * TODO:
+ * TODO: logs of who moderated the question
  */
-export async function moderateMessage() {}
+export async function moderateMessage(
+    townhallId: string,
+    messageId: string,
+    visibility: VisibilityState
+) {
+    const { value } = await useCollection('ChatMessages', (ChatMessages) =>
+        ChatMessages.findOneAndUpdate(
+            {
+                _id: new ObjectID(messageId),
+                'meta.townhallId': new ObjectID(townhallId),
+            },
+            {
+                $set: { visibility },
+            }
+        )
+    );
+    if (!value) throw createHttpError(404, 'Unable to find message');
+}
