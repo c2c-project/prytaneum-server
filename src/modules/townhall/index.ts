@@ -23,6 +23,15 @@ export async function createTownhall(form: TownhallForm, user: User) {
                 form,
                 meta: makeMeta(user),
                 settings: defaultSettings,
+                state: {
+                    active: false,
+                    start: null,
+                    end: null,
+                    attendees: {
+                        current: 0,
+                        max: 0,
+                    },
+                },
             })
     );
 

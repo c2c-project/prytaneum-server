@@ -291,22 +291,32 @@ router.delete<MessageParams, void, void, void, RequireLoginLocals>(
     })
 );
 
-type ModBody = {
-    type: 'visibility';
-};
 /**
- * performs a moderator action on a particular chat message
- * NOTE: right now this is idempotent, but it won't be in the future
- * ex. logs will get created, but for now it just sets the visibility
+ * right now this is idempotent in the future it will produce logs
+ * and not be idempotent
  */
-router.post<MessageParams, void, ModBody, void, RequireLoginLocals>(
-    '/:townhallId/chat-messages/:messageId/moderate',
+router.post<MessageParams, void, void, void, RequireLoginLocals>(
+    '/:townhallId/chat-messages/:messageId/hide',
     requireLogin(),
     requireModerator(),
     makeEndpoint(async (req, res) => {
         const { townhallId, messageId } = req.params;
-        const { type } = req.body; // FIXME: i don't know what the shape of this should be right now
         await moderateMessage(townhallId, messageId, 'hidden');
+        res.sendStatus(200);
+    })
+);
+
+/**
+ * right now this is idempotent in the future it will produce logs
+ * and not be idempotent
+ */
+router.post<MessageParams, void, void, void, RequireLoginLocals>(
+    '/:townhallId/chat-messages/:messageId/show',
+    requireLogin(),
+    requireModerator(),
+    makeEndpoint(async (req, res) => {
+        const { townhallId, messageId } = req.params;
+        await moderateMessage(townhallId, messageId, 'visible');
         res.sendStatus(200);
     })
 );
