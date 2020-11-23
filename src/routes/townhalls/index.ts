@@ -20,8 +20,8 @@ import {
     requireLogin,
     RequireLoginLocals,
 } from 'middlewares';
+import { makeObjectIdValidationObject } from 'utils/validators';
 
-import { validateTownhallParams } from './middlewares';
 import { TownhallParams } from './types';
 import questionRoutes from './questions';
 import chatMessageRoutes from './chat-messages';
@@ -55,6 +55,15 @@ router.post<Express.EmptyParams, void, TownhallForm, void, RequireLoginLocals>(
         res.sendStatus(200);
     })
 );
+
+/**
+ * validator used for validating the townhall id parameter
+ */
+const validateTownhallParams = makeJoiMiddleware({
+    params: Joi.object(makeObjectIdValidationObject('townhallId')).unknown(
+        true
+    ),
+});
 
 /**
  * validates all townhall id params that are exactly /:townhallId
