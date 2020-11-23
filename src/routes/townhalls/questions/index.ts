@@ -34,6 +34,7 @@ router.get<TownhallParams, Question[]>(
         res.status(200).send(questions);
     })
 );
+
 /**
  * creates a new question for the townhall
  * TODO: if townhall is private I will need to gatekeep here
@@ -72,6 +73,7 @@ router.get<QuestionParams, Question, void, void, void>(
         res.status(200).send(question);
     })
 );
+
 /**
  * updates a particular question
  */
@@ -94,7 +96,7 @@ router.put<QuestionParams, void, QuestionForm, void, RequireLoginLocals>(
  */
 router.delete<QuestionParams, void, void, void, RequireLoginLocals>(
     '/:townhallId/questions/:questionId',
-    requireLogin(['organizer']),
+    requireLogin(['organizer', 'admin']),
     makeEndpoint(async (req, res) => {
         const { user } = req.results;
         const { questionId, townhallId } = req.params;
