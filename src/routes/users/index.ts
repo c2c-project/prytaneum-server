@@ -7,7 +7,6 @@ import { User, RegisterForm, ClientSafeUser } from 'prytaneum-typings';
 import {
     makeJoiMiddleware,
     makeEndpoint,
-    requireRoles,
     requireLogin,
     RequireLoginLocals,
 } from 'middlewares';

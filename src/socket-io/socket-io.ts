@@ -1,5 +1,4 @@
-/* eslint-disable max-classes-per-file */
-import { RequestHandler } from 'express';
+/* eslint-disable max-classes-per-file */ 
 import { Server, Namespace, Socket } from 'socket.io';
 
 declare class PrytaneumNamespace extends Namespace {

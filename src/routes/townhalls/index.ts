@@ -1,15 +1,7 @@
 /* eslint-disable @typescript-eslint/indent */
 import { Router } from 'express';
 import Joi from 'joi';
-import {
-    TownhallForm,
-    QuestionForm,
-    Question,
-    Townhall,
-    TownhallSettings,
-    ChatMessage,
-    ChatMessageForm,
-} from 'prytaneum-typings';
+import { TownhallForm, Townhall, TownhallSettings } from 'prytaneum-typings';
 
 import {
     createTownhall,
@@ -21,30 +13,18 @@ import {
     startTownhall,
     endTownhall,
 } from 'modules/townhall';
-import {
-    getQuestions,
-    createQuestion,
-    getQuestion,
-    updateQuestion,
-    deleteQuestion,
-} from 'modules/questions';
 import { townhallValidationObject } from 'modules/townhall/validators';
-import { questionFormValidationObject } from 'modules/questions/validators';
-import { makeObjectIdValidationObject } from 'utils/validators';
 import {
     makeJoiMiddleware,
     makeEndpoint,
     requireLogin,
     RequireLoginLocals,
 } from 'middlewares';
-import {
-    createChatMessage,
-    deleteChatMessage,
-    getChatMessages,
-    moderateMessage,
-    updateChatMessage,
-} from 'modules/chat';
-import requireModerator from 'middlewares/requireModerator';
+
+import { validateTownhallParams } from './middlewares';
+import { TownhallParams } from './types';
+import questionRoutes from './questions';
+import chatMessageRoutes from './chat-messages';
 
 const router = Router();
 
@@ -76,17 +56,14 @@ router.post<Express.EmptyParams, void, TownhallForm, void, RequireLoginLocals>(
     })
 );
 
-type TownhallParams = { townhallId: string };
-
 /**
- * validates all townhall id params
+ * validates all townhall id params that are exactly /:townhallId
  */
-router.all(
-    '/:townhallId',
-    makeJoiMiddleware({
-        params: Joi.object(makeObjectIdValidationObject('townhallId')),
-    })
-);
+router.use('/:townhallId', validateTownhallParams);
+/**
+ * validates all routes prefixed by the townhallId
+ */
+router.use('/:townhallId/*', validateTownhallParams);
 
 /**
  * gets a particular townhall, there's no private data, so all data is sent to the client
@@ -143,185 +120,6 @@ router.post<TownhallParams, void, TownhallSettings>(
 );
 
 /**
- * gets questions associated with the townhalls
- */
-router.get<TownhallParams, Question[]>(
-    '/:townhallId/questions',
-    // TODO: pagination
-    makeEndpoint(async (req, res) => {
-        const { townhallId } = req.params;
-        const questions = await getQuestions(townhallId);
-        res.status(200).send(questions);
-    })
-);
-/**
- * creates a new question for the townhall
- * TODO: if townhall is private I will need to gatekeep here
- */
-router.post<TownhallParams, void, QuestionForm, void, RequireLoginLocals>(
-    '/:townhallId/questions',
-    requireLogin(),
-    makeJoiMiddleware({
-        body: Joi.object(questionFormValidationObject),
-    }),
-    makeEndpoint(async (req, res) => {
-        const { townhallId } = req.params;
-        await createQuestion(req.body, townhallId, req.results.user);
-        res.sendStatus(200);
-    })
-);
-
-type QuestionParams = { questionId: string } & TownhallParams;
-
-router.all(
-    '/:townhallId/questions/:questionId',
-    makeJoiMiddleware({
-        params: Joi.object(makeObjectIdValidationObject('questionId')),
-    })
-);
-/**
- * gets a particular question
- */
-router.get<QuestionParams, Question, void, void, void>(
-    '/:townhallId/questions/:questionId',
-    makeEndpoint(async (req, res) => {
-        const { questionId, townhallId } = req.params;
-        const question = await getQuestion(questionId, townhallId);
-        res.status(200).send(question);
-    })
-);
-/**
- * updates a particular question
- */
-router.put<QuestionParams, void, QuestionForm, void, RequireLoginLocals>(
-    '/:townhallId/questions/:questionId',
-    requireLogin(),
-    makeJoiMiddleware({
-        body: Joi.object(questionFormValidationObject),
-    }),
-    makeEndpoint(async (req, res) => {
-        const { questionId, townhallId } = req.params;
-        const { user } = req.results;
-        await updateQuestion(questionId, townhallId, user._id, req.body);
-        res.sendStatus(200);
-    })
-);
-
-/**
- * deletes a particular question
- */
-router.delete<QuestionParams, void, void, void, RequireLoginLocals>(
-    '/:townhallId/questions/:questionId',
-    requireLogin(['organizer']),
-    makeEndpoint(async (req, res) => {
-        const { user } = req.results;
-        const { questionId, townhallId } = req.params;
-        await deleteQuestion(questionId, townhallId, user._id);
-        res.sendStatus(200);
-    })
-);
-
-/**
- * gets all chat messages
- * TODO: filtering/pagination
- */
-router.get<TownhallParams, ChatMessage[], void, void, RequireLoginLocals>(
-    '/:townhallId/chat-messages',
-    requireLogin(),
-    makeEndpoint(async (req, res) => {
-        const { townhallId } = req.params;
-        const messages = await getChatMessages(townhallId);
-        res.status(200).send(messages);
-    })
-);
-
-/**
- * submit a new chat message
- */
-router.post<TownhallParams, void, ChatMessageForm, void, RequireLoginLocals>(
-    '/:townhallId/chat-messages',
-    requireLogin(),
-    makeJoiMiddleware({
-        body: Joi.object({
-            message: Joi.string().required(),
-        }),
-    }),
-    makeEndpoint(async (req, res) => {
-        const { townhallId } = req.params;
-        const { message } = req.body;
-        const { user } = req.results;
-        await createChatMessage(message, townhallId, user);
-        res.status(200);
-    })
-);
-
-type MessageParams = { messageId: string } & TownhallParams;
-router.all(
-    '/:townhallId/chat-messages/:messageId',
-    makeJoiMiddleware({
-        params: Joi.object(makeObjectIdValidationObject('messageId')),
-    })
-);
-
-/**
- * updates a chat message
- */
-router.put<MessageParams, void, ChatMessageForm, void, RequireLoginLocals>(
-    '/:townhallId/chat-messages/:messageId',
-    requireLogin(),
-    makeEndpoint(async (req, res) => {
-        const { townhallId, messageId } = req.params;
-        const { message } = req.body;
-        const { user } = req.results;
-        await updateChatMessage(message, messageId, townhallId, user);
-        res.status(200);
-    })
-);
-/**
- * deletes a chat message
- */
-router.delete<MessageParams, void, void, void, RequireLoginLocals>(
-    '/:townhallId/chat-messages/:messageId',
-    requireLogin(),
-    makeEndpoint(async (req, res) => {
-        const { townhallId, messageId } = req.params;
-        const { user } = req.results;
-        await deleteChatMessage(messageId, townhallId, user);
-        res.status(200);
-    })
-);
-
-/**
- * right now this is idempotent in the future it will produce logs
- * and not be idempotent
- */
-router.post<MessageParams, void, void, void, RequireLoginLocals>(
-    '/:townhallId/chat-messages/:messageId/hide',
-    requireLogin(),
-    requireModerator(),
-    makeEndpoint(async (req, res) => {
-        const { townhallId, messageId } = req.params;
-        await moderateMessage(townhallId, messageId, 'hidden');
-        res.sendStatus(200);
-    })
-);
-
-/**
- * right now this is idempotent in the future it will produce logs
- * and not be idempotent
- */
-router.post<MessageParams, void, void, void, RequireLoginLocals>(
-    '/:townhallId/chat-messages/:messageId/show',
-    requireLogin(),
-    requireModerator(),
-    makeEndpoint(async (req, res) => {
-        const { townhallId, messageId } = req.params;
-        await moderateMessage(townhallId, messageId, 'visible');
-        res.sendStatus(200);
-    })
-);
-
-/**
  * starts a townhall
  */
 router.post<TownhallParams, void, void, void, RequireLoginLocals>(
@@ -348,5 +146,8 @@ router.post<TownhallParams, void, void, void, RequireLoginLocals>(
         res.sendStatus(200);
     })
 );
+
+router.use(questionRoutes);
+router.use(chatMessageRoutes);
 
 export default router;

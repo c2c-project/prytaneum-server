@@ -7,6 +7,8 @@ import {
     Townhall,
     makeTownhallForm,
     makeUser,
+    makeTownhall,
+    User,
 } from 'prytaneum-typings';
 
 import * as DB from 'db/mongo';
@@ -32,8 +34,9 @@ afterEach(() => {
     jest.restoreAllMocks();
 });
 
-const user = makeUser();
+const user = makeUser() as User & { _id: string };
 const townhallForm = makeTownhallForm();
+const townhall = makeTownhall() as Townhall & { _id: string };
 
 describe('/townhall', () => {
     describe('GET /', () => {
@@ -252,7 +255,6 @@ describe('/townhall', () => {
             // spy and mock useCollection
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             // for the townhall query
-            const townhall = {}; // FIXME: make this an actual townhall
             collectionSpy.mockResolvedValueOnce(townhall);
 
             // make the request
@@ -262,13 +264,12 @@ describe('/townhall', () => {
 
             // expectations
             expect(status).toStrictEqual(200);
-            expect(body).toEqual(townhall);
+            expect(JSON.stringify(body)).toEqual(JSON.stringify(townhall));
         });
         it('should have status 400 for an invalid townhall id', async () => {
             // spy and mock useCollection
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             // for the townhall query
-            const townhall = {}; // FIXME: make this an actual townhall
             collectionSpy.mockResolvedValueOnce(townhall);
 
             // make the request
@@ -278,7 +279,7 @@ describe('/townhall', () => {
 
             // expectations
             expect(status).toStrictEqual(400);
-            expect(body).not.toEqual(townhall);
+            expect(JSON.stringify(body)).not.toEqual(JSON.stringify(townhall));
         });
     });
     describe('PUT /:townhallId', () => {
@@ -547,20 +548,58 @@ describe('/townhall', () => {
             expect(status).toStrictEqual(404);
         });
     });
-    describe('GET /:townhallId/questions', () => {
+    describe('POST /:townhallId/start', () => {
         it('should have status 200', async () => {
             // spy and mock useCollection
             const collectionSpy = jest.spyOn(DB, 'useCollection');
+            // for the requireLogin middleware
+            collectionSpy.mockResolvedValueOnce({
+                ...user,
+                roles: ['organizer'],
+            });
 
-            // for the questions query
-            collectionSpy.mockResolvedValueOnce([]);
+            // for the townhall start modification
+            collectionSpy.mockResolvedValueOnce({
+                value: { ...townhall, _id: new ObjectID() },
+            });
+
+            // jwt spy for requireLogin()
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
 
             // make the request
-            const { status } = await request(app).get(
-                `/${new ObjectID().toHexString()}/questions`
-            );
+            const { status } = await request(app)
+                .post(`/${townhall._id}/start`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+
             // expectations
             expect(status).toStrictEqual(200);
+        });
+        it('should have status 400 for invalid townhallId', async () => {
+            // spy and mock useCollection
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            // for the requireLogin middleware
+            collectionSpy.mockResolvedValueOnce({
+                ...user,
+                roles: ['organizer'],
+            });
+
+            // for the townhall start modification
+            collectionSpy.mockResolvedValueOnce({
+                value: { ...townhall, _id: new ObjectID() },
+            });
+
+            // jwt spy for requireLogin()
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+
+            // make the request
+            const { status } = await request(app)
+                .post(`/${faker.random.alphaNumeric(6)}/start`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+
+            // expectations
+            expect(status).toStrictEqual(400);
         });
     });
 });

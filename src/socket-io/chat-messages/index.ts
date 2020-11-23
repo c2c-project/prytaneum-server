@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/indent */
 import events from 'lib/events';
 import { ChatMessage } from 'prytaneum-typings';
 import { Socket } from 'socket.io';
@@ -7,10 +8,15 @@ import io from '../socket-io';
 type CreatePayload = { type: 'create-chat-message'; payload: ChatMessage };
 type UpdatePayload = { type: 'update-chat-message'; payload: ChatMessage };
 type DeletePayload = { type: 'delete-chat-message'; payload: ChatMessage };
+type ModeratePayload = { type: 'moderate-chat-message'; payload: ChatMessage };
 
 declare module '../socket-io' {
     interface ServerEmits {
-        'chat-message-state': CreatePayload | UpdatePayload | DeletePayload;
+        'chat-message-state':
+            | CreatePayload
+            | UpdatePayload
+            | DeletePayload
+            | ModeratePayload;
     }
     interface Namespaces {
         '/chat-messages': true;
@@ -49,6 +55,14 @@ events.on('delete-chat-message', (chatMessage) => {
     const { townhallId } = chatMessage.meta;
     chatNamespace.to(townhallId.toString()).emit('chat-message-state', {
         type: 'delete-chat-message',
+        payload: chatMessage,
+    });
+});
+
+events.on('moderate-chat-message', (chatMessage) => {
+    const { townhallId } = chatMessage.meta;
+    chatNamespace.to(townhallId.toString()).emit('chat-message-state', {
+        type: 'moderate-chat-message',
         payload: chatMessage,
     });
 });

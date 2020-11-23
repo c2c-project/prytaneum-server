@@ -37,7 +37,7 @@ export default function requireModerator<
                     ],
                 })
             );
-            if (!found) createHttpError(403, 'You must be a moderator.');
+            if (!found) throw createHttpError(403, 'You must be a moderator.');
             next();
         } catch (e) {
             next(e);

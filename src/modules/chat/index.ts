@@ -9,6 +9,7 @@ declare module 'lib/events' {
         'create-chat-message': ChatMessage;
         'update-chat-message': ChatMessage;
         'delete-chat-message': ChatMessage;
+        'moderate-chat-message': ChatMessage;
     }
 }
 
@@ -131,4 +132,5 @@ export async function moderateMessage(
         )
     );
     if (!value) throw createHttpError(404, 'Unable to find message');
+    else events.emit('moderate-chat-message', value);
 }
