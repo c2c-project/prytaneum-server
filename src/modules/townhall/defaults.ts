@@ -18,7 +18,7 @@ export const defaultSettings: TownhallSettings = {
         enabled: false,
         list: [],
     },
-    links: {
+    attachments: {
         enabled: false,
         list: [],
     },

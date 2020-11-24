@@ -11,6 +11,12 @@ import errors from './errors';
 
 const SALT_ROUNDS = 10;
 
+declare module 'lib/events' {
+    interface EventMap {
+        'register-user': User;
+    }
+}
+
 export const verifyPassword = bcrypt.compare;
 
 /**
@@ -109,7 +115,10 @@ export const updatePassword = async (userId: string, password: string) => {
     );
     if (result.modifiedCount === 0)
         // shouldn't really ever happen, but this isn't a great user experience
-        throw createHttpError(404, `${errors[404]}, try logging in and out again`);
+        throw createHttpError(
+            404,
+            `${errors[404]}, try logging in and out again`
+        );
 };
 
 /**
