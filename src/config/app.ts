@@ -4,7 +4,7 @@ import express, { Express } from 'express';
 import passport from 'passport';
 
 import { init as InitializeMiddlewares } from 'middlewares';
-import env from './env'; // initializes env vars using our configuration
+import env from './env';
 import configureStrategies from './passport';
 
 export default function (app: Express): void {

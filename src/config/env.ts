@@ -10,6 +10,7 @@ export const defaults = {
     DB_URL: 'mongodb://localhost:27017',
     JWT_SECRET: 'secret',
     COOKIE_SECRET: 'secret',
+    DEBUG: '*',
 } as Readonly<Required<NodeJS.ProcessEnv>>;
 
 function set(key: keyof NodeJS.ProcessEnv): string {
@@ -35,6 +36,7 @@ const resilientEnv = {
     DB_URL: set('DB_URL'),
     JWT_SECRET: set('JWT_SECRET'),
     COOKIE_SECRET: set('COOKIE_SECRET'),
+    DEBUG: set('DEBUG'),
 } as Required<NodeJS.ProcessEnv>;
 
 export default resilientEnv as Readonly<Required<NodeJS.ProcessEnv>>;

@@ -14,6 +14,7 @@
         "@babel/runtime": "^7.9.6",
         "bcrypt": "^5.0.0",
         "cookie-parser": "^1.4.5",
+        "debug": "^4.3.1",
         "dotenv": "^8.2.0",
         "express": "^4.17.1",
         "http-errors": "^1.7.3",
@@ -24,8 +25,8 @@
         "nodemon": "^2.0.3",
         "passport": "^0.4.1",
         "passport-local": "^1.0.0",
-        "socket.io": "^3.0.1",
-        "prytaneum-typings": "https://github.com/c2c-project/prytaneum-typings#v1.0.0-alpha.26"
+        "prytaneum-typings": "https://github.com/c2c-project/prytaneum-typings#v1.0.0-alpha.26",
+        "socket.io": "^3.0.1"
     },
     "devDependencies": {
         "@babel/cli": "^7.10.1",
@@ -39,6 +40,7 @@
         "@babel/register": "^7.9.0",
         "@types/bcrypt": "^3.0.0",
         "@types/cookie-parser": "^1.4.2",
+        "@types/debug": "^4.1.5",
         "@types/faker": "^4.1.12",
         "@types/http-errors": "^1.8.0",
         "@types/jest": "^25.2.3",

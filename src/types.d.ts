@@ -12,6 +12,7 @@ declare global {
             DB_URL?: string;
             JWT_SECRET?: string;
             COOKIE_SECRET?: string;
+            DEBUG?: string;
         }
     }
 
