@@ -7,6 +7,8 @@ import {
     makeUser,
     makeTownhall,
     makeChatMessage,
+    makeChatMessageForm,
+    ChatMessageForm,
 } from 'prytaneum-typings';
 
 import * as DB from 'db/mongo';
@@ -35,8 +37,156 @@ afterEach(() => {
 const user = makeUser();
 const townhall = makeTownhall() as Townhall & { _id: string };
 const message = makeChatMessage() as ChatMessage & { _id: string };
+const messageForm = makeChatMessageForm();
 
 describe('/townhall', () => {
+    describe('GET /:townhallId/chat-messages', () => {
+        it('should have status 200', async () => {
+            // spy and mock useCollection
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            // chat messages
+            collectionSpy.mockResolvedValueOnce([message]);
+
+            // make the request
+            const { status, body } = (await request(app).get(
+                `/${townhall._id}/chat-messages`
+            )) as {
+                status: number;
+                body: ChatMessage[];
+            }; // 401 without this
+            // expectations
+            expect(status).toStrictEqual(200);
+            expect(JSON.stringify(body)).toEqual(JSON.stringify([message]));
+        });
+    });
+    describe('POST /:townhallId/chat-messages', () => {
+        it('should have status 200', async () => {
+            // jwt spy for requireLogin() -- 401 without this
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+
+            // spy and mock useCollection
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            // for requireLogin() middleware
+            collectionSpy.mockResolvedValueOnce(user);
+            collectionSpy.mockResolvedValueOnce({
+                insertedCount: 1,
+                ops: [message],
+            });
+
+            // make the request
+            const { status } = await request(app)
+                .post(`/${townhall._id}/chat-messages`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
+                .type('form')
+                .send(messageForm);
+
+            // expectations
+            expect(status).toStrictEqual(200);
+        });
+
+        it('should have status 400 for incomplete form', async () => {
+            const copy = { ...messageForm } as Partial<ChatMessageForm>;
+            delete copy.message;
+            // jwt spy for requireLogin() -- 401 without this
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+
+            // spy and mock useCollection
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            // for requireLogin() middleware
+            collectionSpy.mockResolvedValueOnce(user);
+            collectionSpy.mockResolvedValueOnce({
+                insertedCount: 1,
+                ops: [message],
+            });
+
+            // make the request
+            const { status } = await request(app)
+                .post(`/${townhall._id}/chat-messages`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
+                .type('form')
+                .send(copy);
+
+            // expectations
+            expect(status).toStrictEqual(400);
+        });
+
+        it('should have status 401 for a missing cookie', async () => {
+            // jwt spy for requireLogin() -- 401 without this
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+
+            // spy and mock useCollection
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            // for requireLogin() middleware
+            collectionSpy.mockResolvedValueOnce(user);
+            collectionSpy.mockResolvedValueOnce({
+                insertedCount: 1,
+                ops: [message],
+            });
+
+            // make the request
+            const { status } = await request(app)
+                .post(`/${townhall._id}/chat-messages`)
+                // .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
+                .type('form')
+                .send(messageForm);
+
+            // expectations
+            expect(status).toStrictEqual(401);
+        });
+    });
+    describe('PUT /:townhallId/chat-messages', () => {
+        it('should have status 200', async () => {
+            // jwt spy for requireLogin() -- 401 without this
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+
+            // spy and mock useCollection
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            // for requireLogin() middleware
+            collectionSpy.mockResolvedValueOnce(user);
+            collectionSpy.mockResolvedValueOnce({
+                value: message,
+            });
+
+            // make the request
+            const { status } = await request(app)
+                .put(`/${townhall._id}/chat-messages/${message._id}`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
+                .type('form')
+                .send(messageForm);
+
+            // expectations
+            expect(status).toStrictEqual(200);
+        });
+        // TODO: more tests?
+    });
+    describe('DELETE /:townhallId/chat-messages', () => {
+        it('should have status 200', async () => {
+            // jwt spy for requireLogin() -- 401 without this
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+
+            // spy and mock useCollection
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            // for requireLogin() middleware
+            collectionSpy.mockResolvedValueOnce(user);
+            collectionSpy.mockResolvedValueOnce({
+                value: message,
+            });
+
+            // make the request
+            const { status } = await request(app)
+                .delete(`/${townhall._id}/chat-messages/${message._id}`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+
+            // expectations
+            expect(status).toStrictEqual(200);
+        });
+        // TODO: more tests?
+    });
     describe('POST /:townhallId/chat-messages/:messageId/hide', () => {
         it('should have status 200', async () => {
             // jwt spy for requireLogin() -- 401 without this

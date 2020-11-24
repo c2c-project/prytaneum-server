@@ -28,7 +28,6 @@ const router = Router();
  */
 router.get<TownhallParams, ChatMessage[], void, void, RequireLoginLocals>(
     '/:townhallId/chat-messages',
-    requireLogin(),
     makeEndpoint(async (req, res) => {
         const { townhallId } = req.params;
         const messages = await getChatMessages(townhallId);
@@ -38,6 +37,7 @@ router.get<TownhallParams, ChatMessage[], void, void, RequireLoginLocals>(
 
 /**
  * submit a new chat message
+ * TODO: if the event is private then I will have to make sure the user was invited to this event
  */
 router.post<TownhallParams, void, ChatMessageForm, void, RequireLoginLocals>(
     '/:townhallId/chat-messages',
@@ -52,7 +52,7 @@ router.post<TownhallParams, void, ChatMessageForm, void, RequireLoginLocals>(
         const { message } = req.body;
         const { user } = req.results;
         await createChatMessage(message, townhallId, user);
-        res.status(200);
+        res.sendStatus(200);
     })
 );
 
@@ -85,7 +85,7 @@ router.put<MessageParams, void, ChatMessageForm, void, RequireLoginLocals>(
         const { message } = req.body;
         const { user } = req.results;
         await updateChatMessage(message, messageId, townhallId, user);
-        res.status(200);
+        res.sendStatus(200);
     })
 );
 /**
@@ -98,7 +98,7 @@ router.delete<MessageParams, void, void, void, RequireLoginLocals>(
         const { townhallId, messageId } = req.params;
         const { user } = req.results;
         await deleteChatMessage(messageId, townhallId, user);
-        res.status(200);
+        res.sendStatus(200);
     })
 );
 
