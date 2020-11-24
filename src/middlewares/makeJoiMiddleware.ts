@@ -32,6 +32,7 @@ export default function makeJoiMiddleware(
             if (querySchema) Joi.assert(query, querySchema);
             next();
         } catch (err) {
+            // TODO: figure out why err messsages are weird
             if (err instanceof Joi.ValidationError) {
                 next(createHttpError(400, err.message));
             } else next(err);

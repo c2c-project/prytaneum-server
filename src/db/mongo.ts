@@ -1,13 +1,19 @@
 import { MongoClient, Db, Collection, ObjectId } from 'mongodb';
+import makeDebug from 'debug';
 
 import config from 'config/mongo';
 import { User, Townhall, Question, ChatMessage } from 'prytaneum-typings';
 
+const info = makeDebug('prytaneum:db');
+
 const { url, dbName } = config;
 
+info(`Attempting database connection to ${url}`);
 const clientPromise = new MongoClient(url, {
     useUnifiedTopology: true,
-}).connect();
+})
+    .connect()
+    .finally(() => info('Successfully connected'));
 
 export type DbCallback<T> = (d: Db) => T;
 
