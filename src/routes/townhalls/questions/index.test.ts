@@ -78,6 +78,10 @@ describe('/townhall', () => {
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             // for the requireLogin() middleware
             collectionSpy.mockResolvedValueOnce(user);
+            collectionSpy.mockResolvedValueOnce({
+                insertedCount: 1,
+                ops: [question],
+            });
 
             // jwt spy for requireLogin() -- 401 without this
             const jwtSpy = jest.spyOn(jwt, 'verify');

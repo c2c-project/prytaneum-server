@@ -461,6 +461,7 @@ describe('/users', () => {
             // spy and mock useCollection
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            collectionSpy.mockResolvedValueOnce([user]);
 
             // jwt spy
             const jwtSpy = jest.spyOn(jwt, 'verify');
