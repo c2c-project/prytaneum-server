@@ -28,6 +28,6 @@ WORKDIR /usr/app
 COPY --from=build-stage /usr/app/build /usr/app
 COPY --from=build-stage /usr/app/.env /usr/app/.env
 COPY --from=build-stage /usr/app/node_modules /usr/node_modules
-EXPOSE 3000
+EXPOSE 8080
 ENV NODE_PATH=.
 CMD [ "node" , "index.js"]
