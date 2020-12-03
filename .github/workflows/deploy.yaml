@@ -24,8 +24,9 @@ jobs:
                   envkey_DB_URL: ${{ secrets.DB_URL }}
                   envkey_JWT_SECRET: ${{ secrets.JWT_SECRET }}
                   envkey_COOKIE_SECRET: ${{ secrets.COOKIE_SECRET }}
+                  envKey_DEBUG: prytaneum:*
                   file_name: .env
-                  
+
             - name: Set up QEMU
               if: ${{ !env.ACT }}
               uses: docker/setup-qemu-action@v1
