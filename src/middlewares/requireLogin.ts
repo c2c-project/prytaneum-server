@@ -1,7 +1,7 @@
 import { Request } from 'express';
 import { ObjectId, ObjectID } from 'mongodb';
 import createHttpError from 'http-errors';
-import { Roles, User } from 'prytaneum-typings';
+import type { Roles, User } from 'prytaneum-typings';
 
 import isAllowed from 'utils/isAllowed';
 import env from 'config/env';

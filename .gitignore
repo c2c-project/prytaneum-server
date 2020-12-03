@@ -1,6 +1,7 @@
 node_modules
 dist
 .yarn/*
+build
 !.yarn/cache
 !.yarn/releases
 !.yarn/plugins
