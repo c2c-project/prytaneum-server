@@ -23,7 +23,7 @@ jobs:
                   envkey_NODE_ENV: ${{ secrets.NODE_ENV }}
                   envkey_DB_URL: ${{ secrets.DB_URL }}
                   envkey_JWT_SECRET: ${{ secrets.JWT_SECRET }}
-                  envkey_COOKIE_SECRET: ${{ secrets.COOKIE_SECRET }}
+                  envkey_COOKIE_SECRET: "not actually a secret"
                   envKey_DEBUG: prytaneum:*
                   file_name: .env
 
