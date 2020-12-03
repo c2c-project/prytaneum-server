@@ -46,7 +46,7 @@ export const _test = {
 } as { env: NodeJS.ProcessEnv };
 
 function checkEnv() {
-    if (env.COOOKIE_SECRET === defaults.COOOKIE_SECRET) {
+    if (env.COOKIE_SECRET === defaults.COOKIE_SECRET) {
         throw new Error('COOKIE_SECRET IS SET INCORRECTLY IN PRODUCTION!');
     }
     if (env.JWT_SECRET === defaults.JWT_SECRET) {
@@ -56,6 +56,4 @@ function checkEnv() {
 
 if (env.NODE_ENV === 'production') {
     checkEnv();
-    // eslint-disable-next-line no-console
-    console.log('checking env...');
 }
