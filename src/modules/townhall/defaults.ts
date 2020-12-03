@@ -1,5 +1,5 @@
 /* eslint-disable import/prefer-default-export */
-import { TownhallSettings } from 'prytaneum-typings';
+import type { TownhallSettings } from 'prytaneum-typings';
 
 export const defaultSettings: TownhallSettings = {
     waitingRoom: {
@@ -24,7 +24,6 @@ export const defaultSettings: TownhallSettings = {
     },
     moderators: {
         list: [],
-        primary: '',
     },
     speakers: {
         list: [],

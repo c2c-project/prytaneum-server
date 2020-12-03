@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/indent */
 import { Router } from 'express';
 import Joi from 'joi';
-import { ChatMessage, ChatMessageForm } from 'prytaneum-typings';
+import type { ChatMessage, ChatMessageForm } from 'prytaneum-typings';
+import { ObjectId } from 'mongodb';
 
 import { makeObjectIdValidationObject } from 'utils/validators';
 import {
@@ -26,7 +27,13 @@ const router = Router();
  * gets all chat messages
  * TODO: filtering/pagination
  */
-router.get<TownhallParams, ChatMessage[], void, void, RequireLoginLocals>(
+router.get<
+    TownhallParams,
+    ChatMessage<ObjectId>[],
+    void,
+    void,
+    RequireLoginLocals
+>(
     '/:townhallId/chat-messages',
     makeEndpoint(async (req, res) => {
         const { townhallId } = req.params;

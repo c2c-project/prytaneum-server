@@ -1,5 +1,5 @@
 import { ObjectId, ObjectID } from 'mongodb';
-import { QuestionForm, User, Question } from 'prytaneum-typings';
+import type { QuestionForm, User, Question } from 'prytaneum-typings';
 import createHttpError from 'http-errors';
 
 import { useCollection } from 'db';
@@ -9,10 +9,10 @@ import { makeMeta } from 'modules/common';
 // declaration merging
 declare module 'lib/events' {
     interface EventMap {
-        'create-question': Question;
-        'update-question': Question;
-        'delete-question': Question;
-        'moderate-question': Question;
+        'create-question': Question<ObjectId>;
+        'update-question': Question<ObjectId>;
+        'delete-question': Question<ObjectId>;
+        'moderate-question': Question<ObjectId>;
     }
 }
 

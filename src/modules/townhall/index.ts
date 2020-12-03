@@ -1,6 +1,6 @@
 import { ObjectID, ObjectId } from 'mongodb';
 import createHttpError from 'http-errors';
-import { TownhallForm, TownhallSettings, User } from 'prytaneum-typings';
+import type { TownhallForm, TownhallSettings, User } from 'prytaneum-typings';
 
 import events from 'lib/events';
 import { useCollection } from 'db';

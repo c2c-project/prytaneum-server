@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/indent */
 import { Router } from 'express';
 import Joi from 'joi';
-import { QuestionForm, Question } from 'prytaneum-typings';
+import type { QuestionForm, Question } from 'prytaneum-typings';
+import { ObjectId } from 'mongodb';
 
 import {
     getQuestions,
@@ -25,7 +26,7 @@ const router = Router();
 /**
  * gets questions associated with the townhalls
  */
-router.get<TownhallParams, Question[]>(
+router.get<TownhallParams, Question<ObjectId>[]>(
     '/:townhallId/questions',
     // TODO: pagination
     makeEndpoint(async (req, res) => {
@@ -65,7 +66,7 @@ router.use(
 /**
  * gets a particular question
  */
-router.get<QuestionParams, Question, void, void, void>(
+router.get<QuestionParams, Question<ObjectId>, void, void, void>(
     '/:townhallId/questions/:questionId',
     makeEndpoint(async (req, res) => {
         const { questionId, townhallId } = req.params;

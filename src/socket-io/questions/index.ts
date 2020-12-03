@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/indent */
 import debug from 'debug';
+import { ObjectId } from 'mongodb';
 
 import events from 'lib/events';
 import type { Question } from 'prytaneum-typings';
@@ -10,10 +11,10 @@ import io from '../socket-io';
 
 const info = debug('socket-io:questions');
 
-type InitialState = { type: 'initial-state'; payload: Question[] };
-type CreatePayload = { type: 'create-question'; payload: Question };
-type UpdatePayload = { type: 'update-question'; payload: Question };
-type DeletePayload = { type: 'delete-question'; payload: Question };
+type InitialState = { type: 'initial-state'; payload: Question<ObjectId>[] };
+type CreatePayload = { type: 'create-question'; payload: Question<ObjectId> };
+type UpdatePayload = { type: 'update-question'; payload: Question<ObjectId> };
+type DeletePayload = { type: 'delete-question'; payload: Question<ObjectId> };
 
 declare module '../socket-io' {
     interface ServerEmits {

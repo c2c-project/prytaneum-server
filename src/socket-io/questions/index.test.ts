@@ -42,7 +42,7 @@ beforeEach((done) => {
             reconnectionDelay: 0,
             forceNew: true,
             transports: ['websocket'],
-            query: `townhallId=${question.meta.townhallId as string}`,
+            query: `townhallId=${question.meta.townhallId}`,
         }
     );
     socket.on('connect', () => {

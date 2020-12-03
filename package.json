@@ -8,7 +8,7 @@
         "test": "jest --watchAll --runInBand",
         "test:ci": "jest",
         "build:types": "tsc --emitDeclarationOnly",
-        "build": "tsc --project tsconfig.production.json"
+        "build": "tsc --project tsconfig.prod.json"
     },
     "dependencies": {
         "@babel/runtime": "^7.9.6",
@@ -67,6 +67,6 @@
         "superagent": "^5.2.2",
         "supertest": "^4.0.2",
         "typescript": "^3.9.5",
-        "prytaneum-typings": "https://github.com/c2c-project/prytaneum-typings#v1.0.0-alpha.43"
+        "prytaneum-typings": "https://github.com/c2c-project/prytaneum-typings#v1.0.0-alpha.44"
     }
 }

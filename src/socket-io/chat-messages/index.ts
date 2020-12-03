@@ -1,14 +1,27 @@
 /* eslint-disable @typescript-eslint/indent */
 import events from 'lib/events';
-import { ChatMessage } from 'prytaneum-typings';
+import { ObjectId } from 'mongodb';
+import type { ChatMessage } from 'prytaneum-typings';
 import { Socket } from 'socket.io';
 
 import io from '../socket-io';
 
-type CreatePayload = { type: 'create-chat-message'; payload: ChatMessage };
-type UpdatePayload = { type: 'update-chat-message'; payload: ChatMessage };
-type DeletePayload = { type: 'delete-chat-message'; payload: ChatMessage };
-type ModeratePayload = { type: 'moderate-chat-message'; payload: ChatMessage };
+type CreatePayload = {
+    type: 'create-chat-message';
+    payload: ChatMessage<ObjectId>;
+};
+type UpdatePayload = {
+    type: 'update-chat-message';
+    payload: ChatMessage<ObjectId>;
+};
+type DeletePayload = {
+    type: 'delete-chat-message';
+    payload: ChatMessage<ObjectId>;
+};
+type ModeratePayload = {
+    type: 'moderate-chat-message';
+    payload: ChatMessage<ObjectId>;
+};
 
 declare module '../socket-io' {
     interface ServerEmits {

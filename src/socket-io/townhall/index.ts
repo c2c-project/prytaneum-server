@@ -1,11 +1,10 @@
 import events from 'lib/events';
-import { ChatMessage } from 'prytaneum-typings';
 import { Socket } from 'socket.io';
 
 import io from '../socket-io';
 
-type UserAttend = { type: 'user-attend'; payload: ChatMessage };
-type UserLeave = { type: 'user-leave'; payload: ChatMessage };
+type UserAttend = { type: 'user-attend'; payload: null };
+type UserLeave = { type: 'user-leave'; payload: null };
 type TownhallStart = { type: 'townhall-start'; payload: null };
 type TownhallEnd = { type: 'townhall-end'; payload: null };
 

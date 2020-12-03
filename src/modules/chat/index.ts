@@ -1,15 +1,15 @@
 import { useCollection } from 'db';
 import createHttpError from 'http-errors';
 import events from 'lib/events';
-import { ObjectID } from 'mongodb';
-import { ChatMessage, User } from 'prytaneum-typings';
+import { ObjectID, ObjectId } from 'mongodb';
+import type { ChatMessage, User } from 'prytaneum-typings';
 
 declare module 'lib/events' {
     interface EventMap {
-        'create-chat-message': ChatMessage;
-        'update-chat-message': ChatMessage;
-        'delete-chat-message': ChatMessage;
-        'moderate-chat-message': ChatMessage;
+        'create-chat-message': ChatMessage<ObjectId>;
+        'update-chat-message': ChatMessage<ObjectId>;
+        'delete-chat-message': ChatMessage<ObjectId>;
+        'moderate-chat-message': ChatMessage<ObjectId>;
     }
 }
 

@@ -3,7 +3,7 @@ import Joi from 'joi';
 import passport from 'passport';
 
 import jwt from 'lib/jwt';
-import { User, RegisterForm, ClientSafeUser } from 'prytaneum-typings';
+import type { User, RegisterForm, ClientSafeUser } from 'prytaneum-typings';
 import {
     makeJoiMiddleware,
     makeEndpoint,
@@ -24,6 +24,7 @@ import {
 } from 'modules/user/validators';
 import { getUsers, getUser } from 'modules/admin';
 import { makeObjectIdValidationObject } from 'utils/validators';
+import { ObjectId } from 'mongodb';
 
 const router = Router();
 
@@ -168,7 +169,7 @@ type UserParams = { userId: string };
 /**
  * gets a specific user
  */
-router.get<UserParams, ClientSafeUser, void, void, RequireLoginLocals>(
+router.get<UserParams, ClientSafeUser<ObjectId>, void, void, RequireLoginLocals>(
     '/:userId',
     requireLogin(['admin']),
     makeJoiMiddleware({

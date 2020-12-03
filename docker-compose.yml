@@ -3,7 +3,7 @@ services:
     prytaneum-server:
         build:
             context: .
-            target: BASE_IMAGE
+            target: base-stage
         volumes:
             - ./src:/usr/app/src
             - ./package.json:/usr/app/package.json
