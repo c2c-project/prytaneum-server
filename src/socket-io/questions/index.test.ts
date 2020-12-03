@@ -16,8 +16,9 @@ let httpServerAddr: AddressInfo;
 let ioServerInstance: Server;
 const question = makeQuestion();
 
+// jest.mock('mongodb');
 beforeAll(() => {
-    jest.mock('mongodb');
+    jest.mock('db');
     httpServer = http.createServer().listen();
     // https://nodejs.org/api/net.html#net_server_address
     // this should never be null --
@@ -28,7 +29,7 @@ beforeAll(() => {
 });
 
 afterAll(() => {
-    jest.unmock('mongodb');
+    // jest.unmock('mongodb');
     ioServerInstance.close();
     httpServer.close();
 });

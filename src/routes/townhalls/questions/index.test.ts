@@ -19,16 +19,17 @@ import routes from '../index';
 
 const app = express();
 
+// jest.mock('mongodb');
 beforeAll(() => {
-    jest.mock('mongodb');
+    jest.mock('db');
     config(app);
     app.use(routes);
     app.use(errorHandler());
 });
 
-afterAll(() => {
-    jest.unmock('mongodb');
-});
+// afterAll(() => {
+//     jest.unmock('mongodb');
+// });
 
 afterEach(() => {
     jest.restoreAllMocks();

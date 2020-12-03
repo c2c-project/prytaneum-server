@@ -16,8 +16,9 @@ let httpServerAddr: AddressInfo;
 let ioServerInstance: Server;
 const townhall = makeTownhall();
 
+jest.mock('mongodb');
 beforeAll(() => {
-    jest.mock('mongodb');
+    // jest.mock('db');
     httpServer = http.createServer().listen();
     // https://nodejs.org/api/net.html#net_server_address
     // this should never be null --
@@ -28,7 +29,7 @@ beforeAll(() => {
 });
 
 afterAll(() => {
-    jest.unmock('mongodb');
+    // jest.unmock('mongodb');
     ioServerInstance.close();
     httpServer.close();
 });
@@ -36,13 +37,14 @@ afterAll(() => {
 beforeEach((done) => {
     if (!httpServerAddr)
         throw new Error('Test initialization for socketio failed');
+    
     socket = io(
         `http://[${httpServerAddr.address}]:${httpServerAddr.port}/townhalls`,
         {
             reconnectionDelay: 0,
             forceNew: true,
             transports: ['websocket'],
-            query: `townhallId=${townhall._id as string}`,
+            query: `townhallId=${townhall._id}`,
         }
     );
     socket.on('connect', () => {
@@ -66,7 +68,7 @@ afterEach(() => {
 describe('socket-io /questions', () => {
     it('should send a a message that the townhall has started', async () => {
         // i know townhall._id is a string here
-        events.emit('start-townhall', townhall._id as string);
+        events.emit('start-townhall', townhall._id);
         await new Promise((resolve) => {
             socket.once(
                 'townhall-state',
@@ -80,7 +82,7 @@ describe('socket-io /questions', () => {
     });
     it('should send a a message that the townhall has ended', async () => {
         // i know townhall._id is a string here
-        events.emit('end-townhall', townhall._id as string);
+        events.emit('end-townhall', townhall._id);
         await new Promise((resolve) => {
             socket.once(
                 'townhall-state',

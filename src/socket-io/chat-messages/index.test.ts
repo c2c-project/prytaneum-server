@@ -14,9 +14,10 @@ let socket: Socket;
 let httpServer: http.Server;
 let httpServerAddr: AddressInfo;
 let ioServerInstance: Server;
+// jest.mock('mongodb');
 
 beforeAll(() => {
-    jest.mock('mongodb');
+    jest.mock('db');
     httpServer = http.createServer().listen();
 
     // https://nodejs.org/api/net.html#net_server_address
@@ -28,7 +29,7 @@ beforeAll(() => {
 });
 
 afterAll(() => {
-    jest.unmock('mongodb');
+    // jest.unmock('mongodb');
     ioServerInstance.close();
     httpServer.close();
 });
