@@ -12,6 +12,5 @@
         ],
         "@babel/plugin-proposal-export-namespace-from"
     ],
-    "include": ["./src"],
-    "exclude": ["**/*.test.*"]
+    "ignore": ["node_modules", "**/*.test.*", "**/__mocks__/*"]
 }

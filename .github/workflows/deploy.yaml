@@ -14,6 +14,18 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v2
+
+            - name: Make envfile
+              uses: SpicyPizza/create-envfile@v1
+              with:
+                  envkey_ORIGIN: ${{ secrets.ORIGIN }}
+                  envkey_PORT: ${{ secrets.PORT }}
+                  envkey_NODE_ENV: ${{ secrets.NODE_ENV }}
+                  envkey_DB_URL: ${{ secrets.DB_URL }}
+                  envkey_JWT_SECRET: ${{ secrets.JWT_SECRET }}
+                  envkey_COOKIE_SECRET: ${{ secrets.COOKIE_SECRET }}
+                  file_name: .env
+                  
             - name: Set up QEMU
               if: ${{ !env.ACT }}
               uses: docker/setup-qemu-action@v1

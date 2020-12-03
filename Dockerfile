@@ -26,6 +26,7 @@ RUN yarn build \
 FROM node:14-alpine
 WORKDIR /usr/app
 COPY --from=build-stage /usr/app/build /usr/app
+COPY --from=build-stage /usr/app/.env /usr/app/.env
 COPY --from=build-stage /usr/app/node_modules /usr/node_modules
 EXPOSE 3000
 ENV NODE_PATH=.
