@@ -1,8 +1,12 @@
-import { Cursor, ObjectID } from 'mongodb';
+/* eslint-disable @typescript-eslint/indent */
+import { Cursor, ObjectID, ObjectId } from 'mongodb';
 import { useCollection } from 'db';
 import { User } from 'prytaneum-typings';
 
-type FilteredUser = Pick<User, '_id' | 'email' | 'meta' | 'name' | 'roles'>;
+type FilteredUser = Pick<
+    User<ObjectId>,
+    '_id' | 'email' | 'meta' | 'name' | 'roles'
+>;
 function filterFields(cursor: Cursor<User>) {
     return cursor.project({
         _id: 1,
@@ -13,9 +17,11 @@ function filterFields(cursor: Cursor<User>) {
     });
 }
 
-export async function getUsers() {
+export async function getUsers(query?: { email?: string }) {
+    let _query = {};
+    if (query?.email) _query = { ..._query, 'email.address': query.email };
     return useCollection('Users', (Users) =>
-        filterFields(Users.find()).toArray()
+        filterFields(Users.find(_query)).toArray()
     );
 }
 
@@ -24,7 +30,7 @@ export async function getUser(userId: string) {
         Users.findOne({ _id: new ObjectID(userId) })
     );
     if (!user) throw new Error('User not found');
-    
+
     const filteredUser: FilteredUser = {
         _id: user._id,
         email: user.email,

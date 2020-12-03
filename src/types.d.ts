@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/indent */
 // import { ParsedQs } from 'qs';
 import * as core from 'express-serve-static-core';
-import { User as PrytaneumUser } from 'prytaneum-typings';
+import type { User as PrytaneumUser } from 'prytaneum-typings';
 
 declare global {
     namespace NodeJS {

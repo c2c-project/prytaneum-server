@@ -1,7 +1,12 @@
 /* eslint-disable @typescript-eslint/indent */
 import { Router } from 'express';
 import Joi from 'joi';
-import { TownhallForm, Townhall, TownhallSettings } from 'prytaneum-typings';
+import { ObjectId } from 'mongodb';
+import type {
+    TownhallForm,
+    Townhall,
+    TownhallSettings,
+} from 'prytaneum-typings';
 
 import {
     createTownhall,
@@ -31,7 +36,7 @@ const router = Router();
 /**
  * gets the list of townhalls owned by the user
  */
-router.get<Express.EmptyParams, Townhall[]>(
+router.get<Express.EmptyParams, Townhall<ObjectId>[]>(
     '/',
     requireLogin(['organizer']),
     // TODO: pagination middleware that does joi + extracts query to a mongodb query + any other validation needed
@@ -78,7 +83,7 @@ router.use('/:townhallId/*', validateTownhallParams);
  * gets a particular townhall, there's no private data, so all data is sent to the client
  * TODO: check if all of the data is actually not sensitive
  */
-router.get<TownhallParams, Townhall>(
+router.get<TownhallParams, Townhall<ObjectId>>(
     '/:townhallId',
     makeEndpoint(async (req, res) => {
         const { townhallId } = req.params;

@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
-import { ObjectID } from 'mongodb';
+import { ObjectID, ObjectId } from 'mongodb';
 import createHttpError from 'http-errors';
-import { RegisterForm, User, ClientSafeUser } from 'prytaneum-typings';
+import type { RegisterForm, User, ClientSafeUser } from 'prytaneum-typings';
 
 import jwt from 'lib/jwt';
 import Emails from 'lib/emails';
@@ -13,7 +13,7 @@ const SALT_ROUNDS = 10;
 
 declare module 'lib/events' {
     interface EventMap {
-        'register-user': User;
+        'register-user': User<ObjectId>;
     }
 }
 

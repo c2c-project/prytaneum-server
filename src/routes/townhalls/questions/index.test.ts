@@ -1,7 +1,6 @@
 import express from 'express';
-import request, { Response } from 'supertest';
+import request from 'supertest';
 import faker from 'faker';
-import { ObjectID } from 'mongodb';
 import {
     Townhall,
     Question,

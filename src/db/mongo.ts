@@ -30,19 +30,19 @@ export type CollectionNames =
     | 'ChatMessages';
 export async function useCollection<T, U>(
     name: 'Users',
-    cb: (c: Collection<User & { _id: ObjectId }>) => U
+    cb: (c: Collection<User<ObjectId>>) => U
 ): Promise<U>;
 export async function useCollection<T, U>(
     name: 'Townhalls',
-    cb: (c: Collection<Townhall & { _id: ObjectId }>) => U
+    cb: (c: Collection<Townhall<ObjectId>>) => U
 ): Promise<U>;
 export async function useCollection<T, U>(
     name: 'Questions',
-    cb: (c: Collection<Question & { _id: ObjectId }>) => U
+    cb: (c: Collection<Question<ObjectId>>) => U
 ): Promise<U>;
 export async function useCollection<T, U>(
     name: 'ChatMessages',
-    cb: (c: Collection<ChatMessage & { _id: ObjectId }>) => U
+    cb: (c: Collection<ChatMessage<ObjectId>>) => U
 ): Promise<U>;
 export async function useCollection<T, U>(
     name: CollectionNames,

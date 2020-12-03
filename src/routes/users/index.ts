@@ -181,7 +181,7 @@ router.get<UserParams, ClientSafeUser, void, void, RequireLoginLocals>(
     makeEndpoint(async (req, res) => {
         const { userId } = req.params;
         const user = await getUser(userId);
-        res.status(200).send(user);
+        res.status(200).send(user); // FIXME: make clientsafeuser generic
     })
 );
 
