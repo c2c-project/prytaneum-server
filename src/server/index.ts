@@ -3,20 +3,21 @@ import makeDebug from 'debug';
 
 import app from 'app';
 import { io } from 'socket-io';
+import env from 'config/env';
 
 const info = makeDebug('prytaneum:server');
 info('Starting server');
 
 const server = http.createServer(app);
 io.attach(server);
-server.listen(3000);
+server.listen(env.PORT);
 
 server.on('error', (error: NodeJS.ErrnoException) => {
     if (error.syscall !== 'listen') {
         throw error;
     }
 
-    const bind = `Port ${3000}`;
+    const bind = `Port ${env.PORT}`;
 
     // handle specific listen errors with friendly messages
     switch (error.code) {
