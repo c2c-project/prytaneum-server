@@ -10,7 +10,7 @@ module.exports = {
         project: './tsconfig.json',
     },
     rules: {
-        quotes: ['error', 'single'],
+        quotes: ['error', 'single', { avoidEscape: true }],
         indent: 'off',
         '@typescript-eslint/indent': ['error', 4, { SwitchCase: 1 }],
         'jsx-quotes': ['error', 'prefer-single'],
@@ -22,7 +22,7 @@ module.exports = {
         'no-underscore-dangle': 'off',
         'func-names': 'off',
         '@typescript-eslint/naming-convention': 'off',
-        '@typescript-eslint/explicit-module-boundary-types': 'off'
+        '@typescript-eslint/explicit-module-boundary-types': 'off',
     },
     env: {
         node: true,
