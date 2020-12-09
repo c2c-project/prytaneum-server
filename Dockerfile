@@ -5,7 +5,7 @@ WORKDIR /usr/app
 COPY package.json yarn.lock ./
 RUN apk update \
 && apk add --no-cache git \
-&& yarn config set ${YARN_CACHE_DIR}\
+&& yarn config set cache-folder ${YARN_CACHE_DIR}\
 && yarn install --frozen-lockfile --offline
 EXPOSE 3000
 
