@@ -7,8 +7,6 @@ on:
         branches:
             - master
 
-env:
-    BUILD_ID: ${{ secrets.GCP_SERVER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/${{ secrets.GCP_IMAGE }}:$GITHUB_SHA
 jobs:
     docker-push:
         runs-on: ubuntu-latest
@@ -27,21 +25,9 @@ jobs:
                   envKey_DEBUG: prytaneum:*
                   file_name: .env
 
-            - name: Set up QEMU
-              if: ${{ !env.ACT }}
-              uses: docker/setup-qemu-action@v1
-
             - name: Set up Docker Buildx
               if: ${{ !env.ACT }}
               uses: docker/setup-buildx-action@v1
-
-            # - name: Login to GAR
-            #   if: ${{ !env.ACT }}
-            #   uses: docker/login-action@v1
-            #   with:
-            #       registry: us-west2-docker.pkg.dev
-            #       username: gar-720
-            #       password: ${{ secrets.GAR_JSON_KEY }}
 
             - name: Setup gcloud
               uses: google-github-actions/setup-gcloud@v0.2.0
@@ -55,5 +41,5 @@ jobs:
 
             - name: Configure gcloud and push
               run: |
-                  gcloud auth configure-docker us-west2-docker.pkg.dev
+                  gcloud auth configure-docker ${{ secrets.GCP_SERVER }}-docker.pkg.dev
                   docker push ${{ secrets.GCP_SERVER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/${{ secrets.GCP_IMAGE }}:$GITHUB_SHA

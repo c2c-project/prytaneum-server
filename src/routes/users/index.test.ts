@@ -509,7 +509,7 @@ describe('/users', () => {
             jwtSpy.mockResolvedValueOnce(user);
 
             // make the request
-            const { status, text } = await request(app)
+            const { status } = await request(app)
                 .get(`/${new ObjectID().toHexString()}`)
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
             // expectations

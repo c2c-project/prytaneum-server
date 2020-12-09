@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/indent */
+/* eslint-disable */
 // import { ParsedQs } from 'qs';
 import * as core from 'express-serve-static-core';
 import type { User as PrytaneumUser } from 'prytaneum-typings';

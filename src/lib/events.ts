@@ -1,5 +1,4 @@
 import { EventEmitter } from 'events';
-import { RegisterForm } from 'prytaneum-typings';
 
 class PrytaneumEE extends EventEmitter {
     emit<T extends keyof EventMap>(event: T, payload: EventMap[T]) {

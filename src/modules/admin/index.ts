@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/indent */
 import { Cursor, ObjectID, ObjectId } from 'mongodb';
 import { useCollection } from 'db';
-import { User } from 'prytaneum-typings';
+import type { User } from 'prytaneum-typings';
 
 type FilteredUser = Pick<
     User<ObjectId>,

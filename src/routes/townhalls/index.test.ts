@@ -39,7 +39,7 @@ const user = makeUser() as User & { _id: string };
 const townhallForm = makeTownhallForm();
 const townhall = makeTownhall() as Townhall & { _id: string };
 
-describe('/townhall', () => {
+describe('/townhalls', () => {
     describe('GET /', () => {
         it('should have status 200', async () => {
             // spy and mock useCollection

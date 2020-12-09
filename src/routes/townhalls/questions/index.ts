@@ -10,6 +10,8 @@ import {
     getQuestion,
     updateQuestion,
     deleteQuestion,
+    likeQuestion,
+    deleteLike,
 } from 'modules/questions';
 import { questionFormValidationObject } from 'modules/questions/validators';
 import { makeObjectIdValidationObject } from 'utils/validators';
@@ -102,6 +104,34 @@ router.delete<QuestionParams, void, void, void, RequireLoginLocals>(
         const { user } = req.results;
         const { questionId, townhallId } = req.params;
         await deleteQuestion(questionId, townhallId, user._id);
+        res.sendStatus(200);
+    })
+);
+
+/**
+ * likes a question
+ */
+router.put<QuestionParams, void, void, void, RequireLoginLocals>(
+    '/:townhallId/questions/:questionId/like',
+    requireLogin(),
+    makeEndpoint(async (req, res) => {
+        const { user } = req.results;
+        const { questionId, townhallId } = req.params;
+        await likeQuestion(questionId, townhallId, user._id);
+        res.sendStatus(200);
+    })
+);
+
+/**
+ * removes a like from a question
+ */
+router.delete<QuestionParams, void, void, void, RequireLoginLocals>(
+    '/:townhallId/questions/:questionId/like',
+    requireLogin(),
+    makeEndpoint(async (req, res) => {
+        const { user } = req.results;
+        const { questionId, townhallId } = req.params;
+        await deleteLike(questionId, townhallId, user._id);
         res.sendStatus(200);
     })
 );

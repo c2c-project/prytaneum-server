@@ -127,3 +127,61 @@ export async function createQuestion(
     if (insertedCount === 0) throw new Error('Unable to create question');
     else events.emit('create-question', ops[0]);
 }
+
+export async function likeQuestion(
+    questionId: string,
+    townhallId: string,
+    userId: string
+) {
+    const { matchedCount, modifiedCount } = await useCollection(
+        'Questions',
+        (Questions) =>
+            Questions.updateOne(
+                {
+                    _id: new ObjectID(questionId),
+                    'meta.townhallId': new ObjectID(townhallId),
+                },
+                {
+                    $addToSet: {
+                        likes: new ObjectID(userId),
+                    },
+                }
+            )
+    );
+    if (matchedCount === 0) throw createHttpError(404);
+    if (modifiedCount === 0)
+        // prettier is dumb https://github.com/prettier/prettier/issues/973
+        throw createHttpError(409, "You've already liked this question!");
+}
+
+export async function deleteLike(
+    questionId: string,
+    townhallId: string,
+    userId: string
+) {
+    const { matchedCount, modifiedCount } = await useCollection(
+        'Questions',
+        (Questions) =>
+            Questions.updateOne(
+                {
+                    _id: new ObjectID(questionId),
+                    'meta.townhallId': new ObjectID(townhallId),
+                },
+                {
+                    $pull: {
+                        likes: new ObjectID(userId),
+                    },
+                }
+            )
+    );
+    if (matchedCount === 0) throw createHttpError(404);
+    if (modifiedCount === 0)
+        // prettier is dumb https://github.com/prettier/prettier/issues/973
+        throw createHttpError(
+            409,
+            "You've already unliked this question! (or never liked it)"
+        );
+
+    // TODO: let clients know/emit that there is a new like
+    // if (modifiedCount === 1)
+}
