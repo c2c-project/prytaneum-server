@@ -26,27 +26,6 @@ jobs:
                   envKey_DEBUG: prytaneum:*
                   file_name: .env
 
-              # save cache directory
-            - name: Save yarn cache directory
-              id: yarn-cache-dir-path
-              run: echo "::set-output name=dir::$(yarn cache dir)"
-
-              # setup the actions cache for node modules
-            - name: Cache node modules
-              id: cache
-              uses: actions/cache@v2
-              env:
-                  cache-name: cache-node-modules
-              with:
-                  path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-                  key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-                  restore-keys: |
-                      ${{ runner.os }}-yarn-
-
-            - name: Install node modules
-              if: steps.cache.outputs.cache-hit != 'true'
-              run: yarn install
-
             - name: Set up Docker Buildx
               if: ${{ !env.ACT }}
               uses: docker/setup-buildx-action@v1
@@ -68,10 +47,8 @@ jobs:
                   file: ./Dockerfile
                   load: true
                   tags: ${{ secrets.GCP_SERVER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/${{ secrets.GCP_IMAGE }}:${{ github.sha }}
-                  cache: |
-                      ${{ steps.yarn-cache-dir-path.outputs.dir }}:${{ env.YARN_CACHE_DIR }}
-                  build-args: |
-                      YARN_CACHE_DIR=${{ env.YARN_CACHE_DIR }}
+                  cache-from: type=local,src=/tmp/.buildx-cache
+                  cache-to: type=local,dest=/tmp/.buildx-cache
 
             - name: Setup gcloud
               uses: google-github-actions/setup-gcloud@v0.2.0

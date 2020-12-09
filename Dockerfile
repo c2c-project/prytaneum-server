@@ -1,12 +1,10 @@
 # DEV
 FROM node:14-alpine as base-stage
-ARG YARN_CACHE_DIR=yarn-cache
 WORKDIR /usr/app
 COPY package.json yarn.lock ./
 RUN apk update \
 && apk add --no-cache git \
-&& yarn config set cache-folder ${YARN_CACHE_DIR}\
-&& yarn install --frozen-lockfile --offline
+&& yarn install --frozen-lockfile
 EXPOSE 3000
 
 # BUILD
