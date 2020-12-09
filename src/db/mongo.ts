@@ -8,17 +8,19 @@ const info = makeDebug('prytaneum:db');
 
 const { url, dbName } = config;
 
-info(`Attempting database connection to ${url}`);
-const clientPromise = new MongoClient(url, {
+const mongoClient = new MongoClient(url, {
     useUnifiedTopology: true,
-})
-    .connect()
-    .finally(() => info('Successfully connected'));
+});
+
+export async function connect() {
+    info(`Attempting database connection to ${url}`);
+    return mongoClient.connect().finally(() => info('Successfully connected'));
+}
 
 export type DbCallback<T> = (d: Db) => T;
 
 export async function wrapDb<T>(cb: DbCallback<T>) {
-    const client = await clientPromise;
+    const client = await connect();
     const db = client.db(dbName);
     return cb(db);
 }

@@ -21,7 +21,7 @@ const app = express();
 
 // jest.mock('mongodb');
 beforeAll(() => {
-    jest.mock('db');
+    // jest.mock('db');
     config(app);
     app.use(routes);
     app.use(errorHandler());
