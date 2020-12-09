@@ -67,9 +67,9 @@ jobs:
                   context: .
                   file: ./Dockerfile
                   load: true
-                  tags: ${{ secrets.GCP_SERVER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/${{ secrets.GCP_IMAGE }}:$GITHUB_SHA
+                  tags: ${{ secrets.GCP_SERVER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/${{ secrets.GCP_IMAGE }}:${{ github.sha }}
                   cache: |
-                      ${{ steps.yarn-cache-dir-path.outputs.dir }}:$YARN_CACHE_DIR
+                      ${{ steps.yarn-cache-dir-path.outputs.dir }}:${{ env.YARN_CACHE_DIR }}
                   build-args: |
                       YARN_CACHE_DIR=${{ env.YARN_CACHE_DIR }}
 
