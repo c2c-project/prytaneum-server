@@ -14,6 +14,18 @@ jobs:
         steps:
             - uses: actions/checkout@v2
 
+            - name: Make envfile
+              uses: SpicyPizza/create-envfile@v1
+              with:
+                  envkey_ORIGIN: ${{ secrets.ORIGIN }}
+                  envkey_PORT: ${{ secrets.PORT }}
+                  envkey_NODE_ENV: ${{ secrets.NODE_ENV }}
+                  envkey_DB_URL: ${{ secrets.DB_URL }}
+                  envkey_JWT_SECRET: ${{ secrets.JWT_SECRET }}
+                  envkey_COOKIE_SECRET: ${{ secrets.COOKIE_SECRET }}
+                  envKey_DEBUG: prytaneum:*
+                  file_name: .env
+
               # save cache directory
             - name: Save yarn cache directory
               id: yarn-cache-dir-path
@@ -31,17 +43,9 @@ jobs:
                   restore-keys: |
                       ${{ runner.os }}-yarn-
 
-            - name: Make envfile
-              uses: SpicyPizza/create-envfile@v1
-              with:
-                  envkey_ORIGIN: ${{ secrets.ORIGIN }}
-                  envkey_PORT: ${{ secrets.PORT }}
-                  envkey_NODE_ENV: ${{ secrets.NODE_ENV }}
-                  envkey_DB_URL: ${{ secrets.DB_URL }}
-                  envkey_JWT_SECRET: ${{ secrets.JWT_SECRET }}
-                  envkey_COOKIE_SECRET: ${{ secrets.COOKIE_SECRET }}
-                  envKey_DEBUG: prytaneum:*
-                  file_name: .env
+            - name: Install node modules
+              if: steps.cache.outputs.cache-hit != 'true'
+              run: yarn install
 
             - name: Set up Docker Buildx
               if: ${{ !env.ACT }}
@@ -67,7 +71,7 @@ jobs:
                   cache: |
                       ${{ steps.yarn-cache-dir-path.outputs.dir }}:$YARN_CACHE_DIR
                   build-args: |
-                      YARN_CACHE_DIR=$YARN_CACHE_DIR
+                      YARN_CACHE_DIR=${{ env.YARN_CACHE_DIR }}
 
             - name: Setup gcloud
               uses: google-github-actions/setup-gcloud@v0.2.0
@@ -79,7 +83,7 @@ jobs:
             - name: Push container to gcloud
               run: |
                   gcloud auth configure-docker ${{ secrets.GCP_SERVER }}-docker.pkg.dev
-                  docker push ${{ secrets.GCP_SERVER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/${{ secrets.GCP_IMAGE }}:$GITHUB_SHA
+                  docker push ${{ secrets.GCP_SERVER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/${{ secrets.GCP_IMAGE }}:${{ github.sha }}
 
             # - name: Build
             #   run: docker build -t ${{ secrets.GCP_SERVER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/${{ secrets.GCP_IMAGE }}:$GITHUB_SHA .
