@@ -1,6 +1,6 @@
 /* eslint-disable import/prefer-default-export */
 import Joi from 'joi';
-import { RegisterForm, User } from 'prytaneum-typings';
+import type { RegisterForm, User } from 'prytaneum-typings';
 
 type Email = keyof Pick<User, 'email'>;
 type EmailValidator = Record<Email, Joi.Schema | Joi.Reference>;

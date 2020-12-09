@@ -1,4 +1,4 @@
-import { Meta, User } from 'prytaneum-typings';
+import type { Meta, User } from 'prytaneum-typings';
 
 export function makeUpdatedBy(
     user: User,

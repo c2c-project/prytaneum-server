@@ -1,5 +1,5 @@
 /* eslint-disable import/prefer-default-export */
-import { QuestionForm } from 'prytaneum-typings';
+import type { QuestionForm } from 'prytaneum-typings';
 import Joi from 'joi';
 
 type QuestionValidator = Record<keyof QuestionForm, Joi.Schema>;

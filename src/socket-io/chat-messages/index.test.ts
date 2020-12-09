@@ -45,7 +45,7 @@ beforeEach((done) => {
             reconnectionDelay: 0,
             forceNew: true,
             transports: ['websocket'],
-            query: `townhallId=${message.meta.townhallId as string}`, // I know it's a string here
+            query: `townhallId=${message.meta.townhallId}`, // I know it's a string here
         }
     );
     socket.on('connect', () => {
