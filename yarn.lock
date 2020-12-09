@@ -3241,10 +3241,9 @@ extsprintf@^1.2.0:
   resolved "https://registry.yarnpkg.com/extsprintf/-/extsprintf-1.4.0.tgz#e2689f8f356fad62cca65a3a91c5df5f9551692f"
   integrity sha1-4mifjzVvrWLMplo6kcXfX5VRaS8=
 
-faker@^4.1.0:
-  version "4.1.0"
-  resolved "https://registry.yarnpkg.com/faker/-/faker-4.1.0.tgz#1e45bbbecc6774b3c195fad2835109c6d748cc3f"
-  integrity sha1-HkW7vsxndLPBlfrSg1EJxtdIzD8=
+"faker@https://github.com/marak/Faker.js#v5.1.0":
+  version "5.1.0"
+  resolved "https://github.com/marak/Faker.js#e0b392de967d3000f59ef712c666786aa5ae19b7"
 
 fast-deep-equal@^3.1.1:
   version "3.1.3"
@@ -5842,14 +5841,14 @@ proxy-addr@~2.0.5:
     forwarded "~0.1.2"
     ipaddr.js "1.9.1"
 
-"prytaneum-typings@https://github.com/c2c-project/prytaneum-typings#v1.0.0-alpha.45":
+"prytaneum-typings@https://github.com/c2c-project/prytaneum-typings#v1.0.0-alpha.46":
   version "1.0.0"
-  resolved "https://github.com/c2c-project/prytaneum-typings#d51b061d0acc1c156a316bdeafe65b2b46941cda"
+  resolved "https://github.com/c2c-project/prytaneum-typings#1bd6950d547db5710b9692312427fffe188e8a15"
   dependencies:
     "@types/faker" "^4.1.4"
     "@types/mongodb" "^3.5.32"
     "@types/node" "^14.14.6"
-    faker "^4.1.0"
+    faker "https://github.com/marak/Faker.js#v5.1.0"
 
 psl@^1.1.28:
   version "1.8.0"
