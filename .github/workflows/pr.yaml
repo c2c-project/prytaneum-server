@@ -75,7 +75,7 @@ jobs:
               run: exit 1
 
             - run: yarn install --offline
-            - run: yarn test
+            - run: yarn test:ci
     lint:
         needs: cache-dependencies
         runs-on: ubuntu-20.04
