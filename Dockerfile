@@ -13,7 +13,9 @@ COPY . .
 RUN yarn build \
     && npm prune --production \
     && yarn cache clean \
-    && yarn autoclean --force
+    && yarn autoclean --force \
+    # delete all test and declaration files during the build process
+    && find build -type f -name '*.d.ts' -o -name '*.test.*' -delete
 
 # PROD 
 # FROM nginx:1.18.0-alpine
