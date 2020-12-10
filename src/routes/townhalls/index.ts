@@ -17,6 +17,8 @@ import {
     configure,
     startTownhall,
     endTownhall,
+    addQuestionToList,
+    removeQuestionFromList,
 } from 'modules/townhall';
 import { townhallValidationObject } from 'modules/townhall/validators';
 import {
@@ -24,6 +26,7 @@ import {
     makeEndpoint,
     requireLogin,
     RequireLoginLocals,
+    requireModerator,
 } from 'middlewares';
 import { makeObjectIdValidationObject } from 'utils/validators';
 
@@ -160,6 +163,71 @@ router.post<TownhallParams, void, void, void, RequireLoginLocals>(
         res.sendStatus(200);
     })
 );
+
+// TODO: later on I can maybe allow edits and notify the user that there's an edit to this question
+//  that could be a PUT and the mdoerators can decide whether or not to accept the edit
+
+/**
+ * adds a new question to the list in the playlist field on townhalls
+ */
+router.post<
+    TownhallParams,
+    void,
+    { questionId: string },
+    void,
+    RequireLoginLocals
+>(
+    '/:townhallId/list',
+    requireLogin(),
+    requireModerator(),
+    makeEndpoint(async (req, res) => {
+        const { townhallId } = req.params;
+        const { questionId } = req.body;
+        await addQuestionToList(townhallId, questionId);
+        res.status(200);
+    })
+);
+/**
+ * deletes a particular question from the list in the playlist field
+ */
+router.delete<
+    TownhallParams,
+    void,
+    { questionId: string },
+    void,
+    RequireLoginLocals
+>(
+    '/:townhallId/list',
+    requireLogin(),
+    requireModerator(),
+    makeEndpoint(async (req, res) => {
+        const { townhallId } = req.params;
+        const { questionId } = req.body;
+        await removeQuestionFromList(townhallId, questionId);
+        res.status(200);
+    })
+);
+
+/**
+ * adds an item to the queue
+ */
+router.post('/:townhallId/queue');
+/**
+ * updates the queue order
+ */
+router.put('/:townhallId/queue');
+/**
+ * removes an item from the queue
+ */
+router.delete('/:townhallId/queue');
+
+/**
+ * this has side effects, i.e. is NOT idempotent
+ * 1. will replace currently playing question
+ * 2. will move old currently playing question to the "played" field
+ * 3. will remove the target question to play from the "queued" list
+ */
+router.post('/:townhallId/play');
 
 router.use(questionRoutes);
 router.use(chatMessageRoutes);
