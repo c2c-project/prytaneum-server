@@ -14,7 +14,7 @@ const mongoClient = new MongoClient(url, {
 
 export async function connect() {
     info(`Attempting database connection to ${url}`);
-    if (!mongoClient.isConnected)
+    if (!mongoClient.isConnected())
         return mongoClient
             .connect()
             .finally(() => info('Successfully connected'));
