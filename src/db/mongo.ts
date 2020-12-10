@@ -14,7 +14,12 @@ const mongoClient = new MongoClient(url, {
 
 export async function connect() {
     info(`Attempting database connection to ${url}`);
-    return mongoClient.connect().finally(() => info('Successfully connected'));
+    if (!mongoClient.isConnected)
+        return mongoClient
+            .connect()
+            .finally(() => info('Successfully connected'));
+    info('Mongo client is already connected');
+    return mongoClient;
 }
 
 export type DbCallback<T> = (d: Db) => T;
