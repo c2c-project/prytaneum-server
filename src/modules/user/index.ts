@@ -9,7 +9,7 @@ import emitter from 'lib/events';
 import { useCollection } from 'db';
 import errors from './errors';
 
-const SALT_ROUNDS = 10;
+export const SALT_ROUNDS = 10;
 
 declare module 'lib/events' {
     interface EventMap {

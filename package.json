@@ -9,7 +9,8 @@
         "test:ci": "jest",
         "prebuild": "tsc -p tsconfig.prod.json --emitDeclarationOnly",
         "build": "babel src -d build --extensions \".ts\"",
-        "lint": "eslint src/ --ext .ts,.tsx,.js,.jsx --max-warnings 0"
+        "lint": "eslint src/ --ext .ts,.tsx,.js,.jsx --max-warnings 0",
+        "initdb": "DEBUG=prytaneum:* babel-node -x \".ts\" src/db/init-db.mock.ts"
     },
     "dependencies": {
         "@babel/runtime": "^7.9.6",
@@ -68,6 +69,6 @@
         "superagent": "^5.2.2",
         "supertest": "^4.0.2",
         "typescript": "^3.9.5",
-        "prytaneum-typings": "https://github.com/c2c-project/prytaneum-typings#v1.0.0-alpha.46"
+        "prytaneum-typings": "https://github.com/c2c-project/prytaneum-typings#v1.0.0-alpha.50"
     }
 }
