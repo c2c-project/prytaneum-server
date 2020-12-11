@@ -10,6 +10,7 @@ import {
     makeEndpoint,
     requireLogin,
     RequireLoginLocals,
+    requireModerator,
 } from 'middlewares';
 import {
     createChatMessage,
@@ -18,7 +19,6 @@ import {
     moderateMessage,
     updateChatMessage,
 } from 'modules/chat';
-import requireModerator from 'middlewares/requireModerator';
 import { TownhallParams } from '../types';
 
 const router = Router();
