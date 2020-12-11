@@ -9,6 +9,8 @@ import {
     makeTownhallState,
     Question,
     makeQuestion,
+    ChatMessage,
+    makeChatMessage,
 } from 'prytaneum-typings';
 
 import 'config/env';
@@ -37,6 +39,40 @@ const user: User<ObjectId> = {
     roles: ['admin', 'organizer'],
     password: bcrypt.hashSync(adminPass, SALT_ROUNDS),
 };
+
+const makeChatMessages = (
+    townhallId: ObjectId,
+    num?: number
+): ChatMessage<ObjectId>[] => {
+    const iterations = num || 30;
+    const messages: ChatMessage<ObjectId>[] = [];
+    for (let i = 0; i < iterations; i += 1) {
+        const message = makeChatMessage();
+        messages.push({
+            ...message,
+            _id: new ObjectID(),
+            meta: {
+                ...message.meta,
+                townhallId,
+                createdBy: {
+                    ...message.meta.createdBy,
+                    _id: new ObjectID(message.meta.createdBy._id),
+                },
+                updatedBy: {
+                    ...message.meta.updatedBy,
+                    _id: new ObjectID(message.meta.updatedBy._id),
+                },
+            },
+        });
+    }
+    return messages;
+};
+
+async function insertChatMessages(messsages: ChatMessage<ObjectId>[]) {
+    await useCollection('ChatMessages', (ChatMessages) =>
+        ChatMessages.insertMany(messsages, { forceServerObjectId: true })
+    );
+}
 
 const makeQuestions = (
     townhallId: ObjectId,
@@ -78,12 +114,21 @@ const makeTownhallsWithQuestions = async (
     const allQuestions: Question<ObjectId>[] = [];
     const townhalls: Townhall<ObjectId>[] = makeTownhalls(num || 20).map(
         (townhall) => {
+            // scoped townhall id
             const townhallId = new ObjectId();
+
+            // question creation
             const list = makeQuestions(townhallId, 30);
             allQuestions.push(...list);
             const [playing] = list;
             const queued = list.slice(15, 20);
             const played = list.slice(8, 10);
+
+            // chat message creation
+            insertChatMessages(makeChatMessages(townhallId, 30)).catch(
+                // eslint-disable-next-line no-console
+                console.error
+            );
             return {
                 ...townhall,
                 _id: townhallId,

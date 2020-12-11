@@ -3,7 +3,7 @@ import makeDebug from 'debug';
 
 import app from 'app';
 import { connect } from 'db';
-import { io } from 'socket-io';
+import io from 'socket-io';
 import env from 'config/env';
 
 const info = makeDebug('prytaneum:server');

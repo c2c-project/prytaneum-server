@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/indent */
-import debug from 'debug';
+import makeDebug from 'debug';
 import { ObjectId } from 'mongodb';
 
 import events from 'lib/events';
@@ -9,7 +9,7 @@ import { getQuestions } from 'modules/questions';
 
 import io from '../socket-io';
 
-const info = debug('socket-io:questions');
+const info = makeDebug('prytaneum:ws/questions');
 
 type InitialState = { type: 'initial-state'; payload: Question<ObjectId>[] };
 type CreatePayload = { type: 'create-question'; payload: Question<ObjectId> };
@@ -32,10 +32,13 @@ declare module '../socket-io' {
 const questionNamespace = io.of('/questions');
 
 questionNamespace.on('connection', (socket: Socket) => {
+    info('Connected');
     socket.on('disconnect', () => {
+        info('Disconnected');
         // TODO: meta event where we record the user joining the chatroom etc.
     });
     const { townhallId } = socket.handshake.query as { townhallId?: string };
+    info(townhallId);
     if (!townhallId) return;
 
     // send initial state

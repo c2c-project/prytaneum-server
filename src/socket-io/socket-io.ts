@@ -1,4 +1,4 @@
-/* eslint-disable max-classes-per-file */ 
+/* eslint-disable max-classes-per-file */
 import { Server, Namespace, Socket } from 'socket.io';
 
 declare class PrytaneumNamespace extends Namespace {
@@ -63,6 +63,6 @@ export interface ClientEmits {
     connection: Socket;
 }
 
-export default new PrytaneumSocketIO();
+export default new PrytaneumSocketIO({ serveClient: false });
 
 // TODO: secure socketio using the signed cookies
