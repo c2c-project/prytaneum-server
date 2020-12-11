@@ -16,7 +16,7 @@ declare module 'lib/events' {
 export async function createChatMessage(
     message: string,
     townhallId: string,
-    user: User
+    user: User<ObjectId>
 ) {
     const { insertedCount, ops } = await useCollection(
         'ChatMessages',

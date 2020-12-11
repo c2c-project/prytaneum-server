@@ -105,7 +105,7 @@ export async function moderateQuestion(
 export async function createQuestion(
     form: QuestionForm,
     townhallId: string,
-    user: User
+    user: User<ObjectId>
 ) {
     const { insertedCount, ops } = await useCollection(
         'Questions',

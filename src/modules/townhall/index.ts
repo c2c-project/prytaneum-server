@@ -15,7 +15,7 @@ declare module 'lib/events' {
     }
 }
 
-export async function createTownhall(form: TownhallForm, user: User) {
+export async function createTownhall(form: TownhallForm, user: User<ObjectId>) {
     const { insertedCount, insertedId } = await useCollection(
         'Townhalls',
         (Townhalls) =>
