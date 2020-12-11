@@ -11,6 +11,7 @@ import {
     makeQuestion,
     ChatMessage,
     makeChatMessage,
+    makeName,
 } from 'prytaneum-typings';
 
 import 'config/env';
@@ -89,12 +90,12 @@ const makeQuestions = (
                 ...tempQ.meta,
                 townhallId,
                 createdBy: {
-                    _id: user._id,
-                    name: user.name,
+                    _id: new ObjectID(),
+                    name: makeName(),
                 },
                 updatedBy: {
-                    _id: user._id,
-                    name: user.name,
+                    _id: new ObjectID(),
+                    name: makeName(),
                 },
             },
         });

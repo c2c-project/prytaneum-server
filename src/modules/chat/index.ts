@@ -97,9 +97,16 @@ export async function deleteChatMessage(
  */
 export async function getChatMessages(townhallId: string) {
     return useCollection('ChatMessages', (ChatMessages) =>
-        ChatMessages.find({
-            'meta.townhallId': new ObjectID(townhallId),
-        }).toArray()
+        ChatMessages.find(
+            {
+                'meta.townhallId': new ObjectID(townhallId),
+            },
+            {
+                sort: {
+                    'meta.createdAt': 1,
+                },
+            }
+        ).toArray()
     );
 }
 

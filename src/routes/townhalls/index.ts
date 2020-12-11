@@ -7,7 +7,6 @@ import type {
     Townhall,
     TownhallSettings,
 } from 'prytaneum-typings';
-import qs from 'qs';
 
 import {
     createTownhall,

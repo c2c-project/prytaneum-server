@@ -20,9 +20,16 @@ declare module 'lib/events' {
 
 export async function getQuestions(townhallId: string) {
     return useCollection('Questions', (Questions) =>
-        Questions.find({
-            'meta.townhallId': new ObjectID(townhallId),
-        }).toArray()
+        Questions.find(
+            {
+                'meta.townhallId': new ObjectID(townhallId),
+            },
+            {
+                sort: {
+                    'meta.createdAt': 1,
+                },
+            }
+        ).toArray()
     );
 }
 
