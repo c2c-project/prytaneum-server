@@ -264,6 +264,14 @@ export async function updateQueue(townhallId: string, queue: Question[]) {
         _id: new ObjectID(question._id),
         meta: {
             ...question.meta,
+            createdBy: {
+                ...question.meta.createdBy,
+                _id: new ObjectID(question.meta.createdBy._id),
+            },
+            updatedBy: {
+                ...question.meta.updatedBy,
+                _id: new ObjectID(question.meta.updatedBy._id),
+            },
             townhallId: new ObjectID(question.meta.townhallId),
         },
     }));
