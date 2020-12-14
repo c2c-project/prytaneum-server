@@ -47,7 +47,10 @@ export const defaultState: TownhallState<ObjectId> = {
         max: 0,
     },
     playlist: {
-        position: -1,
+        position: {
+            current: -1,
+            timestamps: [],
+        },
         queue: [],
         list: [],
     },
