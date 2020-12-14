@@ -17,8 +17,8 @@ let httpServerAddr: AddressInfo;
 let ioServerInstance: Server;
 // jest.mock('mongodb');
 
+jest.mock('db');
 beforeAll(() => {
-    jest.mock('db');
     httpServer = http.createServer().listen();
 
     // https://nodejs.org/api/net.html#net_server_address
@@ -73,7 +73,7 @@ describe('socket-io /chat-messages', () => {
             'create-chat-message',
             (message as unknown) as ChatMessage<ObjectId>
         );
-        await new Promise((resolve) => {
+        await new Promise<void>((resolve) => {
             socket.once(
                 'chat-message-state',
                 (state: ServerEmits['chat-message-state']) => {
@@ -89,7 +89,7 @@ describe('socket-io /chat-messages', () => {
             'update-chat-message',
             (message as unknown) as ChatMessage<ObjectId>
         );
-        await new Promise((resolve) => {
+        await new Promise<void>((resolve) => {
             socket.once(
                 'chat-message-state',
                 (state: ServerEmits['chat-message-state']) => {
@@ -105,7 +105,7 @@ describe('socket-io /chat-messages', () => {
             'delete-chat-message',
             (message as unknown) as ChatMessage<ObjectId>
         );
-        await new Promise((resolve) => {
+        await new Promise<void>((resolve) => {
             socket.once(
                 'chat-message-state',
                 (state: ServerEmits['chat-message-state']) => {

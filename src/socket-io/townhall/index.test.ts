@@ -17,8 +17,8 @@ let ioServerInstance: Server;
 const townhall = makeTownhall();
 
 // jest.mock('mongodb');
+jest.mock('db');
 beforeAll(() => {
-    // jest.mock('db');
     httpServer = http.createServer().listen();
     // https://nodejs.org/api/net.html#net_server_address
     // this should never be null --
