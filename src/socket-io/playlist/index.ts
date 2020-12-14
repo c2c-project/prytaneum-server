@@ -2,28 +2,10 @@
 import events from 'lib/events';
 import { Socket } from 'socket.io';
 import makeDebug from 'debug';
-import { ObjectId } from 'mongodb';
-import type { WrapPayload, Question } from 'prytaneum-typings';
 
 import io from '../socket-io';
 
-type PlaylistAdd = WrapPayload<'playlist-add', Question<ObjectId>>;
-type PlaylistRemove = WrapPayload<'playlist-remove', string>;
-type QueueOrder = WrapPayload<'playlist-queue-order', Question<ObjectId>[]>;
-type QueueAdd = WrapPayload<'playlist-queue-add', Question<ObjectId>>;
-type QueueRemove = WrapPayload<'playlist-queue-remove', string>;
-type PlaylistNext = WrapPayload<'playlist-queue-next', null>;
-
 declare module '../socket-io' {
-    interface ServerEmits {
-        'playlist-state':
-            | PlaylistAdd
-            | PlaylistRemove
-            | QueueAdd
-            | QueueRemove
-            | PlaylistNext
-            | QueueOrder;
-    }
     interface Namespaces {
         '/playlist': true;
     }

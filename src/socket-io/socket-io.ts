@@ -1,6 +1,9 @@
 /* eslint-disable max-classes-per-file */
 import { Server, Namespace, Socket } from 'socket.io';
+import { ObjectId } from 'mongodb';
+import type { SocketIOEvents } from 'prytaneum-typings';
 
+type ServerEmits = SocketIOEvents<ObjectId>;
 declare class PrytaneumNamespace extends Namespace {
     emit<T extends keyof ServerEmits>(
         event: T,
@@ -50,10 +53,6 @@ class PrytaneumSocketIO extends Server {
         return super.of(url);
     }
 }
-
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface ServerEmits {} // intended to be extended
-// TODO: move this to client?
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface Namespaces {} // intended to be extended
