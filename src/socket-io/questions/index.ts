@@ -3,7 +3,6 @@ import makeDebug from 'debug';
 
 import events from 'lib/events';
 import { Socket } from 'socket.io';
-import { getQuestions } from 'modules/questions';
 
 import io from '../socket-io';
 
@@ -26,16 +25,6 @@ questionNamespace.on('connection', (socket: Socket) => {
     const { townhallId } = socket.handshake.query as { townhallId?: string };
     info(townhallId);
     if (!townhallId) return;
-
-    // send initial state
-    getQuestions(townhallId)
-        .then((questions) => {
-            socket.emit('question-state', {
-                type: 'initial-state',
-                payload: questions,
-            });
-        })
-        .catch(info);
 
     // subscribe to updates
     // eslint-disable-next-line no-void

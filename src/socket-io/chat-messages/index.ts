@@ -3,7 +3,6 @@ import events from 'lib/events';
 import { Socket } from 'socket.io';
 import makeDebug from 'debug';
 
-import { getChatMessages } from 'modules/chat';
 import io from '../socket-io';
 
 declare module '../socket-io' {
@@ -24,14 +23,14 @@ chatNamespace.on('connection', (socket: Socket) => {
     const { townhallId } = socket.handshake.query as { townhallId?: string };
     if (!townhallId) return;
 
-    getChatMessages(townhallId)
-        .then((messages) => {
-            socket.emit('chat-message-state', {
-                type: 'initial-state',
-                payload: messages,
-            });
-        })
-        .catch(info);
+    // getChatMessages(townhallId)
+    //     .then((messages) => {
+    //         socket.emit('chat-message-state', {
+    //             type: 'initial-state',
+    //             payload: messages,
+    //         });
+    //     })
+    //     .catch(info);
 
     // eslint-disable-next-line no-void
     void socket.join(townhallId);
