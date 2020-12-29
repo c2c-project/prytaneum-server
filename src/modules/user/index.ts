@@ -127,7 +127,12 @@ export const updatePassword = async (userId: string, password: string) => {
  * @returns resolves to the userDoc with ONLY whitelisted fields
  */
 export const filterSensitiveData = (user: User): ClientSafeUser => {
-    const whitelist: (keyof ClientSafeUser)[] = ['_id', 'email', 'name'];
+    const whitelist: (keyof ClientSafeUser)[] = [
+        '_id',
+        'email',
+        'name',
+        'roles',
+    ];
     function reducer(
         accum: Partial<ClientSafeUser>,
         key: keyof ClientSafeUser
