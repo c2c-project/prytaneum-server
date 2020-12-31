@@ -116,6 +116,9 @@ export async function createQuestion(
     townhallId: string,
     user: User<ObjectId>
 ) {
+    let quote: Question<ObjectId> | null = null;
+    if (form.quoteId) quote = await getQuestion(form.quoteId, townhallId);
+
     const { insertedCount, ops } = await useCollection(
         'Questions',
         (Questions) =>
@@ -131,6 +134,8 @@ export async function createQuestion(
                     labels: [],
                 },
                 visibility: 'visible',
+                replies: [],
+                quote,
             })
     );
     if (insertedCount === 0) throw new Error('Unable to create question');

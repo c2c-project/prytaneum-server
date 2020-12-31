@@ -160,6 +160,8 @@ export async function updateQueue(townhallId: string, queue: Question[]) {
             },
             townhallId: new ObjectID(question.meta.townhallId),
         },
+        quote: null, // FIXME:
+        replies: [], // FIXME:
     }));
     const { matchedCount } = await useCollection('Townhalls', (Townhalls) =>
         Townhalls.updateOne(

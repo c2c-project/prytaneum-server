@@ -36,6 +36,9 @@ export const defaultSettings: TownhallSettings = {
         },
         registrants: [],
     },
+    video: {
+        url: '',
+    },
 };
 
 export const defaultState: TownhallState<ObjectId> = {
