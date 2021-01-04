@@ -47,7 +47,7 @@ router.post(
             sameSite: 'strict',
         })
             .status(200)
-            .send();
+            .send({ user: { ...clientUser, settings: user.settings } });
     })
 );
 
