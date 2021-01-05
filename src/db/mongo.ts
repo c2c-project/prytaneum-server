@@ -8,6 +8,20 @@ const info = makeDebug('prytaneum:db');
 
 const { url, dbName } = config;
 
+export interface MetaData {
+    name: string;
+    size: number; // Size in bytes
+    sentDateTime: string; // UTC Format
+}
+
+export interface Notification<T> {
+    _id: T;
+    region: string;
+    unsubscribeList: Array<string>;
+    subscribeList: Array<string>;
+    inviteHistory: Array<MetaData>;
+}
+
 info(`Attempting database connection to ${url}`);
 const clientPromise = new MongoClient(url, {
     useUnifiedTopology: true,
@@ -27,7 +41,8 @@ export type CollectionNames =
     | 'Users'
     | 'Townhalls'
     | 'Questions'
-    | 'ChatMessages';
+    | 'ChatMessages'
+    | 'Notifications';
 export async function useCollection<T, U>(
     name: 'Users',
     cb: (c: Collection<User<ObjectId>>) => U
@@ -43,6 +58,10 @@ export async function useCollection<T, U>(
 export async function useCollection<T, U>(
     name: 'ChatMessages',
     cb: (c: Collection<ChatMessage<ObjectId>>) => U
+): Promise<U>;
+export async function useCollection<T, U>(
+    name: 'Notifications',
+    cb: (c: Collection<Notification<ObjectId>>) => U
 ): Promise<U>;
 export async function useCollection<T, U>(
     name: CollectionNames,
