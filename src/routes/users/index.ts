@@ -32,6 +32,8 @@ import {
 import { getUsers, getUser, generateInviteLink } from 'modules/admin';
 import { makeObjectIdValidationObject } from 'utils/validators';
 import { ObjectId } from 'mongodb';
+import { getRolesFromInvite, incrementInviteUse } from 'modules/invites';
+import createHttpError from 'http-errors';
 
 const router = Router();
 
@@ -73,13 +75,34 @@ router.post(
 /**
  * registers a new user
  */
-router.post(
+router.post<Express.EmptyParams, void, RegisterForm, { invite?: string }, void>(
     '/register',
     makeJoiMiddleware({
         body: Joi.object(registerValidationObject),
+        query: Joi.object({
+            invite: Joi.string().optional(),
+        }),
     }),
     makeEndpoint(async (req, res) => {
-        await registerUser(req.body as RegisterForm);
+        const { query, body } = req;
+        const { invite: token } = query;
+
+        /**
+         * logic to handle token below
+         */
+        const overrides: Partial<User> = {};
+        if (token) {
+            const { _id: inviteId } = await jwt.verify<{ _id: string }>(token);
+
+            // TODO: handle else case here
+            if (inviteId) {
+                overrides.roles = await getRolesFromInvite(inviteId);
+                // should probably do this AFTER registering the user, but w/e for now
+                await incrementInviteUse(inviteId);
+            }
+        }
+
+        await registerUser(body, overrides);
         res.sendStatus(200);
     })
 );
@@ -140,9 +163,9 @@ router.post<ResetPasswordParams, void, ResetPasswordBody>(
         const { password } = req.body;
         const { token } = req.params;
         // TODO: different jwt verifies?
-        const decodedJwt = (await jwt.verify(token)) as User & {
-            _id: string;
-        };
+        const decodedJwt = await jwt.verify<Pick<User, '_id'>>(token);
+        if (!decodedJwt._id)
+            throw createHttpError(401, 'Invalid token provided');
         await updatePassword(decodedJwt._id, password);
         res.sendStatus(200);
     })

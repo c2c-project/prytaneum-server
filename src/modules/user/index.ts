@@ -1,7 +1,12 @@
 import bcrypt from 'bcrypt';
 import { ObjectID, ObjectId } from 'mongodb';
 import createHttpError from 'http-errors';
-import type { RegisterForm, User, ClientSafeUser } from 'prytaneum-typings';
+import type {
+    RegisterForm,
+    User,
+    ClientSafeUser,
+    Roles,
+} from 'prytaneum-typings';
 
 import jwt from 'lib/jwt';
 import Emails from 'lib/emails';
@@ -67,6 +72,11 @@ export async function registerUser(
     else if (result.insertedCount === 0)
         throw new Error('Unable to register new user');
 }
+
+export const registerUserWithRoles = async (
+    form: RegisterForm,
+    roles: Roles[]
+) => registerUser(form, { roles });
 
 /**
  * @description verifies the user; expects catch in calling function

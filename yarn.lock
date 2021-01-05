@@ -5856,9 +5856,9 @@ proxy-addr@~2.0.5:
     forwarded "~0.1.2"
     ipaddr.js "1.9.1"
 
-"prytaneum-typings@https://github.com/c2c-project/prytaneum-typings#v1.0.0-alpha.65":
+"prytaneum-typings@https://github.com/c2c-project/prytaneum-typings#v1.0.0-alpha.66":
   version "1.0.0"
-  resolved "https://github.com/c2c-project/prytaneum-typings#27d7e10ab2cebfe052f9d3c195fd43599183a0a1"
+  resolved "https://github.com/c2c-project/prytaneum-typings#54898799c9d3bc7f8510dec651dba95981bdea1b"
   dependencies:
     "@types/faker" "^4.1.4"
     "@types/mongodb" "^3.5.32"
