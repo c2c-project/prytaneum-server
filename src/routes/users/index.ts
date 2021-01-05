@@ -5,7 +5,12 @@ import passport from 'passport';
 
 import env from 'config/env';
 import jwt from 'lib/jwt';
-import type { User, RegisterForm, ClientSafeUser } from 'prytaneum-typings';
+import type {
+    User,
+    RegisterForm,
+    ClientSafeUser,
+    Roles,
+} from 'prytaneum-typings';
 import {
     makeJoiMiddleware,
     makeEndpoint,
@@ -24,7 +29,7 @@ import {
     emailValidationObject,
     passwordValidationObject,
 } from 'modules/user/validators';
-import { getUsers, getUser } from 'modules/admin';
+import { getUsers, getUser, generateInviteLink } from 'modules/admin';
 import { makeObjectIdValidationObject } from 'utils/validators';
 import { ObjectId } from 'mongodb';
 
@@ -196,6 +201,31 @@ router.get<
         const { userId } = req.params;
         const user = await getUser(userId);
         res.status(200).send(user); // FIXME: make clientsafeuser generic
+    })
+);
+
+/**
+ * invites a user and allows them to have a particular role
+ */
+router.post<
+    Express.EmptyParams,
+    { token: string },
+    { role: Roles },
+    void,
+    RequireLoginLocals
+>(
+    '/invite',
+    requireLogin(['admin']),
+    makeJoiMiddleware({
+        body: Joi.object({
+            role: Joi.string(),
+        }),
+    }),
+    makeEndpoint(async (req, res) => {
+        const { role } = req.body;
+        const { user } = req.results;
+        const token = await generateInviteLink(role, user._id);
+        res.status(200).send({ token });
     })
 );
 

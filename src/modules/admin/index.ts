@@ -1,7 +1,10 @@
 /* eslint-disable @typescript-eslint/indent */
 import { Cursor, ObjectID, ObjectId } from 'mongodb';
+import type { User, Roles } from 'prytaneum-typings';
+import createHttpError from 'http-errors';
+
 import { useCollection } from 'db';
-import type { User } from 'prytaneum-typings';
+import jwt from 'lib/jwt';
 
 type FilteredUser = Pick<
     User<ObjectId>,
@@ -39,4 +42,18 @@ export async function getUser(userId: string) {
         roles: user.roles,
     };
     return filteredUser;
+}
+
+export async function generateInviteLink(role: Roles, inviter: string) {
+    const { insertedCount, insertedId } = await useCollection(
+        'InviteLinks',
+        (InviteLinks) =>
+            InviteLinks.insertOne({
+                inviter: new ObjectID(inviter),
+                roles: [role],
+                limit: 1, // TODO: make this an option
+            })
+    );
+    if (insertedCount !== 1) throw createHttpError(500);
+    return jwt.sign({ insertedId });
 }

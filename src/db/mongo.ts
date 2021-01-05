@@ -1,6 +1,12 @@
 import { MongoClient, Db, Collection, ObjectId } from 'mongodb';
 import makeDebug from 'debug';
-import type { User, Townhall, Question, ChatMessage } from 'prytaneum-typings';
+import type {
+    User,
+    Townhall,
+    Question,
+    ChatMessage,
+    InviteLink,
+} from 'prytaneum-typings';
 
 import config from 'config/mongo';
 
@@ -34,7 +40,8 @@ export type CollectionNames =
     | 'Users'
     | 'Townhalls'
     | 'Questions'
-    | 'ChatMessages';
+    | 'ChatMessages'
+    | 'InviteLinks';
 export async function useCollection<T, U>(
     name: 'Users',
     cb: (c: Collection<User<ObjectId>>) => U
@@ -50,6 +57,10 @@ export async function useCollection<T, U>(
 export async function useCollection<T, U>(
     name: 'ChatMessages',
     cb: (c: Collection<ChatMessage<ObjectId>>) => U
+): Promise<U>;
+export async function useCollection<T, U>(
+    name: 'InviteLinks',
+    cb: (c: Collection<InviteLink<ObjectId>>) => U
 ): Promise<U>;
 export async function useCollection<T, U>(
     name: CollectionNames,

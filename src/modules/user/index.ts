@@ -19,12 +19,16 @@ declare module 'lib/events' {
 
 export const verifyPassword = bcrypt.compare;
 
+type Overrides = Partial<Omit<User, '_id' | 'password'>>;
 /**
  * @description register the user in the database ONLY
  * @arg form is the registration form submitted to the server
  * @throws E-mail already exists, Passwords do not match
  */
-export async function registerUser(form: RegisterForm) {
+export async function registerUser(
+    form: RegisterForm,
+    overrides: Overrides = {}
+) {
     const encryptedPw = await bcrypt.hash(form.password, SALT_ROUNDS);
     const match = await useCollection('Users', (Users) =>
         Users.findOne({ 'user.email': form.email })
@@ -55,6 +59,7 @@ export async function registerUser(form: RegisterForm) {
                     types: [],
                 },
             },
+            ...overrides,
         })
     );
     if (result.insertedCount === 1)
