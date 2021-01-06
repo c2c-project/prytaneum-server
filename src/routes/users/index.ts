@@ -223,7 +223,7 @@ router.get<
     makeEndpoint(async (req, res) => {
         const { userId } = req.params;
         const user = await getUser(userId);
-        res.status(200).send(user); // FIXME: make clientsafeuser generic
+        res.status(200).send(user);
     })
 );
 
