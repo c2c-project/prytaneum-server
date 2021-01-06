@@ -123,12 +123,13 @@ router.delete<TownhallParams>(
 /**
  * updates the townhall configuration the townhall settings
  */
-router.post<TownhallParams, void, TownhallSettings>(
+router.post<TownhallParams, void, TownhallSettings, void, RequireLoginLocals>(
     '/:townhallId/configure',
     requireLogin(),
     makeEndpoint(async (req, res) => {
         const { townhallId } = req.params;
-        await configure(req.body, townhallId);
+        const { user } = req.results;
+        await configure(req.body, townhallId, user._id);
         res.sendStatus(200);
     })
 );
