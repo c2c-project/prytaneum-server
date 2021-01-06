@@ -8,6 +8,7 @@ import env from 'config/env';
 
 export default function errorHandler(): ErrorRequestHandler {
     return (err: Error | HttpError, req, res, next) => {
+        // error that will get sent to client
         let _err: HttpError;
 
         if (!(err instanceof HttpError)) {
