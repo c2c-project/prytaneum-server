@@ -115,12 +115,13 @@ export async function getBillInfo(townhallId: string) {
 
 export async function configure(
     settings: TownhallSettings,
-    townhallId: string
+    townhallId: string,
+    userId: ObjectId
 ) {
     // TODO: sanity checks ex. enabled must be true within settings for other things to work even if set to true
     const { value } = await useCollection('Townhalls', (Townhalls) =>
         Townhalls.findOneAndUpdate(
-            { _id: new ObjectID(townhallId) },
+            { _id: new ObjectID(townhallId), 'meta.createdBy._id': userId },
             { $set: { settings } },
             { returnOriginal: false }
         )
