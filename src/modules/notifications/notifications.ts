@@ -1,6 +1,7 @@
 import { useCollection } from 'db';
-import { MetaData } from 'db/mongo';
-import { UpdateWriteOpResult } from 'mongodb';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { NotificationMetaData } from 'prytaneum-typings/dist/notifications';
+import createHttpError from 'http-errors';
 
 /**
  * @description fetches the relevant up to date unsubscribed list from the database
@@ -9,13 +10,11 @@ import { UpdateWriteOpResult } from 'mongodb';
  * @throws Error: if no document is found
  */
 const getUnsubList = async (region: string): Promise<Array<string>> => {
-    return useCollection('Notifications', async (collection) => {
-        const doc = await collection.findOne({ region });
-        if (doc === null) {
-            throw new Error('Error finding region document');
-        }
-        return doc.unsubscribeList;
+    const doc = await useCollection('Notifications', (Notifications) => {
+        return Notifications.findOne({ region });
     });
+    if (!doc) throw createHttpError(404, 'Region doc not found');
+    return doc.unsubscribeList;
 };
 
 /**
@@ -25,77 +24,88 @@ const getUnsubList = async (region: string): Promise<Array<string>> => {
  * @throws Error: if no document is found
  */
 const getSubList = async (region: string): Promise<Array<string>> => {
-    return useCollection('Notifications', async (collection) => {
-        const doc = await collection.findOne({ region });
-        if (doc === null) {
-            throw new Error('Error finding region document');
-        }
-        return doc.subscribeList;
+    const doc = await useCollection('Notifications', (Notifications) => {
+        return Notifications.findOne({ region });
     });
+    if (!doc) throw createHttpError(404, 'Region doc not found');
+    return doc.subscribeList;
 };
 
 /**
  * @description adds an email to the relevant unsubscribed list in the database
  * @param {string} email email to be added to the list
  * @param {string} region region that relates to the data
- * @return {Promise<UpdateWriteOpResult>} Promise that resolves to a MongoDB cursor on success
+ * @return {Promise<void>}
  */
 const addToUnsubList = async (
     email: string,
     region: string
-): Promise<UpdateWriteOpResult> => {
-    return useCollection('Notifications', async (collection) => {
-        const query = { $addToSet: { unsubscribeList: email } };
-        return collection.updateOne({ region }, query);
+): Promise<void> => {
+    const { value } = await useCollection('Notifications', (Notifications) => {
+        return Notifications.findOneAndUpdate(
+            { region },
+            {
+                $addToSet: { unsubscribeList: email }
+            }
+        );
     });
+    if (!value) throw createHttpError(404, 'Region doc not found');
 };
 
 /**
  * @descritpion removes an email from the relevant unsubscribed list in the database
  * @param {string} email email to be added to the list
  * @param {string} region region that relates to the data
- * @return {Proise<UpdateWriteOpResult>} Promise that resolves to a MongoDB cursor on success
+ * @return {Proise<void>}
  */
 const removeFromUnsubList = async (
     email: string,
     region: string
-): Promise<UpdateWriteOpResult> => {
-    return useCollection('Notifications', async (collection) => {
-        const query = { $pull: { unsubscribeList: email } };
-        return collection.updateOne({ region }, query);
+): Promise<void> => {
+    const { value } = await useCollection('Notifications', (Notifications) => {
+        return Notifications.findOneAndUpdate({ region },
+            { $pull: { unsubscribeList: email } }
+        );
     });
+    if (!value) throw createHttpError(404, 'Region doc not found');
 };
 
 /**
  * @description subscribes user to receive notifications
  * @param {string} email email to be added to the list
  * @param {string} region region that relates to the data
- * @return {Promise<UpdateWriteOpResult>} Promise that respoves to a MongoDB cursor
+ * @return {Promise<void>}
  */
 const addToSubList = async (
     email: string,
     region: string
-): Promise<UpdateWriteOpResult> => {
-    return useCollection('Notifications', async (collection) => {
-        const query = { $addToSet: { subscribeList: email } };
-        return collection.updateOne({ region }, query);
+): Promise<void> => {
+    const { value } = await useCollection('Notifications', (Notifications) => {
+        return Notifications.findOneAndUpdate(
+            { region },
+            { $addToSet: { subscribeList: email } }
+        );
     });
+    if (!value) throw createHttpError(404, 'Region doc not found');
 };
 
 /**
  * @descritpion removes an email from the relevant subscribed list in the database
  * @param {string} email email to be added to the list
  * @param {string} region region that relates to the data
- * @return {Proise<UpdateWriteOpResult>} Promise that resolves to a MongoDB cursor on success
+ * @return {Proise<void>}
  */
 const removeFromSubList = async (
     email: string,
     region: string
-): Promise<UpdateWriteOpResult> => {
-    return useCollection('Notifications', async (collection) => {
-        const query = { $pull: { subscribeList: email } };
-        return collection.updateOne({ region }, query);
+): Promise<void> => {
+    const { value } = await useCollection('Notifications', (Notifications) => {
+        return Notifications.findOneAndUpdate(
+            { region },
+            { $pull: { subscribeList: email } }
+        );
     });
+    if (!value) throw createHttpError(404, 'Region doc not found');
 };
 
 /**
@@ -109,16 +119,14 @@ const isSubscribed = async (
     email: string,
     region: string
 ): Promise<boolean> => {
-    return useCollection('Notifications', async (collection) => {
-        const doc = await collection.findOne({ region });
-        if (doc === null) {
-            throw new Error('Error finding region document');
-        }
-        const { subscribeList } = doc;
-        return subscribeList.includes(email);
-    });
     // const query = { subscribeList: { $elemMatch: email } };
     // const emailHash = uuidv5(email, uuidv5.URL);
+    const doc = await useCollection('Notifications', (Notifications) => {
+        return Notifications.findOne({ region });
+    });
+    if (!doc) throw createHttpError(404, 'Region doc not found');
+    const { subscribeList } = doc;
+    return subscribeList.includes(email);
 };
 
 /**
@@ -132,30 +140,31 @@ const isUnsubscribed = async (
     email: string,
     region: string
 ): Promise<boolean> => {
-    return useCollection('Notifications', async (collection) => {
-        const doc = await collection.findOne({ region });
-        if (doc === null) {
-            throw new Error('Error finding region document');
-        }
-        const { unsubscribeList } = doc;
-        return unsubscribeList.includes(email);
+    const doc = await useCollection('Notifications', (Notifications) => {
+        return Notifications.findOne({ region });
     });
+    if (!doc) throw createHttpError(404, 'Region doc not found');
+    const { unsubscribeList } = doc;
+    return unsubscribeList.includes(email);
 };
 
 /**
  * @description adds invite metadata to invite history
- * @param {MetaData} metadata  invite metadata
+ * @param {NotificationMetaData} metadata  invite metadata
  * @param {string} region region region that relates to the data
- * @returns {Promise<UpdateWriteOpResult>}
+ * @returns {Promise<void>}
  */
 const addToInviteHistory = async (
-    metadata: MetaData,
+    metadata: NotificationMetaData,
     region: string
-): Promise<UpdateWriteOpResult> => {
-    return useCollection('Notifications', async (collection) => {
-        const query = { $addToSet: { inviteHistory: metadata } };
-        return collection.updateOne({ region }, query);
+): Promise<void> => {
+    const { value } = await useCollection('Notifications', (Notifications) => {
+        return Notifications.findOneAndUpdate(
+            { region },
+            { $addToSet: { inviteHistory: metadata } }
+        );
     });
+    if (!value) throw createHttpError(404, 'Region doc not found');
 };
 
 export default {
