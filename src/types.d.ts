@@ -13,6 +13,8 @@ declare global {
             JWT_SECRET?: string;
             COOKIE_SECRET?: string;
             DEBUG?: string;
+            MAILGUN_API_KEY?: string;
+            MAILGUN_DOMAIN?: string;
         }
     }
 
