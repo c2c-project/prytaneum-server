@@ -5,7 +5,7 @@ import fs from 'fs';
 import csvParser from 'csv-parser';
 import makeDebug from 'debug';
 import { makeEndpoint } from 'middlewares';
-
+import createHttpError, { HttpError } from 'http-errors';
 
 import Notifications from 'modules/notifications';
 // import logger from 'lib/logger';
@@ -106,7 +106,7 @@ router.post(
         // TODO add authentication
         const { file } = req;
         try {
-            if (!file) throw new Error('File undefined'); // Check if file is undefined (rejected)
+            if (!file) throw createHttpError(400, 'File undefined'); // Check if file is undefined (rejected)
             const data = req.body as InviteData;
             Invite.validateData(data);
             data.deliveryTime = Invite.validateDeliveryTime(
@@ -147,23 +147,25 @@ router.post(
                     if (err) throw new Error(JSON.stringify(err));
                 });
             }
-            throw new Error(e);
+            if (e instanceof HttpError) throw createHttpError(e);
+            else throw new Error(e);
         }
     }
     )
 );
 
 router.post('/subscribe', makeEndpoint(async (req, res) => {
+    // TODO update body validation to use JOI middleware
     const data = req.body as SubscribeData;
     if (data.email === undefined || data.region === undefined) {
-        throw new Error('Invalid Body');
+        throw createHttpError(400, 'Invalid Body');
     }
     const isSubscribed = await Notifications.isSubscribed(
         data.email,
         data.region
     );
     if (isSubscribed) {
-        throw new Error('Already subscribed.');
+        throw createHttpError(400, 'Already subscribed.');
     }
     const isUnsubscribed = await Notifications.isUnsubscribed(
         data.email,
@@ -183,14 +185,14 @@ router.post('/unsubscribe',
     makeEndpoint(async (req, res) => {
         const data = req.body as SubscribeData;
         if (data.email === undefined || data.region === undefined) {
-            throw new Error('Invalid Body');
+            throw createHttpError(400, 'Invalid Body');
         }
         const isUnsubscribed = await Notifications.isUnsubscribed(
             data.email,
             data.region
         );
         if (isUnsubscribed) {
-            throw new Error('Already unsubscribed');
+            throw createHttpError(400, 'Already unsubscribed');
         }
         const isSubscribed = await Notifications.isSubscribed(
             data.email,
