@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/indent */
 import Mailgun from 'mailgun-js';
 import jwt from 'jsonwebtoken';
+import createHttpError from 'http-errors';
 
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { NotificationMetaData } from 'prytaneum-typings/dist/notifications';
@@ -184,7 +185,7 @@ const validateData = (data: InviteData): void => {
         data.constituentScope === undefined ||
         data.region === undefined
     )
-        throw new Error('Invalid Form Data');
+        throw createHttpError(400, 'Invalid Form Data');
 };
 
 /**
@@ -200,7 +201,7 @@ const validateDeliveryTime = (deliveryTimeString: string | undefined): Date => {
         deliveryTime = new Date(Date.now());
     } else if (Number.isNaN(Date.parse(deliveryTimeString))) {
         // Check if the ISO format is valid by parsing string, returns NaN if invalid
-        throw new Error('Invalid ISO Date format');
+        throw createHttpError(400, 'Invalid ISO Date format');
     } else {
         // Delivery time is set to the time given
         deliveryTime = new Date(deliveryTimeString);
@@ -220,7 +221,7 @@ const inviteCSVList = async (
         return !unsubSet.has(item.email);
     });
     if (filteredInviteeList.length === 0) {
-        throw new Error('No valid invitees');
+        throw createHttpError(400, 'No valid invitees');
     }
     if (previewEmail)
         filteredInviteeList.push({
