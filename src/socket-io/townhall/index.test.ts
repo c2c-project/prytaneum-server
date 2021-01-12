@@ -1,11 +1,11 @@
 import http from 'http';
 import { AddressInfo } from 'net';
-import { makeTownhall } from 'prytaneum-typings';
+import { makeTownhall, SocketIOEvents as ServerEmits } from 'prytaneum-typings';
 import { io, Socket } from 'socket.io-client';
 import { Server } from 'socket.io';
 
 import events from 'lib/events';
-import ioServer, { ServerEmits } from '../socket-io';
+import ioServer from '../socket-io';
 
 // must import to properly listen
 import './index';

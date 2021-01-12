@@ -1,12 +1,16 @@
 import http from 'http';
 import { AddressInfo } from 'net';
-import { makeChatMessage, ChatMessage } from 'prytaneum-typings';
+import {
+    makeChatMessage,
+    ChatMessage,
+    SocketIOEvents as ServerEmits,
+} from 'prytaneum-typings';
 import { io, Socket } from 'socket.io-client';
 import { Server } from 'socket.io';
 import { ObjectId } from 'mongodb';
 
 import events from 'lib/events';
-import ioServer, { ServerEmits } from '../socket-io';
+import ioServer from '../socket-io';
 
 // must import to properly listen
 import './index';

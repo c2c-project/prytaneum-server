@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/indent */
-import { useCollection } from 'db';
 import createHttpError from 'http-errors';
-import { ObjectID } from 'mongodb';
 
 import isModerator from 'utils/isModerator';
 import { RequireLoginLocals } from './requireLogin';
