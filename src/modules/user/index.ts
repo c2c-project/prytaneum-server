@@ -1,7 +1,12 @@
 import bcrypt from 'bcrypt';
 import { ObjectID, ObjectId } from 'mongodb';
 import createHttpError from 'http-errors';
-import type { RegisterForm, User, ClientSafeUser } from 'prytaneum-typings';
+import type {
+    RegisterForm,
+    User,
+    ClientSafeUser,
+    Roles,
+} from 'prytaneum-typings';
 
 import jwt from 'lib/jwt';
 import Emails from 'lib/emails';
@@ -19,12 +24,16 @@ declare module 'lib/events' {
 
 export const verifyPassword = bcrypt.compare;
 
+type Overrides = Partial<Omit<User, '_id' | 'password'>>;
 /**
  * @description register the user in the database ONLY
  * @arg form is the registration form submitted to the server
  * @throws E-mail already exists, Passwords do not match
  */
-export async function registerUser(form: RegisterForm) {
+export async function registerUser(
+    form: RegisterForm,
+    overrides: Overrides = {}
+) {
     const encryptedPw = await bcrypt.hash(form.password, SALT_ROUNDS);
     const match = await useCollection('Users', (Users) =>
         Users.findOne({ 'user.email': form.email })
@@ -55,6 +64,7 @@ export async function registerUser(form: RegisterForm) {
                     types: [],
                 },
             },
+            ...overrides,
         })
     );
     if (result.insertedCount === 1)
@@ -62,6 +72,11 @@ export async function registerUser(form: RegisterForm) {
     else if (result.insertedCount === 0)
         throw new Error('Unable to register new user');
 }
+
+export const registerUserWithRoles = async (
+    form: RegisterForm,
+    roles: Roles[]
+) => registerUser(form, { roles });
 
 /**
  * @description verifies the user; expects catch in calling function
@@ -127,7 +142,12 @@ export const updatePassword = async (userId: string, password: string) => {
  * @returns resolves to the userDoc with ONLY whitelisted fields
  */
 export const filterSensitiveData = (user: User): ClientSafeUser => {
-    const whitelist: (keyof ClientSafeUser)[] = ['_id', 'email', 'name'];
+    const whitelist: (keyof ClientSafeUser)[] = [
+        '_id',
+        'email',
+        'name',
+        'roles',
+    ];
     function reducer(
         accum: Partial<ClientSafeUser>,
         key: keyof ClientSafeUser

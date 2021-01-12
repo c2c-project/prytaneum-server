@@ -29,7 +29,7 @@ declare global {
             ResBody = any,
             ReqBody = any,
             ReqQuery = any,
-            MiddlewareResults = Record<string, unknown>
+            MiddlewareResults = Record<string, unknown> | void
         > = core.PrytaneumRequestHandler<
             Params,
             ResBody,

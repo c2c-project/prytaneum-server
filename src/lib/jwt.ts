@@ -9,13 +9,19 @@ import env from 'config/env';
  * @arg {string} token
  * @returns {Promise} resolves to a decoded jwt on success
  */
-const verify = function (token: string): Promise<unknown> {
+const verify = function <T = unknown>(token: string): Promise<Partial<T>> {
     return new Promise((resolve, reject) => {
         jwt.verify(token, env.JWT_SECRET, (err, decodedJwt) => {
             if (err) {
                 reject(err);
+            } else if (decodedJwt) {
+                resolve(decodedJwt as Partial<T>);
             } else {
-                resolve(decodedJwt as Record<string, unknown>);
+                reject(
+                    new Error(
+                        'jsonwebtoken.verify silently failed, have fun :)'
+                    )
+                );
             }
         });
     });
@@ -29,14 +35,18 @@ const verify = function (token: string): Promise<unknown> {
  */
 const sign = function (
     target: string | Record<string, unknown> | Buffer,
-    options = {}
+    options: jwt.SignOptions = {}
 ): Promise<string> {
     return new Promise((resolve, reject) => {
         jwt.sign(target, env.JWT_SECRET, options, (err, token) => {
             if (err) {
                 reject(err);
-            } else {
+            } else if (token) {
                 resolve(token);
+            } else {
+                reject(
+                    new Error('jsonwebtoken.sign silently failed, have fun :)')
+                );
             }
         });
     });

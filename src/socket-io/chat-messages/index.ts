@@ -1,40 +1,11 @@
 /* eslint-disable @typescript-eslint/indent */
 import events from 'lib/events';
-import { ObjectId } from 'mongodb';
-import type { ChatMessage } from 'prytaneum-typings';
 import { Socket } from 'socket.io';
 import makeDebug from 'debug';
 
-import { getChatMessages } from 'modules/chat';
 import io from '../socket-io';
 
-type CreatePayload = {
-    type: 'create-chat-message';
-    payload: ChatMessage<ObjectId>;
-};
-type UpdatePayload = {
-    type: 'update-chat-message';
-    payload: ChatMessage<ObjectId>;
-};
-type DeletePayload = {
-    type: 'delete-chat-message';
-    payload: ChatMessage<ObjectId>;
-};
-type ModeratePayload = {
-    type: 'moderate-chat-message';
-    payload: ChatMessage<ObjectId>;
-};
-type InitialState = { type: 'initial-state'; payload: ChatMessage<ObjectId>[] };
-
 declare module '../socket-io' {
-    interface ServerEmits {
-        'chat-message-state':
-            | CreatePayload
-            | UpdatePayload
-            | DeletePayload
-            | ModeratePayload
-            | InitialState;
-    }
     interface Namespaces {
         '/chat-messages': true;
     }
@@ -52,14 +23,14 @@ chatNamespace.on('connection', (socket: Socket) => {
     const { townhallId } = socket.handshake.query as { townhallId?: string };
     if (!townhallId) return;
 
-    getChatMessages(townhallId)
-        .then((messages) => {
-            socket.emit('chat-message-state', {
-                type: 'initial-state',
-                payload: messages,
-            });
-        })
-        .catch(info);
+    // getChatMessages(townhallId)
+    //     .then((messages) => {
+    //         socket.emit('chat-message-state', {
+    //             type: 'initial-state',
+    //             payload: messages,
+    //         });
+    //     })
+    //     .catch(info);
 
     // eslint-disable-next-line no-void
     void socket.join(townhallId);

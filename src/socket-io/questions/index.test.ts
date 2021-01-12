@@ -4,10 +4,11 @@ import { makeQuestion, Question } from 'prytaneum-typings';
 import { io, Socket } from 'socket.io-client';
 import { Server } from 'socket.io';
 import { ObjectId } from 'mongodb';
+import type { SocketIOEvents as ServerEmits } from 'prytaneum-typings';
 
 // import * as DB from 'db';
 import events from 'lib/events';
-import ioServer, { ServerEmits } from '../socket-io';
+import ioServer from '../socket-io';
 
 // must import to properly listen
 import './index';
@@ -72,7 +73,7 @@ describe('socket-io /questions', () => {
             'create-question',
             (question as unknown) as Question<ObjectId>
         );
-        await new Promise((resolve) => {
+        await new Promise<void>((resolve) => {
             socket.once(
                 'question-state',
                 (state: ServerEmits['question-state']) => {
@@ -91,7 +92,7 @@ describe('socket-io /questions', () => {
             'update-question',
             (question as unknown) as Question<ObjectId>
         );
-        await new Promise((resolve) => {
+        await new Promise<void>((resolve) => {
             socket.once(
                 'question-state',
                 (state: ServerEmits['question-state']) => {
@@ -110,7 +111,7 @@ describe('socket-io /questions', () => {
             'delete-question',
             (question as unknown) as Question<ObjectId>
         );
-        await new Promise((resolve) => {
+        await new Promise<void>((resolve) => {
             socket.once(
                 'question-state',
                 (state: ServerEmits['question-state']) => {

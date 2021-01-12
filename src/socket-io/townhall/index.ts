@@ -4,19 +4,7 @@ import makeDebug from 'debug';
 
 import io from '../socket-io';
 
-type UserAttend = { type: 'user-attend'; payload: null };
-type UserLeave = { type: 'user-leave'; payload: null };
-type TownhallStart = { type: 'townhall-start'; payload: null };
-type TownhallEnd = { type: 'townhall-end'; payload: null };
-
 declare module '../socket-io' {
-    interface ServerEmits {
-        'townhall-state': UserAttend | UserLeave | TownhallEnd | TownhallStart;
-    }
-    interface ClientEmits {
-        'user-state': UserAttend | UserLeave;
-        'townhall-state': TownhallStart | TownhallEnd;
-    }
     interface Namespaces {
         '/townhalls': true;
     }

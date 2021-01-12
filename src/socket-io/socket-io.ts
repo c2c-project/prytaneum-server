@@ -1,6 +1,10 @@
 /* eslint-disable max-classes-per-file */
 import { Server, Namespace, Socket } from 'socket.io';
+import { ObjectId } from 'mongodb';
+import type { SocketIOEvents } from 'prytaneum-typings';
+import env from 'config/env';
 
+type ServerEmits = SocketIOEvents<ObjectId>;
 declare class PrytaneumNamespace extends Namespace {
     emit<T extends keyof ServerEmits>(
         event: T,
@@ -52,10 +56,6 @@ class PrytaneumSocketIO extends Server {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface ServerEmits {} // intended to be extended
-// TODO: move this to client?
-
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface Namespaces {} // intended to be extended
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -63,6 +63,16 @@ export interface ClientEmits {
     connection: Socket;
 }
 
-export default new PrytaneumSocketIO({ serveClient: false });
+const io = new PrytaneumSocketIO({
+    serveClient: false,
+    cors: {
+        origin: env.ORIGIN,
+    },
+});
+
+// ugly but w/e, gets the job done
+export type ioMiddleware = Parameters<typeof io.use>[0];
+
+export default io;
 
 // TODO: secure socketio using the signed cookies

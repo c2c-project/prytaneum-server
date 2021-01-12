@@ -1,12 +1,16 @@
 import http from 'http';
 import { AddressInfo } from 'net';
-import { makeChatMessage, ChatMessage } from 'prytaneum-typings';
+import {
+    makeChatMessage,
+    ChatMessage,
+    SocketIOEvents as ServerEmits,
+} from 'prytaneum-typings';
 import { io, Socket } from 'socket.io-client';
 import { Server } from 'socket.io';
 import { ObjectId } from 'mongodb';
 
 import events from 'lib/events';
-import ioServer, { ServerEmits } from '../socket-io';
+import ioServer from '../socket-io';
 
 // must import to properly listen
 import './index';
@@ -17,8 +21,8 @@ let httpServerAddr: AddressInfo;
 let ioServerInstance: Server;
 // jest.mock('mongodb');
 
+jest.mock('db');
 beforeAll(() => {
-    jest.mock('db');
     httpServer = http.createServer().listen();
 
     // https://nodejs.org/api/net.html#net_server_address
@@ -73,7 +77,7 @@ describe('socket-io /chat-messages', () => {
             'create-chat-message',
             (message as unknown) as ChatMessage<ObjectId>
         );
-        await new Promise((resolve) => {
+        await new Promise<void>((resolve) => {
             socket.once(
                 'chat-message-state',
                 (state: ServerEmits['chat-message-state']) => {
@@ -89,7 +93,7 @@ describe('socket-io /chat-messages', () => {
             'update-chat-message',
             (message as unknown) as ChatMessage<ObjectId>
         );
-        await new Promise((resolve) => {
+        await new Promise<void>((resolve) => {
             socket.once(
                 'chat-message-state',
                 (state: ServerEmits['chat-message-state']) => {
@@ -105,7 +109,7 @@ describe('socket-io /chat-messages', () => {
             'delete-chat-message',
             (message as unknown) as ChatMessage<ObjectId>
         );
-        await new Promise((resolve) => {
+        await new Promise<void>((resolve) => {
             socket.once(
                 'chat-message-state',
                 (state: ServerEmits['chat-message-state']) => {

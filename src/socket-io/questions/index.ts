@@ -1,29 +1,14 @@
 /* eslint-disable @typescript-eslint/indent */
 import makeDebug from 'debug';
-import { ObjectId } from 'mongodb';
 
 import events from 'lib/events';
-import type { Question } from 'prytaneum-typings';
 import { Socket } from 'socket.io';
-import { getQuestions } from 'modules/questions';
 
 import io from '../socket-io';
 
 const info = makeDebug('prytaneum:ws/questions');
 
-type InitialState = { type: 'initial-state'; payload: Question<ObjectId>[] };
-type CreatePayload = { type: 'create-question'; payload: Question<ObjectId> };
-type UpdatePayload = { type: 'update-question'; payload: Question<ObjectId> };
-type DeletePayload = { type: 'delete-question'; payload: Question<ObjectId> };
-
 declare module '../socket-io' {
-    interface ServerEmits {
-        'question-state':
-            | CreatePayload
-            | UpdatePayload
-            | DeletePayload
-            | InitialState;
-    }
     interface Namespaces {
         '/questions': true;
     }
@@ -40,16 +25,6 @@ questionNamespace.on('connection', (socket: Socket) => {
     const { townhallId } = socket.handshake.query as { townhallId?: string };
     info(townhallId);
     if (!townhallId) return;
-
-    // send initial state
-    getQuestions(townhallId)
-        .then((questions) => {
-            socket.emit('question-state', {
-                type: 'initial-state',
-                payload: questions,
-            });
-        })
-        .catch(info);
 
     // subscribe to updates
     // eslint-disable-next-line no-void

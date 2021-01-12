@@ -36,6 +36,9 @@ export const defaultSettings: TownhallSettings = {
         },
         registrants: [],
     },
+    video: {
+        url: '',
+    },
 };
 
 export const defaultState: TownhallState<ObjectId> = {
@@ -46,10 +49,12 @@ export const defaultState: TownhallState<ObjectId> = {
         current: 0,
         max: 0,
     },
-    playing: null,
     playlist: {
-        queued: [],
-        played: [],
+        position: {
+            current: -1,
+            timestamps: [],
+        },
+        queue: [],
         list: [],
     },
 };

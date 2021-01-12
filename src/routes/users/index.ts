@@ -5,7 +5,12 @@ import passport from 'passport';
 
 import env from 'config/env';
 import jwt from 'lib/jwt';
-import type { User, RegisterForm, ClientSafeUser } from 'prytaneum-typings';
+import type {
+    User,
+    RegisterForm,
+    ClientSafeUser,
+    Roles,
+} from 'prytaneum-typings';
 import {
     makeJoiMiddleware,
     makeEndpoint,
@@ -24,9 +29,11 @@ import {
     emailValidationObject,
     passwordValidationObject,
 } from 'modules/user/validators';
-import { getUsers, getUser } from 'modules/admin';
+import { getUsers, getUser, generateInviteLink } from 'modules/admin';
 import { makeObjectIdValidationObject } from 'utils/validators';
 import { ObjectId } from 'mongodb';
+import { getRolesFromInvite, incrementInviteUse } from 'modules/invites';
+import createHttpError from 'http-errors';
 
 const router = Router();
 
@@ -47,7 +54,7 @@ router.post(
             sameSite: 'strict',
         })
             .status(200)
-            .send();
+            .send({ user: { ...clientUser, settings: user.settings } });
     })
 );
 
@@ -68,13 +75,34 @@ router.post(
 /**
  * registers a new user
  */
-router.post(
+router.post<Express.EmptyParams, void, RegisterForm, { invite?: string }, void>(
     '/register',
     makeJoiMiddleware({
         body: Joi.object(registerValidationObject),
+        query: Joi.object({
+            invite: Joi.string().optional(),
+        }),
     }),
     makeEndpoint(async (req, res) => {
-        await registerUser(req.body as RegisterForm);
+        const { query, body } = req;
+        const { invite: token } = query;
+
+        /**
+         * logic to handle token below
+         */
+        const overrides: Partial<User> = {};
+        if (token) {
+            const { _id: inviteId } = await jwt.verify<{ _id: string }>(token);
+
+            // TODO: handle else case here
+            if (inviteId) {
+                overrides.roles = await getRolesFromInvite(inviteId);
+                // should probably do this AFTER registering the user, but w/e for now
+                await incrementInviteUse(inviteId);
+            }
+        }
+
+        await registerUser(body, overrides);
         res.sendStatus(200);
     })
 );
@@ -135,9 +163,9 @@ router.post<ResetPasswordParams, void, ResetPasswordBody>(
         const { password } = req.body;
         const { token } = req.params;
         // TODO: different jwt verifies?
-        const decodedJwt = (await jwt.verify(token)) as User & {
-            _id: string;
-        };
+        const decodedJwt = await jwt.verify<Pick<User, '_id'>>(token);
+        if (!decodedJwt._id)
+            throw createHttpError(401, 'Invalid token provided');
         await updatePassword(decodedJwt._id, password);
         res.sendStatus(200);
     })
@@ -195,7 +223,32 @@ router.get<
     makeEndpoint(async (req, res) => {
         const { userId } = req.params;
         const user = await getUser(userId);
-        res.status(200).send(user); // FIXME: make clientsafeuser generic
+        res.status(200).send(user);
+    })
+);
+
+/**
+ * invites a user and allows them to have a particular role
+ */
+router.post<
+    Express.EmptyParams,
+    { token: string },
+    { role: Roles },
+    void,
+    RequireLoginLocals
+>(
+    '/invite',
+    requireLogin(['admin']),
+    makeJoiMiddleware({
+        body: Joi.object({
+            role: Joi.string(),
+        }),
+    }),
+    makeEndpoint(async (req, res) => {
+        const { role } = req.body;
+        const { user } = req.results;
+        const token = await generateInviteLink(role, user._id);
+        res.status(200).send({ token });
     })
 );
 
