@@ -44,12 +44,12 @@ export async function getUser(userId: string) {
     return filteredUser;
 }
 
-export async function generateInviteLink(role: Roles, inviter: string) {
+export async function generateInviteLink(role: Roles, inviter: ObjectId) {
     const { insertedCount, insertedId } = await useCollection(
         'InviteLinks',
         (InviteLinks) =>
             InviteLinks.insertOne({
-                inviter: new ObjectID(inviter),
+                inviter,
                 roles: [role],
                 limit: 1, // TODO: make this an option
                 uses: 0,

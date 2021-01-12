@@ -129,7 +129,11 @@ export async function configure(
     if (!value) throw createHttpError(404, 'Unable to find townhall');
 }
 
-async function toggleTownhall(townhallId: string, user: User, active: boolean) {
+async function toggleTownhall(
+    townhallId: string,
+    user: User<ObjectId>,
+    active: boolean
+) {
     let startEndUpdate = {};
     if (active) startEndUpdate = { 'state.start': new Date() };
     else startEndUpdate = { 'state.end': new Date() };

@@ -7,6 +7,7 @@
         "start": "nodemon -e ts,js,json --exec \"babel-node -x \".ts\" src\"",
         "test": "jest --watchAll --runInBand",
         "test:ci": "jest",
+        "typecheck": "tsc -p tsconfig.prod.json --noEmit",
         "prebuild": "tsc -p tsconfig.prod.json --emitDeclarationOnly",
         "build": "babel src -d build --extensions \".ts\"",
         "lint": "eslint src/ --ext .ts,.tsx,.js,.jsx --max-warnings 0",
