@@ -14,6 +14,7 @@ declare module 'lib/events' {
         'playlist-queue-remove': { questionId: string; townhallId: string };
         'playlist-queue-order': Question<ObjectId>[];
         'playlist-queue-next': string;
+        'playlist-queue-previous': string;
     }
 }
 
@@ -81,6 +82,24 @@ export async function nextQuestion(townhallId: string) {
     events.emit('playlist-queue-next', townhallId);
 }
 
+export async function previousQuestion(townhallId: string) {
+    const { matchedCount } = await useCollection('Townhalls', (Townhalls) =>
+        Townhalls.updateOne(
+            {
+                _id: new ObjectID(townhallId),
+            },
+            {
+                $inc: {
+                    'state.playlist.position': -1,
+                },
+            }
+        )
+    );
+    if (matchedCount === 0)
+        throw createHttpError(404, 'Unable to find townhall');
+    events.emit('playlist-queue-previous', townhallId);
+}
+
 /**
  * NOTE: There's a small race condition to where if the user updates the question and the update finishes as
  * the moderator clicks add to queue but w/e
@@ -103,7 +122,7 @@ export async function addQuestionToQueue(
         (Townhalls) =>
             Townhalls.updateOne(
                 { _id: new ObjectID(townhallId) },
-                { $push: { 'state.playlist.queue': question } }
+                { $addToSet: { 'state.playlist.queue': question } }
             )
     );
     if (matchedCount === 0)

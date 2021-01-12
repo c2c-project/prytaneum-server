@@ -2,5 +2,6 @@
 import './townhall';
 import './chat-messages';
 import './questions';
+import './playlist';
 
 export { default } from './socket-io';

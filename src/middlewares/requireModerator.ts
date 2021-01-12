@@ -2,6 +2,8 @@
 import { useCollection } from 'db';
 import createHttpError from 'http-errors';
 import { ObjectID } from 'mongodb';
+
+import isModerator from 'utils/isModerator';
 import { RequireLoginLocals } from './requireLogin';
 
 type Params = { townhallId: string };
@@ -26,17 +28,12 @@ export default function requireModerator<
         try {
             const { townhallId } = req.params;
             const { user } = req.results;
-            const found = await useCollection('Townhalls', (Townhalls) =>
-                Townhalls.findOne({
-                    _id: new ObjectID(townhallId),
-                    // if the user is the moderator or organizer
-                    // organizer is the one who made the townhall
-                    $or: [
-                        { 'settings.moderators.list': user._id.toHexString() },
-                        { 'meta.createdBy._id': user._id },
-                    ],
-                })
+            const found = await isModerator(
+                townhallId,
+                user.email.address,
+                user._id
             );
+
             if (!found) throw createHttpError(403, 'You must be a moderator.');
             next();
         } catch (e) {

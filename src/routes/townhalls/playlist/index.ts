@@ -29,8 +29,8 @@ const router = Router();
 router.post<
     TownhallParams,
     void,
-    { questionId: string },
     void,
+    { questionId: string },
     RequireLoginLocals
 >(
     '/:townhallId/playlist',
@@ -38,7 +38,7 @@ router.post<
     requireModerator(),
     makeEndpoint(async (req, res) => {
         const { townhallId } = req.params;
-        const { questionId } = req.body;
+        const { questionId } = req.query;
         await addQuestionToList(townhallId, questionId);
         res.status(200);
     })
@@ -47,18 +47,17 @@ router.post<
  * deletes a particular question from the list in the playlist field
  */
 router.delete<
-    TownhallParams,
+    TownhallParams & { questionId: string },
     void,
     { questionId: string },
     void,
     RequireLoginLocals
 >(
-    '/:townhallId/playlist',
+    '/:townhallId/playlist/:questionId',
     requireLogin(),
     requireModerator(),
     makeEndpoint(async (req, res) => {
-        const { townhallId } = req.params;
-        const { questionId } = req.body;
+        const { townhallId, questionId } = req.params;
         await removeQuestionFromList(townhallId, questionId);
         res.status(200);
     })
@@ -125,8 +124,25 @@ router.delete<
     })
 );
 
+/**
+ * advances the question
+ */
 router.post<TownhallParams, void, void, void, RequireLoginLocals>(
     '/:townhallId/playlist/next',
+    requireLogin(),
+    requireModerator(),
+    makeEndpoint(async (req, res) => {
+        const { townhallId } = req.params;
+        await nextQuestion(townhallId);
+        res.sendStatus(200);
+    })
+);
+
+/**
+ * decrements the question
+ */
+router.post<TownhallParams, void, void, void, RequireLoginLocals>(
+    '/:townhallId/playlist/previous',
     requireLogin(),
     requireModerator(),
     makeEndpoint(async (req, res) => {

@@ -73,7 +73,9 @@ describe('/townhall', () => {
         });
     });
     describe('POST /:townhallId/questions', () => {
-        it('should have status 200', async () => {
+        it('should have status 200 no quote in form', async () => {
+            const myForm = { ...questionForm };
+            myForm.quoteId = undefined;
             // spy and mock useCollection
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             // for the requireLogin() middleware
@@ -92,7 +94,36 @@ describe('/townhall', () => {
                 .post(`/${townhall._id}/questions`)
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]) // 401 without this
                 .type('form')
-                .send(questionForm);
+                .send(myForm);
+
+            // expectations
+            expect(status).toStrictEqual(200);
+        });
+
+        it('should have status 200 quote in form', async () => {
+            const myForm = { ...questionForm };
+            myForm.quoteId = makeQuestion()._id;
+            // spy and mock useCollection
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            // for the requireLogin() middleware
+            collectionSpy.mockResolvedValueOnce(user);
+            // for the question lookup
+            collectionSpy.mockResolvedValueOnce(makeQuestion());
+            collectionSpy.mockResolvedValueOnce({
+                insertedCount: 1,
+                ops: [question],
+            });
+
+            // jwt spy for requireLogin() -- 401 without this
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+
+            // make the request
+            const { status } = await request(app)
+                .post(`/${townhall._id}/questions`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]) // 401 without this
+                .type('form')
+                .send(myForm);
 
             // expectations
             expect(status).toStrictEqual(200);

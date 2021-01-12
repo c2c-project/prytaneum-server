@@ -2,6 +2,7 @@
 import { Server, Namespace, Socket } from 'socket.io';
 import { ObjectId } from 'mongodb';
 import type { SocketIOEvents } from 'prytaneum-typings';
+import env from 'config/env';
 
 type ServerEmits = SocketIOEvents<ObjectId>;
 declare class PrytaneumNamespace extends Namespace {
@@ -62,6 +63,16 @@ export interface ClientEmits {
     connection: Socket;
 }
 
-export default new PrytaneumSocketIO({ serveClient: false });
+const io = new PrytaneumSocketIO({
+    serveClient: false,
+    cors: {
+        origin: env.ORIGIN,
+    },
+});
+
+// ugly but w/e, gets the job done
+export type ioMiddleware = Parameters<typeof io.use>[0];
+
+export default io;
 
 // TODO: secure socketio using the signed cookies

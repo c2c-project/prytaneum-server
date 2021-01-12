@@ -145,7 +145,7 @@ export async function createQuestion(
 export async function likeQuestion(
     questionId: string,
     townhallId: string,
-    userId: string
+    userId: ObjectId
 ) {
     const { matchedCount, modifiedCount } = await useCollection(
         'Questions',
@@ -157,7 +157,7 @@ export async function likeQuestion(
                 },
                 {
                     $addToSet: {
-                        likes: new ObjectID(userId),
+                        likes: userId,
                     },
                 }
             )
@@ -171,7 +171,7 @@ export async function likeQuestion(
 export async function deleteLike(
     questionId: string,
     townhallId: string,
-    userId: string
+    userId: ObjectId
 ) {
     const { matchedCount, modifiedCount } = await useCollection(
         'Questions',
@@ -183,7 +183,7 @@ export async function deleteLike(
                 },
                 {
                     $pull: {
-                        likes: new ObjectID(userId),
+                        likes: userId,
                     },
                 }
             )

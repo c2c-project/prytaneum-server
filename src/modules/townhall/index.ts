@@ -43,7 +43,7 @@ export async function createTownhall(form: TownhallForm, user: User<ObjectId>) {
 export async function updateTownhall(
     form: TownhallForm,
     townhallId: string,
-    user: User
+    user: User<ObjectId>
 ) {
     if (!ObjectID.isValid(townhallId))
         throw createHttpError(400, 'Invalid townhall id provided');
@@ -147,12 +147,12 @@ async function toggleTownhall(townhallId: string, user: User, active: boolean) {
     return value;
 }
 
-export async function startTownhall(townhallId: string, user: User) {
+export async function startTownhall(townhallId: string, user: User<ObjectId>) {
     const { _id } = await toggleTownhall(townhallId, user, true);
     events.emit('start-townhall', _id.toHexString());
 }
 
-export async function endTownhall(townhallId: string, user: User) {
+export async function endTownhall(townhallId: string, user: User<ObjectId>) {
     const { _id } = await toggleTownhall(townhallId, user, false);
     events.emit('end-townhall', _id.toHexString());
 }
