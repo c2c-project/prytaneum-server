@@ -111,10 +111,10 @@ jobs:
             - run: yarn install --offline
             - run: yarn lint
 
-    typecheck: 
-      needs: cache-dependencies
-          runs-on: ubuntu-20.04
-          steps:
+    typecheck:
+        needs: cache-dependencies
+        runs-on: ubuntu-20.04
+        steps:
             - uses: actions/checkout@v2
 
             # setup node
@@ -140,6 +140,6 @@ jobs:
             - name: Exit if no cache hit
               if: steps.cache.outputs.cache-hit != 'true'
               run: exit 1
-            
+
             # typecheck
             - run: yarn typecheck
