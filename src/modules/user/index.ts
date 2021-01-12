@@ -141,7 +141,7 @@ export const updatePassword = async (userId: string, password: string) => {
  * @arg user target to filter
  * @returns resolves to the userDoc with ONLY whitelisted fields
  */
-export const filterSensitiveData = (user: User): ClientSafeUser => {
+export const filterSensitiveData = (user: User<ObjectId>): ClientSafeUser => {
     const whitelist: (keyof ClientSafeUser)[] = [
         '_id',
         'email',

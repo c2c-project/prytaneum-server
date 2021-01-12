@@ -44,7 +44,9 @@ router.post(
     '/login',
     passport.authenticate('login', { session: false }),
     makeEndpoint(async (req, res) => {
-        const { user } = req as Express.Request & { user: User };
+        const { user } = (req as unknown) as Express.Request & {
+            user: User<ObjectId>;
+        };
         const clientUser = filterSensitiveData(user);
         const token = await jwt.sign(clientUser);
         res.cookie('jwt', token, {

@@ -47,7 +47,7 @@ export async function updateChatMessage(
     message: string,
     messageId: string,
     townhallId: string,
-    user: User
+    user: User<ObjectId>
 ) {
     const { value } = await useCollection('ChatMessages', (ChatMessages) =>
         ChatMessages.findOneAndUpdate(
@@ -77,7 +77,7 @@ export async function updateChatMessage(
 export async function deleteChatMessage(
     messageId: string,
     townhallId: string,
-    user: User
+    user: User<ObjectId>
 ) {
     const { value } = await useCollection('ChatMessages', (ChatMessages) =>
         ChatMessages.findOneAndDelete({
