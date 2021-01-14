@@ -181,6 +181,7 @@ export async function updateQueue(townhallId: string, queue: Question[]) {
         },
         quote: null, // FIXME:
         replies: [], // FIXME:
+        likes: question.likes.map((id) => new ObjectID(id)),
     }));
     const { matchedCount } = await useCollection('Townhalls', (Townhalls) =>
         Townhalls.updateOne(

@@ -5,6 +5,7 @@ import createHttpError from 'http-errors';
 import { useCollection } from 'db';
 import events from 'lib/events';
 import { makeMeta } from 'modules/common';
+// import isModerator from 'utils/isModerator';
 
 // declaration merging
 declare module 'lib/events' {

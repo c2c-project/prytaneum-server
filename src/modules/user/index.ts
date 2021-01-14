@@ -71,6 +71,7 @@ export async function registerUser(
         emitter.emit('register-user', result.ops[0]);
     else if (result.insertedCount === 0)
         throw new Error('Unable to register new user');
+    return result.ops[0];
 }
 
 export const registerUserWithRoles = async (
@@ -147,6 +148,7 @@ export const filterSensitiveData = (user: User<ObjectId>): ClientSafeUser => {
         'email',
         'name',
         'roles',
+        'settings',
     ];
     function reducer(
         accum: Partial<ClientSafeUser>,
