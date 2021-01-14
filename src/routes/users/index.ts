@@ -56,7 +56,7 @@ router.post(
             sameSite: 'strict',
         })
             .status(200)
-            .send({ user: { ...clientUser, settings: user.settings } });
+            .send({ user: clientUser });
     })
 );
 
@@ -77,7 +77,13 @@ router.post(
 /**
  * registers a new user
  */
-router.post<Express.EmptyParams, void, RegisterForm, { invite?: string }, void>(
+router.post<
+    Express.EmptyParams,
+    { user: ClientSafeUser & Pick<User, 'settings'> },
+    RegisterForm,
+    { invite?: string },
+    void
+>(
     '/register',
     makeJoiMiddleware({
         body: Joi.object(registerValidationObject),
@@ -104,8 +110,18 @@ router.post<Express.EmptyParams, void, RegisterForm, { invite?: string }, void>(
             }
         }
 
-        await registerUser(body, overrides);
-        res.sendStatus(200);
+        const user = await registerUser(body, overrides);
+        const clientUser = filterSensitiveData(user);
+        const jwtToken = await jwt.sign(clientUser);
+
+        res.cookie('jwt', jwtToken, {
+            httpOnly: true,
+            secure: env.NODE_ENV === 'production',
+            signed: env.NODE_ENV === 'production',
+            sameSite: 'strict',
+        })
+            .status(200)
+            .send({ user: clientUser });
     })
 );
 
@@ -202,13 +218,15 @@ router.get<Express.EmptyParams, User[], void, void, RequireLoginLocals>(
 );
 
 type UserParams = { userId: string };
-
+type Unpromise<T extends Promise<unknown>> = T extends Promise<infer U>
+    ? U
+    : never;
 /**
  * gets a specific user
  */
 router.get<
     UserParams,
-    ClientSafeUser<ObjectId>,
+    Unpromise<ReturnType<typeof getUser>>,
     void,
     void,
     RequireLoginLocals
