@@ -14,6 +14,11 @@ declare module 'lib/events' {
         'update-question': Question<ObjectId>;
         'delete-question': Question<ObjectId>;
         'moderate-question': Question<ObjectId>;
+        'update-like-count': {
+            questionId: string;
+            townhallId: string;
+            userId: string;
+        };
     }
 }
 
@@ -167,6 +172,12 @@ export async function likeQuestion(
     if (modifiedCount === 0)
         // prettier is dumb https://github.com/prettier/prettier/issues/973
         throw createHttpError(409, "You've already liked this question!");
+
+    events.emit('update-like-count', {
+        questionId,
+        townhallId,
+        userId: userId.toHexString(),
+    });
 }
 
 export async function deleteLike(
@@ -197,6 +208,9 @@ export async function deleteLike(
             "You've already unliked this question! (or never liked it)"
         );
 
-    // TODO: let clients know/emit that there is a new like
-    // if (modifiedCount === 1)
+    events.emit('update-like-count', {
+        questionId,
+        townhallId,
+        userId: userId.toHexString(),
+    });
 }

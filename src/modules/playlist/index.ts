@@ -1,20 +1,19 @@
 /* eslint-disable @typescript-eslint/indent */
 import { ObjectID, ObjectId } from 'mongodb';
 import createHttpError from 'http-errors';
-import type { Question } from 'prytaneum-typings';
+import type { TownhallQueueUpdates } from 'prytaneum-typings';
 
 import events from 'lib/events';
 import { useCollection } from 'db';
 
 declare module 'lib/events' {
     interface EventMap {
-        'playlist-add': Question<ObjectId>;
+        'playlist-add': { questionId: string; townhallId: string };
         'playlist-remove': { questionId: string; townhallId: string };
-        'playlist-queue-add': Question<ObjectId>;
-        'playlist-queue-remove': { questionId: string; townhallId: string };
-        'playlist-queue-order': Question<ObjectId>[];
-        'playlist-queue-next': string;
-        'playlist-queue-previous': string;
+        'playlist-queue-event': {
+            townhallId: string;
+            update: TownhallQueueUpdates<ObjectId>;
+        };
     }
 }
 
@@ -65,64 +64,70 @@ declare module 'lib/events' {
 // }
 
 export async function nextQuestion(townhallId: string) {
+    const update: TownhallQueueUpdates<ObjectId> = {
+        type: 'PREVIOUS',
+        payload: undefined,
+        timestamp: new Date(),
+    };
     const { matchedCount } = await useCollection('Townhalls', (Townhalls) =>
         Townhalls.updateOne(
             {
                 _id: new ObjectID(townhallId),
             },
             {
-                $inc: {
-                    'state.playlist.position': 1,
+                $push: {
+                    'state.playlist.queue': update,
                 },
             }
         )
     );
     if (matchedCount === 0)
         throw createHttpError(404, 'Unable to find townhall');
-    events.emit('playlist-queue-next', townhallId);
+    events.emit('playlist-queue-event', { townhallId, update });
 }
 
 export async function previousQuestion(townhallId: string) {
+    const update: TownhallQueueUpdates<ObjectId> = {
+        type: 'PREVIOUS',
+        payload: undefined,
+        timestamp: new Date(),
+    };
     const { matchedCount } = await useCollection('Townhalls', (Townhalls) =>
         Townhalls.updateOne(
             {
                 _id: new ObjectID(townhallId),
             },
             {
-                $inc: {
-                    'state.playlist.position': -1,
+                $push: {
+                    'state.playlist.queue': update,
                 },
             }
         )
     );
     if (matchedCount === 0)
         throw createHttpError(404, 'Unable to find townhall');
-    events.emit('playlist-queue-previous', townhallId);
+    events.emit('playlist-queue-event', { townhallId, update });
 }
 
-/**
- * NOTE: There's a small race condition to where if the user updates the question and the update finishes as
- * the moderator clicks add to queue but w/e
- */
 export async function addQuestionToQueue(
     townhallId: string,
     questionId: string
 ) {
-    // TODO: notify the user that there is a duplictae detected on the frontend if there is one
-    // $addToSet does not guarantee order when it matters here
-    const question = await useCollection('Questions', (Questions) =>
-        Questions.findOne({
-            _id: new ObjectID(questionId),
-            'meta.townhallId': new ObjectID(townhallId),
-        })
-    );
-    if (!question) throw createHttpError(404, 'Unable to find question');
+    const update: TownhallQueueUpdates<ObjectId> = {
+        type: 'ADD_QUESTION',
+        payload: new ObjectID(questionId),
+        timestamp: new Date(),
+    };
     const { matchedCount, modifiedCount } = await useCollection(
         'Townhalls',
         (Townhalls) =>
             Townhalls.updateOne(
                 { _id: new ObjectID(townhallId) },
-                { $addToSet: { 'state.playlist.queue': question } }
+                {
+                    $push: {
+                        'state.playlist.queue': update,
+                    },
+                }
             )
     );
     if (matchedCount === 0)
@@ -130,23 +135,26 @@ export async function addQuestionToQueue(
     if (modifiedCount === 0)
         throw createHttpError(409, 'This question is already in the queue');
 
-    events.emit('playlist-queue-add', question);
+    events.emit('playlist-queue-event', { townhallId, update });
 }
 
 export async function removeQuestionFromQueue(
     townhallId: string,
     questionId: string
 ) {
+    const update: TownhallQueueUpdates<ObjectId> = {
+        type: 'REMOVE_QUESTION',
+        payload: new ObjectID(questionId),
+        timestamp: new Date(),
+    };
     const { matchedCount, modifiedCount } = await useCollection(
         'Townhalls',
         (Townhalls) =>
             Townhalls.updateOne(
                 { _id: new ObjectID(townhallId) },
                 {
-                    $pull: {
-                        'state.playlist.queue': {
-                            _id: { $eq: new ObjectID(questionId) },
-                        },
+                    $push: {
+                        'state.playlist.queue': update,
                     },
                 }
             )
@@ -156,39 +164,33 @@ export async function removeQuestionFromQueue(
     if (modifiedCount === 0)
         throw createHttpError(409, 'This question is not in the queue');
 
-    events.emit('playlist-queue-remove', { questionId, townhallId });
+    events.emit('playlist-queue-event', { townhallId, update });
 }
 
 /**
  * changes the queue order
  */
-export async function updateQueue(townhallId: string, queue: Question[]) {
-    // replaces all id strings with object id's since the queue itself will be overwritten
-    const newQueue: Question<ObjectId>[] = queue.map((question) => ({
-        ...question,
-        _id: new ObjectID(question._id),
-        meta: {
-            ...question.meta,
-            createdBy: {
-                ...question.meta.createdBy,
-                _id: new ObjectID(question.meta.createdBy._id),
-            },
-            updatedBy: {
-                ...question.meta.updatedBy,
-                _id: new ObjectID(question.meta.updatedBy._id),
-            },
-            townhallId: new ObjectID(question.meta.townhallId),
+export async function updateQueue(
+    townhallId: string,
+    source: number,
+    destination: number
+) {
+    const update: TownhallQueueUpdates = {
+        type: 'REORDER',
+        payload: {
+            source,
+            destination,
         },
-        quote: null, // FIXME:
-        replies: [], // FIXME:
-        likes: question.likes.map((id) => new ObjectID(id)),
-    }));
+        timestamp: new Date(),
+    };
     const { matchedCount } = await useCollection('Townhalls', (Townhalls) =>
         Townhalls.updateOne(
-            { _id: new ObjectID(townhallId) },
             {
-                $set: {
-                    'state.playlist.queue': newQueue,
+                _id: new ObjectID(townhallId),
+            },
+            {
+                $push: {
+                    'state.playlist.queue': update,
                 },
             }
         )
@@ -196,18 +198,13 @@ export async function updateQueue(townhallId: string, queue: Question[]) {
     if (matchedCount === 0)
         throw createHttpError(404, 'Unable to find townhall');
 
-    events.emit('playlist-queue-order', newQueue);
+    events.emit('playlist-queue-event', { townhallId, update });
 }
 
 export async function addQuestionToList(
     townhallId: string,
     questionId: string
 ) {
-    const question = await useCollection('Questions', (Questions) =>
-        Questions.findOne({ _id: new ObjectID(questionId) })
-    );
-    if (!question) throw createHttpError(404, 'Unable to find question');
-
     const { matchedCount, modifiedCount } = await useCollection(
         'Townhalls',
         (Townhalls) =>
@@ -215,7 +212,7 @@ export async function addQuestionToList(
                 { _id: new ObjectID(townhallId) },
                 {
                     $addToSet: {
-                        'state.playlist.list': question,
+                        'state.playlist.list': new ObjectID(questionId),
                     },
                 }
             )
@@ -225,7 +222,7 @@ export async function addQuestionToList(
     if (modifiedCount === 0)
         throw createHttpError(409, 'This question is already part of the list');
 
-    events.emit('playlist-add', question);
+    events.emit('playlist-add', { questionId, townhallId });
 }
 
 export async function removeQuestionFromList(

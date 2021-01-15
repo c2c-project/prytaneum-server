@@ -1,4 +1,11 @@
-import { MongoClient, Db, Collection, ObjectId } from 'mongodb';
+import {
+    MongoClient,
+    Db,
+    Collection,
+    ObjectId,
+    ClientSession,
+    TransactionOptions,
+} from 'mongodb';
 import makeDebug from 'debug';
 import type {
     User,
@@ -36,36 +43,67 @@ export async function wrapDb<T>(cb: DbCallback<T>) {
     return cb(db);
 }
 
-export type CollectionNames =
-    | 'Users'
-    | 'Townhalls'
-    | 'Questions'
-    | 'ChatMessages'
-    | 'InviteLinks';
-export async function useCollection<T, U>(
-    name: 'Users',
-    cb: (c: Collection<User<ObjectId>>) => U
-): Promise<U>;
-export async function useCollection<T, U>(
-    name: 'Townhalls',
-    cb: (c: Collection<Townhall<ObjectId>>) => U
-): Promise<U>;
-export async function useCollection<T, U>(
-    name: 'Questions',
-    cb: (c: Collection<Question<ObjectId>>) => U
-): Promise<U>;
-export async function useCollection<T, U>(
-    name: 'ChatMessages',
-    cb: (c: Collection<ChatMessage<ObjectId>>) => U
-): Promise<U>;
-export async function useCollection<T, U>(
-    name: 'InviteLinks',
-    cb: (c: Collection<InviteLink<ObjectId>>) => U
-): Promise<U>;
-export async function useCollection<T, U>(
-    name: CollectionNames,
-    cb: (c: Collection<T>) => U
+interface CollectionMap {
+    Users: User<ObjectId>;
+    Townhalls: Townhall<ObjectId>;
+    Questions: Question<ObjectId>;
+    ChatMessages: ChatMessage<ObjectId>;
+    InviteLinks: InviteLink<ObjectId>;
+}
+
+// export type CollectionNames =
+//     | 'Users'
+//     | 'Townhalls'
+//     | 'Questions'
+//     | 'ChatMessages'
+//     | 'InviteLinks';
+// export async function useCollection<T, U>(
+//     name: 'Users',
+//     cb: (c: Collection<User<ObjectId>>) => U
+// ): Promise<U>;
+// export async function useCollection<T, U>(
+//     name: 'Townhalls',
+//     cb: (c: Collection<Townhall<ObjectId>>) => U
+// ): Promise<U>;
+// export async function useCollection<T, U>(
+//     name: 'Questions',
+//     cb: (c: Collection<Question<ObjectId>>) => U
+// ): Promise<U>;
+// export async function useCollection<T, U>(
+//     name: 'ChatMessages',
+//     cb: (c: Collection<ChatMessage<ObjectId>>) => U
+// ): Promise<U>;
+// export async function useCollection<T, U>(
+//     name: 'InviteLinks',
+//     cb: (c: Collection<InviteLink<ObjectId>>) => U
+// ): Promise<U>;
+export async function useCollection<T extends keyof CollectionMap, U>(
+    name: T,
+    cb: (c: Collection<CollectionMap[T]>) => U
 ): Promise<U> {
-    const coll = await wrapDb((db): Collection<T> => db.collection<T>(name));
+    const coll = await wrapDb(
+        (db): Collection<CollectionMap[T]> => db.collection(name)
+    );
     return cb(coll);
+}
+
+/**
+ * used to create a series of atomic updates (i think)
+ * https://docs.mongodb.com/manual/core/transactions/#transactions
+ */
+export async function useSession<T extends keyof CollectionMap, U>(
+    name: T,
+    cb: (c: Collection<CollectionMap[T]>, session: ClientSession) => Promise<U>,
+    options?: TransactionOptions
+): Promise<void> {
+    const client = await connect();
+    const session = client.startSession();
+    await session.withTransaction(async () => {
+        const db = client.db(dbName);
+        const coll = db.collection(name);
+        await cb(coll, session);
+    }, options);
+    // in the mongodb docs linked above they use await, the types are probably wrong --too lazy to check
+    // eslint-disable-next-line @typescript-eslint/await-thenable
+    await session.endSession();
 }

@@ -86,10 +86,10 @@ router.post<
 /**
  * updates the queue order
  */
-router.put<
+router.post<
     TownhallParams,
     void,
-    { questions: Question<string>[] },
+    { source: number; destination: number },
     void,
     RequireLoginLocals
 >(
@@ -98,8 +98,8 @@ router.put<
     requireModerator(),
     makeEndpoint(async (req, res) => {
         const { townhallId } = req.params;
-        const { questions } = req.body;
-        await updateQueue(townhallId, questions);
+        const { source, destination } = req.body;
+        await updateQueue(townhallId, source, destination);
         res.sendStatus(200);
     })
 );

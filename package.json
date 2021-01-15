@@ -66,7 +66,7 @@
         "faker": "https://github.com/marak/Faker.js#v5.1.0",
         "jest": "^26.0.1",
         "jsdoc": "^3.6.4",
-        "prytaneum-typings": "https://github.com/c2c-project/prytaneum-typings#v1.0.0-alpha.68",
+        "prytaneum-typings": "https://github.com/c2c-project/prytaneum-typings#v1.0.0-alpha.74",
         "socket.io-client": "^3.0.1",
         "superagent": "^5.2.2",
         "supertest": "^4.0.2",
