@@ -69,8 +69,8 @@ router.delete<
 router.post<
     TownhallParams,
     void,
-    { questionId: string },
     void,
+    { questionId: string },
     RequireLoginLocals
 >(
     '/:townhallId/playlist/queue',
@@ -78,7 +78,7 @@ router.post<
     requireModerator(),
     makeEndpoint(async (req, res) => {
         const { townhallId } = req.params;
-        const { questionId } = req.body;
+        const { questionId } = req.query;
         await addQuestionToQueue(townhallId, questionId);
         res.sendStatus(200);
     })
