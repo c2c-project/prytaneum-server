@@ -12,7 +12,7 @@ declare module 'lib/events' {
         'playlist-remove': { questionId: string; townhallId: string };
         'playlist-queue-add': Question<ObjectId>;
         'playlist-queue-remove': { questionId: string; townhallId: string };
-        'playlist-queue-order': Question<ObjectId>[];
+        'playlist-queue-order': Question<string>[];
         'playlist-queue-next': string;
         'playlist-queue-previous': string;
     }
@@ -72,7 +72,7 @@ export async function nextQuestion(townhallId: string) {
             },
             {
                 $inc: {
-                    'state.playlist.position': 1,
+                    'state.playlist.position.current': 1,
                 },
             }
         )
@@ -90,7 +90,7 @@ export async function previousQuestion(townhallId: string) {
             },
             {
                 $inc: {
-                    'state.playlist.position': -1,
+                    'state.playlist.position.current': -1,
                 },
             }
         )
@@ -163,32 +163,12 @@ export async function removeQuestionFromQueue(
  * changes the queue order
  */
 export async function updateQueue(townhallId: string, queue: Question[]) {
-    // replaces all id strings with object id's since the queue itself will be overwritten
-    const newQueue: Question<ObjectId>[] = queue.map((question) => ({
-        ...question,
-        _id: new ObjectID(question._id),
-        meta: {
-            ...question.meta,
-            createdBy: {
-                ...question.meta.createdBy,
-                _id: new ObjectID(question.meta.createdBy._id),
-            },
-            updatedBy: {
-                ...question.meta.updatedBy,
-                _id: new ObjectID(question.meta.updatedBy._id),
-            },
-            townhallId: new ObjectID(question.meta.townhallId),
-        },
-        quote: null, // FIXME:
-        replies: [], // FIXME:
-        likes: question.likes.map((id) => new ObjectID(id)),
-    }));
     const { matchedCount } = await useCollection('Townhalls', (Townhalls) =>
         Townhalls.updateOne(
             { _id: new ObjectID(townhallId) },
             {
                 $set: {
-                    'state.playlist.queue': newQueue,
+                    'state.playlist.queue': queue,
                 },
             }
         )
@@ -196,7 +176,7 @@ export async function updateQueue(townhallId: string, queue: Question[]) {
     if (matchedCount === 0)
         throw createHttpError(404, 'Unable to find townhall');
 
-    events.emit('playlist-queue-order', newQueue);
+    events.emit('playlist-queue-order', queue);
 }
 
 export async function addQuestionToList(

@@ -4,7 +4,7 @@ import events from 'lib/events';
 import { Socket } from 'socket.io';
 import makeDebug from 'debug';
 import { ObjectId } from 'mongodb';
-import type { User } from 'prytaneum-typings';
+import type { User, Question } from 'prytaneum-typings';
 
 import isModerator from 'utils/isModerator';
 import io from '../socket-io';
@@ -106,9 +106,9 @@ events.on('playlist-queue-remove', ({ questionId, townhallId }) => {
 
 events.on('playlist-queue-order', (questions) => {
     const { townhallId } = questions[0].meta;
-    playlistNamespace.to(townhallId.toHexString()).emit('playlist-state', {
+    playlistNamespace.to(townhallId).emit('playlist-state', {
         type: 'playlist-queue-order',
-        payload: questions,
+        payload: (questions as unknown) as Question<ObjectId>[],
     });
 });
 
@@ -121,7 +121,7 @@ events.on('playlist-queue-next', (townhallId) => {
 
 events.on('playlist-queue-previous', (townhallId) => {
     playlistNamespace.to(townhallId).emit('playlist-state', {
-        type: 'playlist-queue-next',
+        type: 'playlist-queue-next', // FIXME:
         payload: null,
     });
 });
