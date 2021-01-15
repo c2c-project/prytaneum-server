@@ -75,17 +75,11 @@ playlistNamespace.on('connection', (socket: Socket) => {
     void socket.join(townhallId);
 });
 
-events.on('playlist-add', ({ questionId, townhallId }) => {
+events.on('playlist-add', (question) => {
+    const { townhallId } = question.meta;
     playlistNamespace
-        .to(townhallId)
-        .emit('playlist-state', { type: 'playlist-add', payload: questionId });
-});
-
-events.on('playlist-queue-event', ({ townhallId, update }) => {
-    playlistNamespace.to(townhallId).emit('playlist-state', {
-        type: 'playlist-queue-event',
-        payload: update,
-    });
+        .to(townhallId.toHexString())
+        .emit('playlist-state', { type: 'playlist-add', payload: question });
 });
 
 events.on('playlist-remove', ({ townhallId, questionId }) => {
@@ -95,9 +89,39 @@ events.on('playlist-remove', ({ townhallId, questionId }) => {
     });
 });
 
-events.on('update-like-count', ({ townhallId, questionId, userId }) => {
+events.on('playlist-queue-add', (question) => {
+    const { townhallId } = question.meta;
+    playlistNamespace.to(townhallId.toHexString()).emit('playlist-state', {
+        type: 'playlist-queue-add',
+        payload: question,
+    });
+});
+
+events.on('playlist-queue-remove', ({ questionId, townhallId }) => {
     playlistNamespace.to(townhallId).emit('playlist-state', {
-        type: 'playlist-like-count',
-        payload: { questionId, userId },
+        type: 'playlist-queue-remove',
+        payload: questionId,
+    });
+});
+
+events.on('playlist-queue-order', (questions) => {
+    const { townhallId } = questions[0].meta;
+    playlistNamespace.to(townhallId.toHexString()).emit('playlist-state', {
+        type: 'playlist-queue-order',
+        payload: questions,
+    });
+});
+
+events.on('playlist-queue-next', (townhallId) => {
+    playlistNamespace.to(townhallId).emit('playlist-state', {
+        type: 'playlist-queue-next',
+        payload: null,
+    });
+});
+
+events.on('playlist-queue-previous', (townhallId) => {
+    playlistNamespace.to(townhallId).emit('playlist-state', {
+        type: 'playlist-queue-next',
+        payload: null,
     });
 });
