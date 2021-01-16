@@ -1,5 +1,6 @@
 /* eslint-disable import/prefer-default-export */
-import type { TownhallSettings } from 'prytaneum-typings';
+import { ObjectId } from 'mongodb';
+import type { TownhallSettings, TownhallState } from 'prytaneum-typings';
 
 export const defaultSettings: TownhallSettings = {
     waitingRoom: {
@@ -34,5 +35,26 @@ export const defaultSettings: TownhallSettings = {
             customTimes: [],
         },
         registrants: [],
+    },
+    video: {
+        url: '',
+    },
+};
+
+export const defaultState: TownhallState<ObjectId> = {
+    active: false,
+    start: null,
+    end: null,
+    attendees: {
+        current: 0,
+        max: 0,
+    },
+    playlist: {
+        position: {
+            current: -1,
+            timestamps: [],
+        },
+        queue: [],
+        list: [],
     },
 };

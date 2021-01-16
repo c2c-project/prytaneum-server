@@ -1,6 +1,6 @@
 /* eslint-disable import/prefer-default-export */
 import Joi from 'joi';
-import { TownhallForm } from 'prytaneum-typings';
+import type { TownhallForm } from 'prytaneum-typings';
 
 type TownhallValidator = Record<keyof TownhallForm, Joi.Schema>;
 export const townhallValidationObject: TownhallValidator = {

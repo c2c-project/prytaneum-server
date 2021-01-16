@@ -5,6 +5,7 @@ import createHttpError from 'http-errors';
 import { useCollection } from 'db';
 import events from 'lib/events';
 import { makeMeta } from 'modules/common';
+// import isModerator from 'utils/isModerator';
 
 // declaration merging
 declare module 'lib/events' {
@@ -20,7 +21,16 @@ declare module 'lib/events' {
 
 export async function getQuestions(townhallId: string) {
     return useCollection('Questions', (Questions) =>
-        Questions.find({ 'meta.townhallId': townhallId }).toArray()
+        Questions.find(
+            {
+                'meta.townhallId': new ObjectID(townhallId),
+            },
+            {
+                sort: {
+                    'meta.createdAt': 1,
+                },
+            }
+        ).toArray()
     );
 }
 
@@ -105,8 +115,11 @@ export async function moderateQuestion(
 export async function createQuestion(
     form: QuestionForm,
     townhallId: string,
-    user: User
+    user: User<ObjectId>
 ) {
+    let quote: Question<ObjectId> | null = null;
+    if (form.quoteId) quote = await getQuestion(form.quoteId, townhallId);
+
     const { insertedCount, ops } = await useCollection(
         'Questions',
         (Questions) =>
@@ -122,8 +135,68 @@ export async function createQuestion(
                     labels: [],
                 },
                 visibility: 'visible',
+                replies: [],
+                quote,
             })
     );
     if (insertedCount === 0) throw new Error('Unable to create question');
     else events.emit('create-question', ops[0]);
+}
+
+export async function likeQuestion(
+    questionId: string,
+    townhallId: string,
+    userId: ObjectId
+) {
+    const { matchedCount, modifiedCount } = await useCollection(
+        'Questions',
+        (Questions) =>
+            Questions.updateOne(
+                {
+                    _id: new ObjectID(questionId),
+                    'meta.townhallId': new ObjectID(townhallId),
+                },
+                {
+                    $addToSet: {
+                        likes: userId,
+                    },
+                }
+            )
+    );
+    if (matchedCount === 0) throw createHttpError(404);
+    if (modifiedCount === 0)
+        // prettier is dumb https://github.com/prettier/prettier/issues/973
+        throw createHttpError(409, "You've already liked this question!");
+}
+
+export async function deleteLike(
+    questionId: string,
+    townhallId: string,
+    userId: ObjectId
+) {
+    const { matchedCount, modifiedCount } = await useCollection(
+        'Questions',
+        (Questions) =>
+            Questions.updateOne(
+                {
+                    _id: new ObjectID(questionId),
+                    'meta.townhallId': new ObjectID(townhallId),
+                },
+                {
+                    $pull: {
+                        likes: userId,
+                    },
+                }
+            )
+    );
+    if (matchedCount === 0) throw createHttpError(404);
+    if (modifiedCount === 0)
+        // prettier is dumb https://github.com/prettier/prettier/issues/973
+        throw createHttpError(
+            409,
+            "You've already unliked this question! (or never liked it)"
+        );
+
+    // TODO: let clients know/emit that there is a new like
+    // if (modifiedCount === 1)
 }

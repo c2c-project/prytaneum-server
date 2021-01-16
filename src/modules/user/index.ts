@@ -1,7 +1,12 @@
 import bcrypt from 'bcrypt';
 import { ObjectID, ObjectId } from 'mongodb';
 import createHttpError from 'http-errors';
-import type { RegisterForm, User, ClientSafeUser } from 'prytaneum-typings';
+import type {
+    RegisterForm,
+    User,
+    ClientSafeUser,
+    Roles,
+} from 'prytaneum-typings';
 
 import jwt from 'lib/jwt';
 import Emails from 'lib/emails';
@@ -9,7 +14,7 @@ import emitter from 'lib/events';
 import { useCollection } from 'db';
 import errors from './errors';
 
-const SALT_ROUNDS = 10;
+export const SALT_ROUNDS = 10;
 
 declare module 'lib/events' {
     interface EventMap {
@@ -19,12 +24,16 @@ declare module 'lib/events' {
 
 export const verifyPassword = bcrypt.compare;
 
+type Overrides = Partial<Omit<User, '_id' | 'password'>>;
 /**
  * @description register the user in the database ONLY
  * @arg form is the registration form submitted to the server
  * @throws E-mail already exists, Passwords do not match
  */
-export async function registerUser(form: RegisterForm) {
+export async function registerUser(
+    form: RegisterForm,
+    overrides: Overrides = {}
+) {
     const encryptedPw = await bcrypt.hash(form.password, SALT_ROUNDS);
     const match = await useCollection('Users', (Users) =>
         Users.findOne({ 'user.email': form.email })
@@ -55,13 +64,20 @@ export async function registerUser(form: RegisterForm) {
                     types: [],
                 },
             },
+            ...overrides,
         })
     );
     if (result.insertedCount === 1)
         emitter.emit('register-user', result.ops[0]);
     else if (result.insertedCount === 0)
         throw new Error('Unable to register new user');
+    return result.ops[0];
 }
+
+export const registerUserWithRoles = async (
+    form: RegisterForm,
+    roles: Roles[]
+) => registerUser(form, { roles });
 
 /**
  * @description verifies the user; expects catch in calling function
@@ -126,8 +142,14 @@ export const updatePassword = async (userId: string, password: string) => {
  * @arg user target to filter
  * @returns resolves to the userDoc with ONLY whitelisted fields
  */
-export const filterSensitiveData = (user: User): ClientSafeUser => {
-    const whitelist: (keyof ClientSafeUser)[] = ['_id', 'email', 'name'];
+export const filterSensitiveData = (user: User<ObjectId>): ClientSafeUser => {
+    const whitelist: (keyof ClientSafeUser)[] = [
+        '_id',
+        'email',
+        'name',
+        'roles',
+        'settings',
+    ];
     function reducer(
         accum: Partial<ClientSafeUser>,
         key: keyof ClientSafeUser

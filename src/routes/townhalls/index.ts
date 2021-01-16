@@ -30,6 +30,7 @@ import { makeObjectIdValidationObject } from 'utils/validators';
 import { TownhallParams } from './types';
 import questionRoutes from './questions';
 import chatMessageRoutes from './chat-messages';
+import playlistRoutes from './playlist';
 
 const router = Router();
 
@@ -123,12 +124,13 @@ router.delete<TownhallParams>(
 /**
  * updates the townhall configuration the townhall settings
  */
-router.post<TownhallParams, void, TownhallSettings>(
+router.post<TownhallParams, void, TownhallSettings, void, RequireLoginLocals>(
     '/:townhallId/configure',
     requireLogin(),
     makeEndpoint(async (req, res) => {
         const { townhallId } = req.params;
-        await configure(req.body, townhallId);
+        const { user } = req.results;
+        await configure(req.body, townhallId, user._id);
         res.sendStatus(200);
     })
 );
@@ -163,5 +165,6 @@ router.post<TownhallParams, void, void, void, RequireLoginLocals>(
 
 router.use(questionRoutes);
 router.use(chatMessageRoutes);
+router.use(playlistRoutes);
 
 export default router;

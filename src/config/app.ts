@@ -12,7 +12,7 @@ export default function (app: Express): void {
     configureStrategies();
     // TODO: production logger
     app.use(express.json());
-    app.use(express.urlencoded({ extended: false }));
+    app.use(express.urlencoded({ extended: true }));
     app.use(cookieParser(env.COOKIE_SECRET));
     app.use(passport.initialize());
     app.use(InitializeMiddlewares);

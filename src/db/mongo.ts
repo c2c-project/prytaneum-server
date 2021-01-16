@@ -1,6 +1,12 @@
 import { MongoClient, Db, Collection, ObjectId } from 'mongodb';
 import makeDebug from 'debug';
-import type { User, Townhall, Question, ChatMessage } from 'prytaneum-typings';
+import type {
+    User,
+    Townhall,
+    Question,
+    ChatMessage,
+    InviteLink,
+} from 'prytaneum-typings';
 
 import config from 'config/mongo';
 
@@ -8,17 +14,24 @@ const info = makeDebug('prytaneum:db');
 
 const { url, dbName } = config;
 
-info(`Attempting database connection to ${url}`);
-const clientPromise = new MongoClient(url, {
+const mongoClient = new MongoClient(url, {
     useUnifiedTopology: true,
-})
-    .connect()
-    .finally(() => info('Successfully connected'));
+});
+
+export async function connect() {
+    info(`Attempting database connection to ${url}`);
+    if (!mongoClient.isConnected())
+        return mongoClient
+            .connect()
+            .finally(() => info('Successfully connected'));
+    info('Mongo client is already connected');
+    return mongoClient;
+}
 
 export type DbCallback<T> = (d: Db) => T;
 
 export async function wrapDb<T>(cb: DbCallback<T>) {
-    const client = await clientPromise;
+    const client = await connect();
     const db = client.db(dbName);
     return cb(db);
 }
@@ -27,7 +40,8 @@ export type CollectionNames =
     | 'Users'
     | 'Townhalls'
     | 'Questions'
-    | 'ChatMessages';
+    | 'ChatMessages'
+    | 'InviteLinks';
 export async function useCollection<T, U>(
     name: 'Users',
     cb: (c: Collection<User<ObjectId>>) => U
@@ -43,6 +57,10 @@ export async function useCollection<T, U>(
 export async function useCollection<T, U>(
     name: 'ChatMessages',
     cb: (c: Collection<ChatMessage<ObjectId>>) => U
+): Promise<U>;
+export async function useCollection<T, U>(
+    name: 'InviteLinks',
+    cb: (c: Collection<InviteLink<ObjectId>>) => U
 ): Promise<U>;
 export async function useCollection<T, U>(
     name: CollectionNames,
