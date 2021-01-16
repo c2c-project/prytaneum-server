@@ -26,7 +26,7 @@ export default async function isModerator(
             // if the user is the moderator or organizer
             // organizer is the one who made the townhall
             $or: [
-                { 'settings.moderators.list': userEmail },
+                { 'settings.moderators.list.email': userEmail },
                 { 'meta.createdBy._id': userId },
             ],
         })
