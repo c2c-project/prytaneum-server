@@ -15,6 +15,16 @@ declare module 'lib/events' {
         'playlist-queue-order': Question<string>[];
         'playlist-queue-next': string;
         'playlist-queue-previous': string;
+        'playlist-like-remove': {
+            questionId: string;
+            townhallId: string;
+            userId: string;
+        };
+        'playlist-like-add': {
+            questionId: string;
+            townhallId: string;
+            userId: string;
+        };
     }
 }
 

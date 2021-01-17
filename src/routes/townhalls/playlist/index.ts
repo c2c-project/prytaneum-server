@@ -6,6 +6,7 @@ import {
     addQuestionToList,
     addQuestionToQueue,
     nextQuestion,
+    previousQuestion,
     removeQuestionFromList,
     updateQueue,
 } from 'modules/playlist';
@@ -147,7 +148,7 @@ router.post<TownhallParams, void, void, void, RequireLoginLocals>(
     requireModerator(),
     makeEndpoint(async (req, res) => {
         const { townhallId } = req.params;
-        await nextQuestion(townhallId);
+        await previousQuestion(townhallId);
         res.sendStatus(200);
     })
 );

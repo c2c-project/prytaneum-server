@@ -121,7 +121,21 @@ events.on('playlist-queue-next', (townhallId) => {
 
 events.on('playlist-queue-previous', (townhallId) => {
     playlistNamespace.to(townhallId).emit('playlist-state', {
-        type: 'playlist-queue-next', // FIXME:
+        type: 'playlist-queue-previous',
         payload: null,
+    });
+});
+
+events.on('playlist-like-add', ({ townhallId, questionId, userId }) => {
+    playlistNamespace.to(townhallId).emit('playlist-state', {
+        type: 'playlist-like-add',
+        payload: { questionId, userId },
+    });
+});
+
+events.on('playlist-like-remove', ({ townhallId, questionId, userId }) => {
+    playlistNamespace.to(townhallId).emit('playlist-state', {
+        type: 'playlist-like-remove',
+        payload: { questionId, userId },
     });
 });
