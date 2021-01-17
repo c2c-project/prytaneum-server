@@ -163,10 +163,33 @@ export async function likeQuestion(
                 }
             )
     );
+    // TODO: delete this
+    await useCollection('Townhalls', (Townhalls) =>
+        Townhalls.updateOne(
+            {
+                _id: new ObjectId(townhallId),
+                'state.playlist.list': {
+                    $elemMatch: { _id: new ObjectID(questionId) },
+                },
+            },
+            {
+                $addToSet: {
+                    'state.playlist.list.$.likes': userId,
+                },
+            }
+        )
+    );
+    // DELETE ABOVE
+
     if (matchedCount === 0) throw createHttpError(404);
     if (modifiedCount === 0)
         // prettier is dumb https://github.com/prettier/prettier/issues/973
         throw createHttpError(409, "You've already liked this question!");
+    events.emit('playlist-like-add', {
+        questionId,
+        townhallId,
+        userId: userId.toHexString(),
+    });
 }
 
 export async function deleteLike(
@@ -189,6 +212,25 @@ export async function deleteLike(
                 }
             )
     );
+
+    // TODO: delete this
+    await useCollection('Townhalls', (Townhalls) =>
+        Townhalls.updateOne(
+            {
+                _id: new ObjectId(townhallId),
+                'state.playlist.list': {
+                    $elemMatch: { _id: new ObjectID(questionId) },
+                },
+            },
+            {
+                $pull: {
+                    'state.playlist.list.$.likes': userId,
+                },
+            }
+        )
+    );
+    // DELETE ABOVE
+
     if (matchedCount === 0) throw createHttpError(404);
     if (modifiedCount === 0)
         // prettier is dumb https://github.com/prettier/prettier/issues/973
@@ -199,4 +241,9 @@ export async function deleteLike(
 
     // TODO: let clients know/emit that there is a new like
     // if (modifiedCount === 1)
+    events.emit('playlist-like-remove', {
+        questionId,
+        townhallId,
+        userId: userId.toHexString(),
+    });
 }
