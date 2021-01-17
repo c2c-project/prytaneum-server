@@ -38,6 +38,7 @@ export async function createTownhall(form: TownhallForm, user: User<ObjectId>) {
     } else {
         throw new Error('Unable to create townhall');
     }
+    return insertedId;
 }
 
 export async function updateTownhall(
@@ -73,6 +74,7 @@ export async function updateTownhall(
             401,
             'You must be the creator in order to modify'
         );
+    return townhallId;
 }
 
 // TODO: extend this to write to a trash collection rather than actually delete
@@ -95,9 +97,9 @@ export async function getTownhall(townhallId: string) {
 
 // TODO: limit this so it doesn't show all townhalls?
 // TODO: queries
-export function getTownhalls() {
+export function getTownhalls(userId: ObjectId) {
     return useCollection('Townhalls', (Townhalls) =>
-        Townhalls.find({}).toArray()
+        Townhalls.find({ 'meta.createdBy._id': userId }).toArray()
     );
 }
 
