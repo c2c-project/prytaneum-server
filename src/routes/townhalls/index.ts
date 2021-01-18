@@ -37,19 +37,32 @@ const router = Router();
 /**
  * gets the list of townhalls owned by the user
  */
-router.get<Express.EmptyParams, Townhall<ObjectId>[]>(
+router.get<
+    Express.EmptyParams,
+    Townhall<ObjectId>[],
+    void,
+    void,
+    RequireLoginLocals
+>(
     '/',
     requireLogin(['organizer']),
     // TODO: pagination middleware that does joi + extracts query to a mongodb query + any other validation needed
     makeEndpoint(async (req, res) => {
-        const townhalls = await getTownhalls();
+        const { user } = req.results;
+        const townhalls = await getTownhalls(user._id);
         res.status(200).send(townhalls);
     })
 );
 /**
  * creates a new townhall by the user
  */
-router.post<Express.EmptyParams, void, TownhallForm, void, RequireLoginLocals>(
+router.post<
+    Express.EmptyParams,
+    { _id: string },
+    TownhallForm,
+    void,
+    RequireLoginLocals
+>(
     '/',
     requireLogin(['organizer', 'admin']),
     makeJoiMiddleware({
@@ -57,8 +70,8 @@ router.post<Express.EmptyParams, void, TownhallForm, void, RequireLoginLocals>(
     }),
     makeEndpoint(async (req, res) => {
         const townhallForm = req.body;
-        await createTownhall(townhallForm, req.results.user);
-        res.sendStatus(200);
+        const townhallId = await createTownhall(townhallForm, req.results.user);
+        res.status(200).send({ _id: townhallId.toHexString() });
     })
 );
 
@@ -95,7 +108,13 @@ router.get<TownhallParams, Townhall<ObjectId>>(
 /**
  * updates a particular townhall (only the form fields)
  */
-router.put<TownhallParams, void, TownhallForm, void, RequireLoginLocals>(
+router.put<
+    TownhallParams,
+    { _id: string },
+    TownhallForm,
+    void,
+    RequireLoginLocals
+>(
     '/:townhallId',
     requireLogin(['organizer', 'admin']),
     makeJoiMiddleware({
@@ -106,7 +125,7 @@ router.put<TownhallParams, void, TownhallForm, void, RequireLoginLocals>(
         const { townhallId } = req.params;
         const { user } = req.results;
         await updateTownhall(townhallForm, townhallId, user);
-        res.sendStatus(200);
+        res.sendStatus(200).send({ _id: townhallId });
     })
 );
 /**

@@ -2,6 +2,7 @@
 import { Router } from 'express';
 import Joi from 'joi';
 import passport from 'passport';
+import debug from 'debug';
 
 import env from 'config/env';
 import jwt from 'lib/jwt';
@@ -36,6 +37,7 @@ import { getRolesFromInvite, incrementInviteUse } from 'modules/invites';
 import createHttpError from 'http-errors';
 
 const router = Router();
+const info = debug('prytaneum:routes/users');
 
 /**
  * logs in a user
@@ -100,16 +102,17 @@ router.post<
          */
         const overrides: Partial<User> = {};
         if (token) {
+            info('registering with token...');
             const { _id: inviteId } = await jwt.verify<{ _id: string }>(token);
-
             // TODO: handle else case here
             if (inviteId) {
+                info('Invite found...');
                 overrides.roles = await getRolesFromInvite(inviteId);
                 // should probably do this AFTER registering the user, but w/e for now
                 await incrementInviteUse(inviteId);
             }
         }
-
+        info('Overrides: ', overrides);
         const user = await registerUser(body, overrides);
         const clientUser = filterSensitiveData(user);
         const jwtToken = await jwt.sign(clientUser);

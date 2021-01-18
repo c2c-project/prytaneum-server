@@ -56,5 +56,5 @@ export async function generateInviteLink(role: Roles, inviter: ObjectId) {
             })
     );
     if (insertedCount !== 1) throw createHttpError(500);
-    return jwt.sign({ insertedId }, { expiresIn: '1d' });
+    return jwt.sign({ _id: insertedId }, { expiresIn: '1d' });
 }
