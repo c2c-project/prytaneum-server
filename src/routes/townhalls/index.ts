@@ -30,6 +30,7 @@ import { makeObjectIdValidationObject } from 'utils/validators';
 import { TownhallParams } from './types';
 import questionRoutes from './questions';
 import chatMessageRoutes from './chat-messages';
+import ratingRoutes from './rating';
 
 const router = Router();
 
@@ -163,5 +164,6 @@ router.post<TownhallParams, void, void, void, RequireLoginLocals>(
 
 router.use(questionRoutes);
 router.use(chatMessageRoutes);
+router.use(ratingRoutes);
 
 export default router;
