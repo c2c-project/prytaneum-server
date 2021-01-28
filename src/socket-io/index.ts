@@ -1,2 +1,7 @@
 /* eslint-disable import/prefer-default-export */
-export { default as io } from './socket-io';
+import './townhall';
+import './chat-messages';
+import './questions';
+import './playlist';
+
+export { default } from './socket-io';

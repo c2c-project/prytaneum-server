@@ -1,11 +1,16 @@
 import http from 'http';
 import { AddressInfo } from 'net';
-import { makeChatMessage } from 'prytaneum-typings';
+import {
+    makeChatMessage,
+    ChatMessage,
+    SocketIOEvents as ServerEmits,
+} from 'prytaneum-typings';
 import { io, Socket } from 'socket.io-client';
 import { Server } from 'socket.io';
+import { ObjectId } from 'mongodb';
 
 import events from 'lib/events';
-import ioServer, { ServerEmits } from '../socket-io';
+import ioServer from '../socket-io';
 
 // must import to properly listen
 import './index';
@@ -16,8 +21,8 @@ let httpServerAddr: AddressInfo;
 let ioServerInstance: Server;
 // jest.mock('mongodb');
 
+jest.mock('db');
 beforeAll(() => {
-    jest.mock('db');
     httpServer = http.createServer().listen();
 
     // https://nodejs.org/api/net.html#net_server_address
@@ -45,7 +50,7 @@ beforeEach((done) => {
             reconnectionDelay: 0,
             forceNew: true,
             transports: ['websocket'],
-            query: `townhallId=${message.meta.townhallId as string}`, // I know it's a string here
+            query: `townhallId=${message.meta.townhallId}`, // I know it's a string here
         }
     );
     socket.on('connect', () => {
@@ -68,8 +73,11 @@ afterEach(() => {
  */
 describe('socket-io /chat-messages', () => {
     it('should send client new messages', async () => {
-        events.emit('create-chat-message', message);
-        await new Promise((resolve) => {
+        events.emit(
+            'create-chat-message',
+            (message as unknown) as ChatMessage<ObjectId>
+        );
+        await new Promise<void>((resolve) => {
             socket.once(
                 'chat-message-state',
                 (state: ServerEmits['chat-message-state']) => {
@@ -81,8 +89,11 @@ describe('socket-io /chat-messages', () => {
         });
     });
     it('should send client updated messages', async () => {
-        events.emit('update-chat-message', message);
-        await new Promise((resolve) => {
+        events.emit(
+            'update-chat-message',
+            (message as unknown) as ChatMessage<ObjectId>
+        );
+        await new Promise<void>((resolve) => {
             socket.once(
                 'chat-message-state',
                 (state: ServerEmits['chat-message-state']) => {
@@ -94,8 +105,11 @@ describe('socket-io /chat-messages', () => {
         });
     });
     it('should send client deleted messages', async () => {
-        events.emit('delete-chat-message', message);
-        await new Promise((resolve) => {
+        events.emit(
+            'delete-chat-message',
+            (message as unknown) as ChatMessage<ObjectId>
+        );
+        await new Promise<void>((resolve) => {
             socket.once(
                 'chat-message-state',
                 (state: ServerEmits['chat-message-state']) => {

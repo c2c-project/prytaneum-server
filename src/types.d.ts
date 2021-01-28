@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/indent */
+/* eslint-disable */
 // import { ParsedQs } from 'qs';
 import * as core from 'express-serve-static-core';
 import type { User as PrytaneumUser } from 'prytaneum-typings';
@@ -31,7 +31,7 @@ declare global {
             ResBody = any,
             ReqBody = any,
             ReqQuery = any,
-            MiddlewareResults = Record<string, unknown>
+            MiddlewareResults = Record<string, unknown> | void
         > = core.PrytaneumRequestHandler<
             Params,
             ResBody,

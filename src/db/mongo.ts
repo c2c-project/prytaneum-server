@@ -1,7 +1,20 @@
-import { MongoClient, Db, Collection, ObjectId } from 'mongodb';
+import {
+    MongoClient,
+    Db,
+    Collection,
+    ObjectId,
+    ClientSession,
+    TransactionOptions,
+} from 'mongodb';
 import makeDebug from 'debug';
-import type { User, Townhall, Question, ChatMessage } from 'prytaneum-typings';
-import type { Notification } from 'prytaneum-typings/dist/notifications';
+import type {
+    User,
+    Townhall,
+    Question,
+    ChatMessage,
+    InviteLink,
+    Notification
+} from 'prytaneum-typings';
 
 import config from 'config/mongo';
 
@@ -9,51 +22,64 @@ const info = makeDebug('prytaneum:db');
 
 const { url, dbName } = config;
 
-info(`Attempting database connection to ${url}`);
-const clientPromise = new MongoClient(url, {
+const mongoClient = new MongoClient(url, {
     useUnifiedTopology: true,
-})
-    .connect()
-    .finally(() => info('Successfully connected'));
+});
+
+export async function connect() {
+    info(`Attempting database connection to ${url}`);
+    if (!mongoClient.isConnected())
+        return mongoClient
+            .connect()
+            .finally(() => info('Successfully connected'));
+    info('Mongo client is already connected');
+    return mongoClient;
+}
 
 export type DbCallback<T> = (d: Db) => T;
 
 export async function wrapDb<T>(cb: DbCallback<T>) {
-    const client = await clientPromise;
+    const client = await connect();
     const db = client.db(dbName);
     return cb(db);
 }
 
-export type CollectionNames =
-    | 'Users'
-    | 'Townhalls'
-    | 'Questions'
-    | 'ChatMessages'
-    | 'Notifications';
-export async function useCollection<T, U>(
-    name: 'Users',
-    cb: (c: Collection<User<ObjectId>>) => U
-): Promise<U>;
-export async function useCollection<T, U>(
-    name: 'Townhalls',
-    cb: (c: Collection<Townhall<ObjectId>>) => U
-): Promise<U>;
-export async function useCollection<T, U>(
-    name: 'Questions',
-    cb: (c: Collection<Question<ObjectId>>) => U
-): Promise<U>;
-export async function useCollection<T, U>(
-    name: 'ChatMessages',
-    cb: (c: Collection<ChatMessage<ObjectId>>) => U
-): Promise<U>;
-export async function useCollection<T, U>(
-    name: 'Notifications',
-    cb: (c: Collection<Notification<ObjectId>>) => U
-): Promise<U>;
-export async function useCollection<T, U>(
-    name: CollectionNames,
-    cb: (c: Collection<T>) => U
+interface CollectionMap {
+    Users: User<ObjectId>;
+    Townhalls: Townhall<ObjectId>;
+    Questions: Question<ObjectId>;
+    ChatMessages: ChatMessage<ObjectId>;
+    InviteLinks: InviteLink<ObjectId>;
+    Notifications: Notification<ObjectId>
+}
+
+export async function useCollection<T extends keyof CollectionMap, U>(
+    name: T,
+    cb: (c: Collection<CollectionMap[T]>) => U
 ): Promise<U> {
-    const coll = await wrapDb((db): Collection<T> => db.collection<T>(name));
+    const coll = await wrapDb(
+        (db): Collection<CollectionMap[T]> => db.collection(name)
+    );
     return cb(coll);
+}
+
+/**
+ * used to create a series of atomic updates (i think)
+ * https://docs.mongodb.com/manual/core/transactions/#transactions
+ */
+export async function useSession<T extends keyof CollectionMap, U>(
+    name: T,
+    cb: (c: Collection<CollectionMap[T]>, session: ClientSession) => Promise<U>,
+    options?: TransactionOptions
+): Promise<void> {
+    const client = await connect();
+    const session = client.startSession();
+    await session.withTransaction(async () => {
+        const db = client.db(dbName);
+        const coll = db.collection(name);
+        await cb(coll, session);
+    }, options);
+    // in the mongodb docs linked above they use await, the types are probably wrong --too lazy to check
+    // eslint-disable-next-line @typescript-eslint/await-thenable
+    await session.endSession();
 }

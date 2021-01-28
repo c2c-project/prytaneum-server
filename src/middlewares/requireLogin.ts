@@ -1,3 +1,4 @@
+/* eslint-disable no-multi-str */
 import { Request } from 'express';
 import { ObjectId, ObjectID } from 'mongodb';
 import createHttpError from 'http-errors';
@@ -8,8 +9,8 @@ import env from 'config/env';
 import JWT from 'lib/jwt';
 import { useCollection } from 'db';
 
-type Cookies = Record<string, string | undefined>;
-function getCookies(req: Request): Cookies {
+export type Cookies = Record<string, string | undefined>;
+export function getCookies(req: Request): Cookies {
     if (env.NODE_ENV === 'production') return req.signedCookies as Cookies;
     return req.cookies as Cookies;
 }
@@ -26,7 +27,7 @@ export default function requireLogin(roles?: Roles[]): Express.Middleware {
             const { jwt } = cookies;
 
             // finding user
-            const { _id } = (await JWT.verify(jwt)) as User;
+            const { _id } = await JWT.verify<User>(jwt);
             const user = await useCollection('Users', (Users) =>
                 Users.findOne({
                     _id: new ObjectID(_id),
@@ -35,7 +36,13 @@ export default function requireLogin(roles?: Roles[]): Express.Middleware {
 
             // set user if found
             if (!user) throw createHttpError(404, 'User not found');
-            req.results.user = user;
+            if (req.results) req.results.user = user;
+            else
+                throw new Error(
+                    'Middlewares have not been initialized properly.\
+                     Make sure the init function in index is called\
+                      appropriately before all other middlewares'
+                );
             // check permissions if needed
             if (roles) {
                 // technically, this could be done at the query level, but then I don't know if the user was not found
@@ -54,4 +61,4 @@ export default function requireLogin(roles?: Roles[]): Express.Middleware {
     };
 }
 
-export type RequireLoginLocals = { user: User & { _id: ObjectId } };
+export type RequireLoginLocals = { user: User<ObjectId> };

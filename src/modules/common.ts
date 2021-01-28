@@ -1,9 +1,10 @@
-import { Meta, User } from 'prytaneum-typings';
+import { ObjectId } from 'mongodb';
+import type { Meta, User } from 'prytaneum-typings';
 
 export function makeUpdatedBy(
-    user: User,
+    user: User<ObjectId>,
     date?: Date
-): Pick<Meta, 'updatedAt' | 'updatedBy'> {
+): Pick<Meta<ObjectId>, 'updatedAt' | 'updatedBy'> {
     return {
         updatedAt: date || new Date(),
         updatedBy: {
@@ -13,7 +14,7 @@ export function makeUpdatedBy(
     };
 }
 
-export function makeMeta(user: User): Meta {
+export function makeMeta(user: User<ObjectId>): Meta<ObjectId> {
     const date = new Date();
     const byField = {
         _id: user._id,

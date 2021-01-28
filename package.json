@@ -7,8 +7,11 @@
         "start": "nodemon -e ts,js,json --exec \"babel-node -x \".ts\" src\"",
         "test": "jest --watchAll --runInBand",
         "test:ci": "jest",
+        "typecheck": "tsc -p tsconfig.prod.json --noEmit",
         "prebuild": "tsc -p tsconfig.prod.json --emitDeclarationOnly",
-        "build": "babel src -d build --extensions \".ts\""
+        "build": "babel src -d build --extensions \".ts\"",
+        "lint": "eslint src/ --ext .ts,.tsx,.js,.jsx --max-warnings 0",
+        "initdb": "DEBUG=prytaneum:* babel-node -x \".ts\" src/db/init-db.mock.ts"
     },
     "dependencies": {
         "@babel/runtime": "^7.9.6",
@@ -28,7 +31,7 @@
         "nodemon": "^2.0.3",
         "passport": "^0.4.1",
         "passport-local": "^1.0.0",
-        "socket.io": "^3.0.1"
+        "socket.io": "^3.0.4"
     },
     "devDependencies": {
         "@babel/cli": "^7.10.1",
@@ -49,7 +52,7 @@
         "@types/joi": "^14.3.4",
         "@types/jsonwebtoken": "^8.5.0",
         "@types/mailgun-js": "^0.22.11",
-        "@types/mongodb": "^3.5.20",
+        "@types/mongodb": "^3.6.3",
         "@types/morgan": "^1.9.2",
         "@types/multer": "^1.4.5",
         "@types/papaparse": "^5.2.4",
@@ -66,7 +69,7 @@
         "eslint-config-prettier": "^6.4.0",
         "eslint-plugin-import": "^2.18.2",
         "eslint-plugin-jest": "^23.13.1",
-        "faker": "^4.1.0",
+        "faker": "https://github.com/marak/Faker.js#v5.1.0",
         "jest": "^26.0.1",
         "jsdoc": "^3.6.4",
         "papaparse": "^5.3.0",

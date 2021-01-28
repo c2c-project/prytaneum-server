@@ -7,6 +7,7 @@ import {
 
 import { verifyPassword } from 'modules/user';
 import { useCollection } from 'db';
+import createHttpError from 'http-errors';
 
 export const localOptions: IStrategyOptions = { usernameField: 'email' };
 export const localCallback: LocalVerifyCallback = (
@@ -16,38 +17,33 @@ export const localCallback: LocalVerifyCallback = (
 ) => {
     async function verify(): Promise<void> {
         try {
+            // generic error -- we don't want to specifically tell them if the email or password was incorrect
+            const err = createHttpError(401, 'Email or password is incorrect');
             const user = await useCollection('Users', (Users) =>
                 Users.findOne({
                     'email.address': email,
                 })
             );
-            if (!user) {
-                // user does not exist
-                done(null, false);
-            } else {
-                const isVerified = await verifyPassword(
-                    password,
-                    user.password
-                );
+            // user does not exist
+            if (!user) throw err;
 
-                // password does not match
-                if (!isVerified) {
-                    done(null, false);
-                }
+            const isVerified = await verifyPassword(password, user.password);
 
-                // update last login for this user
-                await useCollection('Users', (Users) =>
-                    Users.updateOne(
-                        { _id: user._id },
-                        { $set: { 'meta.lastLogin': new Date() } }
-                    )
-                );
-                // password matches and we're good to go
-                done(null, user);
-            }
-        } catch (e) {
+            // password does not match
+            if (!isVerified) throw err;
+
+            // update last login for this user
+            await useCollection('Users', (Users) =>
+                Users.updateOne(
+                    { _id: user._id },
+                    { $set: { 'meta.lastLogin': new Date() } }
+                )
+            );
+            // password matches and we're good to go
+            done(null, user);
+        } catch (err) {
             // some error happened somewhere
-            done(e);
+            done(err, false);
         }
     }
 
