@@ -14,7 +14,9 @@ import {
     deleteLike,
 } from 'modules/questions';
 import { questionFormValidationObject } from 'modules/questions/validators';
+import { addQuestionToList, removeQuestionFromList } from 'modules/playlist'; // TODO: remove
 import { makeObjectIdValidationObject } from 'utils/validators';
+import isModerator from 'utils/isModerator';
 import {
     makeJoiMiddleware,
     makeEndpoint,
@@ -118,6 +120,15 @@ router.put<QuestionParams, void, void, void, RequireLoginLocals>(
         const { user } = req.results;
         const { questionId, townhallId } = req.params;
         await likeQuestion(questionId, townhallId, user._id);
+        // TODO: remove this, shouldn't be here but for now it gets the job done
+        const isMod = await isModerator(
+            townhallId,
+            user.email.address,
+            user._id
+        );
+        if (isMod) await addQuestionToList(townhallId, questionId);
+        // ******************************************************************
+
         res.sendStatus(200);
     })
 );
@@ -132,6 +143,16 @@ router.delete<QuestionParams, void, void, void, RequireLoginLocals>(
         const { user } = req.results;
         const { questionId, townhallId } = req.params;
         await deleteLike(questionId, townhallId, user._id);
+
+        // TODO: remove this, shouldn't be here but for now it gets the job done
+        const isMod = await isModerator(
+            townhallId,
+            user.email.address,
+            user._id
+        );
+        if (isMod) await removeQuestionFromList(townhallId, questionId);
+        // ******************************************************************
+
         res.sendStatus(200);
     })
 );

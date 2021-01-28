@@ -5,6 +5,7 @@ import createHttpError from 'http-errors';
 import { useCollection } from 'db';
 import events from 'lib/events';
 import { makeMeta } from 'modules/common';
+// import isModerator from 'utils/isModerator';
 
 // declaration merging
 declare module 'lib/events' {
@@ -20,7 +21,16 @@ declare module 'lib/events' {
 
 export async function getQuestions(townhallId: string) {
     return useCollection('Questions', (Questions) =>
-        Questions.find({ 'meta.townhallId': townhallId }).toArray()
+        Questions.find(
+            {
+                'meta.townhallId': new ObjectID(townhallId),
+            },
+            {
+                sort: {
+                    'meta.createdAt': 1,
+                },
+            }
+        ).toArray()
     );
 }
 
@@ -105,8 +115,11 @@ export async function moderateQuestion(
 export async function createQuestion(
     form: QuestionForm,
     townhallId: string,
-    user: User
+    user: User<ObjectId>
 ) {
+    let quote: Question<ObjectId> | null = null;
+    if (form.quoteId) quote = await getQuestion(form.quoteId, townhallId);
+
     const { insertedCount, ops } = await useCollection(
         'Questions',
         (Questions) =>
@@ -122,6 +135,8 @@ export async function createQuestion(
                     labels: [],
                 },
                 visibility: 'visible',
+                replies: [],
+                quote,
             })
     );
     if (insertedCount === 0) throw new Error('Unable to create question');
@@ -131,7 +146,7 @@ export async function createQuestion(
 export async function likeQuestion(
     questionId: string,
     townhallId: string,
-    userId: string
+    userId: ObjectId
 ) {
     const { matchedCount, modifiedCount } = await useCollection(
         'Questions',
@@ -143,21 +158,44 @@ export async function likeQuestion(
                 },
                 {
                     $addToSet: {
-                        likes: new ObjectID(userId),
+                        likes: userId,
                     },
                 }
             )
     );
+    // TODO: delete this
+    await useCollection('Townhalls', (Townhalls) =>
+        Townhalls.updateOne(
+            {
+                _id: new ObjectId(townhallId),
+                'state.playlist.list': {
+                    $elemMatch: { _id: new ObjectID(questionId) },
+                },
+            },
+            {
+                $addToSet: {
+                    'state.playlist.list.$.likes': userId,
+                },
+            }
+        )
+    );
+    // DELETE ABOVE
+
     if (matchedCount === 0) throw createHttpError(404);
     if (modifiedCount === 0)
         // prettier is dumb https://github.com/prettier/prettier/issues/973
         throw createHttpError(409, "You've already liked this question!");
+    events.emit('playlist-like-add', {
+        questionId,
+        townhallId,
+        userId: userId.toHexString(),
+    });
 }
 
 export async function deleteLike(
     questionId: string,
     townhallId: string,
-    userId: string
+    userId: ObjectId
 ) {
     const { matchedCount, modifiedCount } = await useCollection(
         'Questions',
@@ -169,11 +207,30 @@ export async function deleteLike(
                 },
                 {
                     $pull: {
-                        likes: new ObjectID(userId),
+                        likes: userId,
                     },
                 }
             )
     );
+
+    // TODO: delete this
+    await useCollection('Townhalls', (Townhalls) =>
+        Townhalls.updateOne(
+            {
+                _id: new ObjectId(townhallId),
+                'state.playlist.list': {
+                    $elemMatch: { _id: new ObjectID(questionId) },
+                },
+            },
+            {
+                $pull: {
+                    'state.playlist.list.$.likes': userId,
+                },
+            }
+        )
+    );
+    // DELETE ABOVE
+
     if (matchedCount === 0) throw createHttpError(404);
     if (modifiedCount === 0)
         // prettier is dumb https://github.com/prettier/prettier/issues/973
@@ -184,4 +241,9 @@ export async function deleteLike(
 
     // TODO: let clients know/emit that there is a new like
     // if (modifiedCount === 1)
+    events.emit('playlist-like-remove', {
+        questionId,
+        townhallId,
+        userId: userId.toHexString(),
+    });
 }

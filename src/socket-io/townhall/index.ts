@@ -1,30 +1,22 @@
 import events from 'lib/events';
 import { Socket } from 'socket.io';
+import makeDebug from 'debug';
 
 import io from '../socket-io';
 
-type UserAttend = { type: 'user-attend'; payload: null };
-type UserLeave = { type: 'user-leave'; payload: null };
-type TownhallStart = { type: 'townhall-start'; payload: null };
-type TownhallEnd = { type: 'townhall-end'; payload: null };
-
 declare module '../socket-io' {
-    interface ServerEmits {
-        'townhall-state': UserAttend | UserLeave | TownhallEnd | TownhallStart;
-    }
-    interface ClientEmits {
-        'user-state': UserAttend | UserLeave;
-        'townhall-state': TownhallStart | TownhallEnd;
-    }
     interface Namespaces {
         '/townhalls': true;
     }
 }
 
 const townhallNamespace = io.of('/townhalls');
+const info = makeDebug('prytaneum:ws/townhalls');
 
 townhallNamespace.on('connection', (socket: Socket) => {
+    info('connected');
     socket.on('disconnect', () => {
+        info('disconnected');
         // TODO: meta event where we record the user joining the chatroom etc.
     });
     const { townhallId } = socket.handshake.query as { townhallId?: string };
