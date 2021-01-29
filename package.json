@@ -73,7 +73,7 @@
         "jest": "^26.0.1",
         "jsdoc": "^3.6.4",
         "papaparse": "^5.3.0",
-        "prytaneum-typings": "https://github.com/c2c-project/prytaneum-typings#v1.0.0-alpha.83",
+        "prytaneum-typings": "https://github.com/c2c-project/prytaneum-typings#3ba38dffc03017204f648cd0f5f7f81fc490dc44",
         "socket.io-client": "^3.0.1",
         "superagent": "^5.2.2",
         "supertest": "^4.0.2",
