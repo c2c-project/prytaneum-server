@@ -1,6 +1,6 @@
 import { MongoClient, Db, Collection, ObjectId } from 'mongodb';
 import makeDebug from 'debug';
-import type { User, Townhall, Question, ChatMessage } from 'prytaneum-typings';
+import type { User, Townhall, Question, ChatMessage, FeedbackReport, BugReport} from 'prytaneum-typings';
 
 import config from 'config/mongo';
 
@@ -27,7 +27,10 @@ export type CollectionNames =
     | 'Users'
     | 'Townhalls'
     | 'Questions'
-    | 'ChatMessages';
+    | 'ChatMessages'
+    | 'FeedbackReports'
+    | 'BugReports';
+
 export async function useCollection<T, U>(
     name: 'Users',
     cb: (c: Collection<User<ObjectId>>) => U
@@ -43,6 +46,14 @@ export async function useCollection<T, U>(
 export async function useCollection<T, U>(
     name: 'ChatMessages',
     cb: (c: Collection<ChatMessage<ObjectId>>) => U
+): Promise<U>;
+export async function useCollection<T, U>(
+    name: 'FeedbackReports',
+    cb: (c: Collection<FeedbackReport<ObjectId>>) => U
+): Promise<U>;
+export async function useCollection<T, U>(
+    name: 'BugReports',
+    cb: (c: Collection<BugReport<ObjectId>>) => U
 ): Promise<U>;
 export async function useCollection<T, U>(
     name: CollectionNames,
