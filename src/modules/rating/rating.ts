@@ -8,12 +8,14 @@ import createHttpError from 'http-errors';
 const addRating = async (
     rating: RatingForm,
     townhallId: string,
-    userId: string
+    userId?: string
 ): Promise<void> => {
     const filter = { _id: new ObjectId(townhallId) };
-    const update = {
-        $addToSet: { ratings: { userId: new ObjectId(userId), ...rating } },
-    };
+    const update = userId
+        ? {
+            $push: { ratings: { userId: new ObjectId(userId), ...rating } },
+        }
+        : { $push: { ratings: rating } };
     const options = { upsert: true, returnOriginal: true };
     const doc = await useCollection('Ratings', (Ratings) => {
         return Ratings.findOneAndUpdate(filter, update, options);
