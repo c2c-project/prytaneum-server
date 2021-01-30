@@ -59,14 +59,14 @@ export function getFeedbackReports(
  * @param {string} submitterId - Id of the submitter
  * @returns {Promise<FeedbackReport[]>} - Promise that will produce an array of feedback reports
  */
-export function getFeedbackReportsBySubmitter(
+export function getFeedbackReportsByUser(
     page: number,
     sortByDate: boolean,
-    submitterId: string
+    user: User
 ) {
     return useCollection('FeedbackReports', (FeedbackReports) =>
         FeedbackReports.find({
-            'meta.createdBy._id': new ObjectID(submitterId),
+            'meta.createdBy._id': new ObjectID(user._id),
         })
             .sort({ date: sortByDate ? 1 : -1 })
             .skip(page > 0 ? numberOfDocumentsPerPage * (page - 1) : 0)
@@ -169,7 +169,7 @@ export async function updateResolvedStatus(
 
 /**
  * @description Adds a reply to feedback a report
- * @param {Object} user - User object of the replier
+ * @param {User} user - User object of the replier
  * @param {string} _id - Id of the report
  * @param {string} replyContent - Content of the reply
  * @returns Mongodb promise

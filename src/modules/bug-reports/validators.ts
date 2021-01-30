@@ -6,7 +6,7 @@ type BugReportData = BugReportForm & { townhallId: string };
 
 type BugReportValidator = Record<keyof BugReportData, Joi.Schema>;
 
-export const feedbackReportValidationObject: BugReportValidator = {
+export const bugReportValidationObject: BugReportValidator = {
     description: Joi.string().required(),
     townhallId: Joi.string().required(),
 };
