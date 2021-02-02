@@ -13,6 +13,7 @@ import type {
     Question,
     ChatMessage,
     InviteLink,
+    Notification
 } from 'prytaneum-typings';
 
 import config from 'config/mongo';
@@ -49,6 +50,7 @@ interface CollectionMap {
     Questions: Question<ObjectId>;
     ChatMessages: ChatMessage<ObjectId>;
     InviteLinks: InviteLink<ObjectId>;
+    Notifications: Notification<ObjectId>
 }
 
 export async function useCollection<T extends keyof CollectionMap, U>(
