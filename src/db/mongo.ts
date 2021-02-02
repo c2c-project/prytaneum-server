@@ -13,6 +13,7 @@ import type {
     Question,
     ChatMessage,
     InviteLink,
+    Rating,
     Notification
 } from 'prytaneum-typings';
 
@@ -50,7 +51,8 @@ interface CollectionMap {
     Questions: Question<ObjectId>;
     ChatMessages: ChatMessage<ObjectId>;
     InviteLinks: InviteLink<ObjectId>;
-    Notifications: Notification<ObjectId>
+    Notifications: Notification<ObjectId>;
+    Ratings: Rating<ObjectId>;
 }
 
 export async function useCollection<T extends keyof CollectionMap, U>(
