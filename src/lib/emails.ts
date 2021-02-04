@@ -61,13 +61,15 @@ const sendEmail = async (
 
 // function sendEmail(...args: any) {}
 
+// eslint-disable-next-line
 function sendPasswordReset(...args: any) {}
 
+// eslint-disable-next-line
 function sendEmailVerification(...args: any) {}
 
 export default {
     sendPasswordReset,
     sendEmail,
     sendEmailVerification,
-    mg
+    mg,
 };

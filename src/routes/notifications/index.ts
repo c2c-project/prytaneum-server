@@ -55,7 +55,7 @@ const inviteUpload = multer({
 // If over max, return bad response with message relating to limit exceeded
 router.post(
     '/invite-limited',
-    inviteUpload.single('inviteFile'),
+    inviteUpload.single('invite-file'),
     makeEndpoint(async (req, res) => {
         const { file } = req;
         try {
@@ -101,7 +101,7 @@ router.post(
 
 router.post(
     '/invite',
-    inviteUpload.single('inviteFile'), // form-data key
+    inviteUpload.single('invite-file'), // form-data key
     makeEndpoint(async (req, res) => {
         // TODO add authentication
         const { file } = req;
@@ -150,8 +150,7 @@ router.post(
             if (e instanceof HttpError) throw createHttpError(e);
             else throw new Error(e);
         }
-    }
-    )
+    })
 );
 
 router.post('/subscribe', makeEndpoint(async (req, res) => {
