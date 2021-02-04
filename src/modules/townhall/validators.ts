@@ -12,6 +12,6 @@ export const townhallValidationObject: TownhallValidator = {
 
 type TownhallRatingValidator = Record<keyof RatingForm, Joi.Schema>;
 export const ratingValidationObject: TownhallRatingValidator = {
-    values: Joi.array().required(),
+    values: Joi.object().required(),
     feedback: Joi.string().required()
 };

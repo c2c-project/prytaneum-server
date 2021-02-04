@@ -16,8 +16,7 @@ router.put<TownhallParams, void, RatingForm, RatingParams>(
     }),
     makeEndpoint(async (req, res) => {
         const { townhallId } = req.params;
-        const { userId } = req.query;
-        await API.addRating(req.body, townhallId, userId);
+        await API.addRating(req.body, townhallId);
         res.status(200).send();
     })
 );
