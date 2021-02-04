@@ -1,15 +1,11 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import express from 'express';
 import request from 'supertest';
-import faker from 'faker';
-import { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
 import { makeRatingForm, makeTownhall, makeUser } from 'prytaneum-typings';
-import { useCollection } from 'db';
-import { ObjectId } from 'mongodb';
 
 import * as DB from 'db/mongo';
 import config from 'config/app';
-import Rating from 'modules/rating';
-import * as Users from 'modules/user';
 import { errorHandler } from 'middlewares';
 import routes from './index';
 
