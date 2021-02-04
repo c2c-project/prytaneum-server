@@ -1,7 +1,6 @@
 import { ObjectId } from 'mongodb';
 import { useCollection } from 'db';
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { RatingForm } from 'prytaneum-typings';
+import type { RatingForm } from 'prytaneum-typings';
 
 import createHttpError from 'http-errors';
 

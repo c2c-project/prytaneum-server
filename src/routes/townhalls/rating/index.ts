@@ -1,8 +1,6 @@
 import { Router } from 'express';
 import Joi from 'joi';
-import makeDebug from 'debug';
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { RatingForm } from 'prytaneum-typings';
+import type { RatingForm } from 'prytaneum-typings';
 import { ratingValidationObject } from 'modules/townhall/validators';
 import API from 'modules/rating';
 
