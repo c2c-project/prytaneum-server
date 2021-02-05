@@ -32,29 +32,30 @@ import {
     ReportQueryParams,
     ReportQueryParamsAdmin,
     ReportParams,
+    ReportsResult,
 } from '../types';
 
 const router = Router();
 
 router.get<
     Express.EmptyParams,
-    FeedbackReport<ObjectId>[],
+    ReportsResult<FeedbackReport<ObjectId>>,
     void,
     ReportQueryParams,
     RequireLoginLocals
 >(
-    '/',
+    '/feedback-reports',
     requireLogin(),
     makeJoiMiddleware({ query: Joi.object(getFeedbackReportQueries) }),
     makeEndpoint(async (req, res) => {
         const { page, sortByDate } = req.query;
         const { user } = req.results;
-        const feedbackReports = await getFeedbackReportsByUser(
+        const { feedbackReports, totalCount } = await getFeedbackReportsByUser(
             parseInt(page, 10),
             sortByDate === 'true',
-            user
+            user._id
         );
-        res.status(200).send(feedbackReports);
+        res.status(200).send({ reports: feedbackReports, count: totalCount });
     })
 );
 
@@ -63,7 +64,7 @@ router.get<
  */
 router.get<
     Express.EmptyParams,
-    FeedbackReport<ObjectId>[],
+    ReportsResult<FeedbackReport<ObjectId>>,
     void,
     ReportQueryParamsAdmin
 >(
@@ -72,12 +73,12 @@ router.get<
     makeJoiMiddleware({ query: Joi.object(getFeedbackReportQueriesAdmin) }),
     makeEndpoint(async (req, res) => {
         const { page, sortByDate, resolved } = req.query;
-        const feedbackReports = await getFeedbackReports(
+        const { feedbackReports, totalCount } = await getFeedbackReports(
             parseInt(page, 10),
             sortByDate === 'true',
             resolved === 'true'
         );
-        res.status(200).send(feedbackReports);
+        res.status(200).send({ reports: feedbackReports, count: totalCount });
     })
 );
 /**
@@ -128,17 +129,10 @@ router.put<ReportParams, void, FeedbackReportForm, void, RequireLoginLocals>(
     makeEndpoint(async (req, res) => {
         const { description } = req.body;
         const { reportId } = req.params;
-
         const { user } = req.results;
         const feedbackReport = await getFeedbackReportById(reportId);
-
-        if (!feedbackReport) {
-            throw Error('Feedback report does not exist');
-        }
-        if (feedbackReport.meta.createdBy._id !== user._id) {
-            throw Error('Calling user is not owner of the report');
-        }
-
+        if (feedbackReport && feedbackReport.meta.createdBy._id !== user._id)
+            throw Error('User is not owner of the report');
         await updateFeedbackReport(reportId, description);
         res.sendStatus(200);
     })
@@ -153,14 +147,8 @@ router.delete<ReportParams, void, void, void, RequireLoginLocals>(
         const { reportId } = req.params;
         const { user } = req.results;
         const feedbackReport = await getFeedbackReportById(reportId);
-
-        if (!feedbackReport) {
-            throw Error('Feedback report does not exist');
-        }
-        if (feedbackReport.meta.createdBy._id !== user._id) {
-            throw Error('Calling user is not owner of the report');
-        }
-
+        if (feedbackReport && feedbackReport.meta.createdBy._id !== user._id)
+            throw Error('User is not owner of the report');
         await deleteFeedbackReport(reportId);
         res.sendStatus(200);
     })
@@ -171,7 +159,13 @@ router.delete<ReportParams, void, void, void, RequireLoginLocals>(
  */
 
 // TODO: Update the meta object to be updated by admin caller of this endpoint
-router.put<ReportParams, void, { resolvedStatus: boolean }, void>(
+router.put<
+    ReportParams,
+    void,
+    { resolvedStatus: boolean },
+    void,
+    RequireLoginLocals
+>(
     '/:reportId/update-resolved-status',
     requireLogin(['admin']),
     makeJoiMiddleware({
@@ -180,13 +174,14 @@ router.put<ReportParams, void, { resolvedStatus: boolean }, void>(
     makeEndpoint(async (req, res) => {
         const { reportId } = req.params;
         const { resolvedStatus } = req.body;
-        await updateResolvedStatus(reportId, resolvedStatus);
+        const { user } = req.results;
+        await updateResolvedStatus(reportId, resolvedStatus, user);
         res.status(200);
     })
 );
 
 /**
- * adds a reply to particular feedback report caller must have admin permission
+ * adds a reply to particular feedback report. Caller must be an admin permission
  */
 router.put<ReportParams, void, { reply: string }, void, RequireLoginLocals>(
     '/:reportId/reply-to',

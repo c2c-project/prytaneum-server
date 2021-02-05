@@ -8,3 +8,5 @@ export type ReportQueryParamsAdmin = ReportQueryParams & {
 };
 
 export type ReportParams = { reportId: string };
+
+export type ReportsResult<T> = { reports: T[]; count: number };
