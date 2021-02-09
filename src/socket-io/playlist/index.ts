@@ -78,67 +78,67 @@ playlistNamespace.on('connection', (socket: Socket) => {
     void socket.join(townhallId);
 });
 
-events.on('playlist-add', (question) => {
-    const { townhallId } = question.meta;
-    playlistNamespace
-        .to(townhallId.toHexString())
-        .emit('playlist-state', { type: 'playlist-add', payload: question });
-});
+// events.on('playlist-add', (question) => {
+//     const { townhallId } = question.meta;
+//     playlistNamespace
+//         .to(townhallId.toHexString())
+//         .emit('playlist-state', { type: 'playlist-add', payload: question });
+// });
 
-events.on('playlist-remove', ({ townhallId, questionId }) => {
-    playlistNamespace.to(townhallId).emit('playlist-state', {
-        type: 'playlist-remove',
-        payload: questionId,
-    });
-});
+// events.on('playlist-remove', ({ townhallId, questionId }) => {
+//     playlistNamespace.to(townhallId).emit('playlist-state', {
+//         type: 'playlist-remove',
+//         payload: questionId,
+//     });
+// });
 
-events.on('playlist-queue-add', (question) => {
-    const { townhallId } = question.meta;
-    playlistNamespace.to(townhallId.toHexString()).emit('playlist-state', {
-        type: 'playlist-queue-add',
-        payload: question,
-    });
-});
+// events.on('playlist-queue-add', (question) => {
+//     const { townhallId } = question.meta;
+//     playlistNamespace.to(townhallId.toHexString()).emit('playlist-state', {
+//         type: 'playlist-queue-add',
+//         payload: question,
+//     });
+// });
 
-events.on('playlist-queue-remove', ({ questionId, townhallId }) => {
-    playlistNamespace.to(townhallId).emit('playlist-state', {
-        type: 'playlist-queue-remove',
-        payload: questionId,
-    });
-});
+// events.on('playlist-queue-remove', ({ questionId, townhallId }) => {
+//     playlistNamespace.to(townhallId).emit('playlist-state', {
+//         type: 'playlist-queue-remove',
+//         payload: questionId,
+//     });
+// });
 
-events.on('playlist-queue-order', (questions) => {
-    const { townhallId } = questions[0].meta;
-    playlistNamespace.to(townhallId).emit('playlist-state', {
-        type: 'playlist-queue-order',
-        payload: (questions as unknown) as Question<ObjectId>[],
-    });
-});
+// events.on('playlist-queue-order', (questions) => {
+//     const { townhallId } = questions[0].meta;
+//     playlistNamespace.to(townhallId).emit('playlist-state', {
+//         type: 'playlist-queue-order',
+//         payload: (questions as unknown) as Question<ObjectId>[],
+//     });
+// });
 
-events.on('playlist-queue-next', (townhallId) => {
-    playlistNamespace.to(townhallId).emit('playlist-state', {
-        type: 'playlist-queue-next',
-        payload: null,
-    });
-});
+// events.on('playlist-queue-next', (townhallId) => {
+//     playlistNamespace.to(townhallId).emit('playlist-state', {
+//         type: 'playlist-queue-next',
+//         payload: null,
+//     });
+// });
 
-events.on('playlist-queue-previous', (townhallId) => {
-    playlistNamespace.to(townhallId).emit('playlist-state', {
-        type: 'playlist-queue-previous',
-        payload: null,
-    });
-});
+// events.on('playlist-queue-previous', (townhallId) => {
+//     playlistNamespace.to(townhallId).emit('playlist-state', {
+//         type: 'playlist-queue-previous',
+//         payload: null,
+//     });
+// });
 
-events.on('playlist-like-add', ({ townhallId, questionId, userId }) => {
-    playlistNamespace.to(townhallId).emit('playlist-state', {
-        type: 'playlist-like-add',
-        payload: { questionId, userId },
-    });
-});
+// events.on('playlist-like-add', ({ townhallId, questionId, userId }) => {
+//     playlistNamespace.to(townhallId).emit('playlist-state', {
+//         type: 'playlist-like-add',
+//         payload: { questionId, userId },
+//     });
+// });
 
-events.on('playlist-like-remove', ({ townhallId, questionId, userId }) => {
-    playlistNamespace.to(townhallId).emit('playlist-state', {
-        type: 'playlist-like-remove',
-        payload: { questionId, userId },
-    });
-});
+// events.on('playlist-like-remove', ({ townhallId, questionId, userId }) => {
+//     playlistNamespace.to(townhallId).emit('playlist-state', {
+//         type: 'playlist-like-remove',
+//         payload: { questionId, userId },
+//     });
+// });

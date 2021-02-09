@@ -18,10 +18,7 @@ const questionNamespace = io.of('/questions');
 
 questionNamespace.on('connection', (socket: Socket) => {
     info('Connected');
-    socket.on('disconnect', () => {
-        info('Disconnected');
-        // TODO: meta event where we record the user joining the chatroom etc.
-    });
+    socket.on('disconnect', () => info('Disconnected'));
     const { townhallId } = socket.handshake.query as { townhallId?: string };
     info(townhallId);
     if (!townhallId) return;
@@ -31,25 +28,30 @@ questionNamespace.on('connection', (socket: Socket) => {
     void socket.join(townhallId);
 });
 
-events.on('create-question', (question) => {
-    const { townhallId } = question.meta;
-    questionNamespace.to(townhallId.toString()).emit('question-state', {
-        type: 'create-question',
-        payload: question,
-    });
+events.on('Questions', (payload) => {
+    const { townhallId } = payload.data.meta;
+    questionNamespace.to(townhallId.toHexString()).emit('Questions', { type: payload.type, payload: payload.data });
 });
 
-events.on('update-question', (question) => {
-    const { townhallId } = question.meta;
-    questionNamespace.to(townhallId.toString()).emit('question-state', {
-        type: 'update-question',
-        payload: question,
-    });
-});
+// events.on('create-question', (question) => {
+//     const { townhallId } = question.meta;
+//     questionNamespace.to(townhallId.toString()).emit('question-state', {
+//         type: 'create-question',
+//         payload: question,
+//     });
+// });
 
-events.on('delete-question', (question) => {
-    const { townhallId } = question.meta;
-    questionNamespace
-        .to(townhallId.toString())
-        .emit('question-state', { type: 'delete-question', payload: question });
-});
+// events.on('update-question', (question) => {
+//     const { townhallId } = question.meta;
+//     questionNamespace.to(townhallId.toString()).emit('question-state', {
+//         type: 'update-question',
+//         payload: question,
+//     });
+// });
+
+// events.on('delete-question', (question) => {
+//     const { townhallId } = question.meta;
+//     questionNamespace
+//         .to(townhallId.toString())
+//         .emit('question-state', { type: 'delete-question', payload: question });
+// });

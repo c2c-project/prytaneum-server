@@ -25,16 +25,22 @@ townhallNamespace.on('connection', (socket: Socket) => {
     void socket.join(townhallId);
 });
 
-events.on('start-townhall', (townhallId) => {
-    townhallNamespace.to(townhallId).emit('townhall-state', {
-        type: 'townhall-start',
-        payload: null,
-    });
+events.on('Townhalls', (payload) => {
+    const townhallId = payload.data._id;
+
+    townhallNamespace.to(townhallId.toHexString()).emit('Townhalls', { type: payload.type, payload: payload.data });
 });
 
-events.on('end-townhall', (townhallId) => {
-    townhallNamespace.to(townhallId).emit('townhall-state', {
-        type: 'townhall-end',
-        payload: null,
-    });
-});
+// events.on('start-townhall', (townhallId) => {
+//     townhallNamespace.to(townhallId).emit('townhall-state', {
+//         type: 'townhall-start',
+//         payload: null,
+//     });
+// });
+
+// events.on('end-townhall', (townhallId) => {
+//     townhallNamespace.to(townhallId).emit('townhall-state', {
+//         type: 'townhall-end',
+//         payload: null,
+//     });
+// });

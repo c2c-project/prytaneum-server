@@ -3,8 +3,8 @@ import { AddressInfo } from 'net';
 import { makeQuestion, Question } from 'prytaneum-typings';
 import { io, Socket } from 'socket.io-client';
 import { Server } from 'socket.io';
-import { ObjectId } from 'mongodb';
-import type { SocketIOEvents as ServerEmits } from 'prytaneum-typings';
+import { ObjectId, ObjectID } from 'mongodb';
+import type { Subscriptions as ServerEmits } from 'prytaneum-typings';
 
 // import * as DB from 'db';
 import events from 'lib/events';
@@ -17,7 +17,7 @@ let socket: Socket;
 let httpServer: http.Server;
 let httpServerAddr: AddressInfo;
 let ioServerInstance: Server;
-const question = makeQuestion();
+const question = { ...makeQuestion(), meta: { ...makeQuestion().meta, townhallId: new ObjectID() } };
 
 // IMPORTANT: this is here because of the initial state load on a connection
 jest.mock('db');
@@ -38,17 +38,13 @@ afterAll(() => {
 });
 
 beforeEach((done) => {
-    if (!httpServerAddr)
-        throw new Error('Test initialization for socketio failed');
-    socket = io(
-        `http://[${httpServerAddr.address}]:${httpServerAddr.port}/questions`,
-        {
-            reconnectionDelay: 0,
-            forceNew: true,
-            transports: ['websocket'],
-            query: `townhallId=${question.meta.townhallId}`,
-        }
-    );
+    if (!httpServerAddr) throw new Error('Test initialization for socketio failed');
+    socket = io(`http://[${httpServerAddr.address}]:${httpServerAddr.port}/questions`, {
+        reconnectionDelay: 0,
+        forceNew: true,
+        transports: ['websocket'],
+        query: `townhallId=${question.meta.townhallId.toHexString()}`,
+    });
     socket.on('connect', () => {
         done();
     });
@@ -69,60 +65,33 @@ afterEach(() => {
  */
 describe('socket-io /questions', () => {
     it('should send client new questions', async () => {
-        events.emit(
-            'create-question',
-            (question as unknown) as Question<ObjectId>
-        );
+        events.emit('Questions', { type: 'create', data: (question as unknown) as Question<ObjectId> });
         await new Promise<void>((resolve) => {
-            socket.once(
-                'question-state',
-                (state: ServerEmits['question-state']) => {
-                    expect(state.type).toStrictEqual('create-question');
-                    // THIS IS JUST EXTRA I HAVE TO TYPE TO KEEP TS HAPPY
-                    if (state.type === 'create-question')
-                        expect(state.payload._id).toStrictEqual(question._id);
-                    else expect(false).toEqual(true);
-                    resolve();
-                }
-            );
+            socket.once('Questions', (state: ServerEmits['Questions']) => {
+                expect(state.type).toStrictEqual('create');
+                expect(state.payload._id).toStrictEqual(question._id);
+                resolve();
+            });
         });
     });
     it('should send client updated questions', async () => {
-        events.emit(
-            'update-question',
-            (question as unknown) as Question<ObjectId>
-        );
+        events.emit('Questions', { type: 'update', data: (question as unknown) as Question<ObjectId> });
         await new Promise<void>((resolve) => {
-            socket.once(
-                'question-state',
-                (state: ServerEmits['question-state']) => {
-                    expect(state.type).toStrictEqual('update-question');
-                    // THIS IS JUST EXTRA I HAVE TO TYPE TO KEEP TS HAPPY
-                    if (state.type === 'update-question')
-                        expect(state.payload._id).toStrictEqual(question._id);
-                    else expect(false).toEqual(true);
-                    resolve();
-                }
-            );
+            socket.once('Questions', (state: ServerEmits['Questions']) => {
+                expect(state.type).toStrictEqual('update');
+                expect(state.payload._id).toStrictEqual(question._id);
+                resolve();
+            });
         });
     });
     it('should send client deleted questions', async () => {
-        events.emit(
-            'delete-question',
-            (question as unknown) as Question<ObjectId>
-        );
+        events.emit('Questions', { type: 'delete', data: (question as unknown) as Question<ObjectId> });
         await new Promise<void>((resolve) => {
-            socket.once(
-                'question-state',
-                (state: ServerEmits['question-state']) => {
-                    expect(state.type).toStrictEqual('delete-question');
-                    // THIS IS JUST EXTRA I HAVE TO TYPE TO KEEP TS HAPPY
-                    if (state.type === 'delete-question')
-                        expect(state.payload._id).toStrictEqual(question._id);
-                    else expect(false).toEqual(true);
-                    resolve();
-                }
-            );
+            socket.once('Questions', (state: ServerEmits['Questions']) => {
+                expect(state.type).toStrictEqual('delete');
+                expect(state.payload._id).toStrictEqual(question._id);
+                resolve();
+            });
         });
     });
 });
