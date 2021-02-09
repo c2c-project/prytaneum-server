@@ -3382,9 +3382,9 @@ extsprintf@^1.2.0:
   resolved "https://registry.yarnpkg.com/extsprintf/-/extsprintf-1.4.0.tgz#e2689f8f356fad62cca65a3a91c5df5f9551692f"
   integrity sha1-4mifjzVvrWLMplo6kcXfX5VRaS8=
 
-"faker@https://github.com/marak/Faker.js#v5.1.0":
+"faker@https://github.com/DevelopmentByDavid/faker.js#delete-stuff":
   version "5.1.0"
-  resolved "https://github.com/marak/Faker.js#e0b392de967d3000f59ef712c666786aa5ae19b7"
+  resolved "https://github.com/DevelopmentByDavid/faker.js#b6488ff0039b737819eed805e2fdd478e07e4b10"
 
 fast-deep-equal@^3.1.1:
   version "3.1.3"
@@ -5862,11 +5862,6 @@ package-json@^6.3.0:
     registry-url "^5.0.0"
     semver "^6.2.0"
 
-papaparse@^5.3.0:
-  version "5.3.0"
-  resolved "https://registry.yarnpkg.com/papaparse/-/papaparse-5.3.0.tgz#ab1702feb96e79ab4309652f36db9536563ad05a"
-  integrity sha512-Lb7jN/4bTpiuGPrYy4tkKoUS8sTki8zacB5ke1p5zolhcSE4TlWgrlsxjrDTbG/dFVh07ck7X36hUf/b5V68pg==
-
 parent-module@^1.0.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/parent-module/-/parent-module-1.0.1.tgz#691d2709e78c79fae3a156622452d00762caaaa2"
@@ -6142,14 +6137,14 @@ proxy-from-env@^1.0.0:
   resolved "https://registry.yarnpkg.com/proxy-from-env/-/proxy-from-env-1.1.0.tgz#e102f16ca355424865755d2c9e8ea4f24d58c3e2"
   integrity sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==
 
-"prytaneum-typings@https://github.com/c2c-project/prytaneum-typings#v1.0.0-alpha.83":
+"prytaneum-typings@https://github.com/c2c-project/prytaneum-typings#ca3f190d1765f43dc68f68e0283add36b88697ee":
   version "1.0.0"
-  resolved "https://github.com/c2c-project/prytaneum-typings#b78a1ee77c2fcdb137d456e65ac0064e6bbe630b"
+  resolved "https://github.com/c2c-project/prytaneum-typings#ca3f190d1765f43dc68f68e0283add36b88697ee"
   dependencies:
     "@types/faker" "^4.1.4"
     "@types/mongodb" "^3.5.32"
     "@types/node" "^14.14.6"
-    faker "https://github.com/marak/Faker.js#v5.1.0"
+    faker "https://github.com/DevelopmentByDavid/faker.js#delete-stuff"
 
 psl@^1.1.28:
   version "1.8.0"
