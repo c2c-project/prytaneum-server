@@ -10,7 +10,7 @@ import { TownhallParams, RatingParams } from '../types';
 const router = Router();
 
 router.put<TownhallParams, void, RatingForm, RatingParams>(
-    '/:townhallId/rating',
+    '/:townhallId/ratings',
     makeJoiMiddleware({
         body: Joi.object(ratingValidationObject),
     }),
