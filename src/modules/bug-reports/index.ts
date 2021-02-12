@@ -1,8 +1,9 @@
 import { ObjectID } from 'mongodb';
 import type { User } from 'prytaneum-typings';
+import createHttpError from 'http-errors';
 
 import { useCollection } from 'db';
-import { makeMeta } from 'modules/common';
+import { makeMeta, makeUpdatedBy } from 'modules/common';
 
 const numberOfDocumentsPerPage = 10;
 /**
@@ -10,24 +11,35 @@ const numberOfDocumentsPerPage = 10;
  * @param {string} description - Description of the bug report
  * @param {string} townhallId - Id of the townhall session where the bug occurred
  * @param {User} user - Represents the submitter of the bug report
+ * @returns Void promise
  * @throws {Error} If unable to insert the bug report
- * @returns MongoDB promise
  */
 export async function createBugReport(
     description: string,
     townhallId: string,
     user: User
 ) {
+    const { createdAt, createdBy, updatedAt, updatedBy } = makeMeta(user);
     const { insertedCount } = await useCollection('BugReports', (BugReports) =>
         BugReports.insertOne({
             description,
             resolved: false,
             replies: [],
             townhallId: new ObjectID(townhallId),
-            meta: makeMeta(user), // what's wrong?
+            meta: {
+                createdAt,
+                updatedAt,
+                updatedBy: {
+                    ...updatedBy,
+                    _id: new ObjectID(updatedBy._id),
+                },
+                createdBy: {
+                    ...createdBy,
+                    _id: new ObjectID(createdBy._id),
+                },
+            },
         })
     );
-
     if (insertedCount === 0) throw new Error('Unable to create bug report');
 }
 
@@ -36,45 +48,54 @@ export async function createBugReport(
  * @param {number} page - Page number to return. If the page number exceeds the number of available pages, 0 reports are returned
  * @param {boolean} sortByDate - Sort by date order. True for ascending. False for descending
  * @param {boolean} resolved - Resolved status of reports to retrieve
- * @returns {Promise<Bug[]>} - promise that will produce an array of bug reports
+ * @returns {Promise} - promise that will produce an array of bug reports and the total count of bug reports in the database
  */
-export function getBugReports(
+export async function getBugReports(
     page: number,
     sortByDate: boolean,
     resolved?: boolean
 ) {
     const resolvedQuery = typeof resolved === 'boolean' ? { resolved } : {};
-
-    return useCollection('BugReports', (BugReports) =>
+    const totalCount = await useCollection('BugReports', (BugReports) =>
+        BugReports.countDocuments(resolvedQuery)
+    );
+    const bugReports = await useCollection('BugReports', (BugReports) =>
         BugReports.find(resolvedQuery)
             .sort({ date: sortByDate ? 1 : -1 })
             .skip(page > 0 ? numberOfDocumentsPerPage * (page - 1) : 0)
             .limit(numberOfDocumentsPerPage)
             .toArray()
     );
+    return { bugReports, totalCount };
 }
 
 /**
- * @description Retrieves at most 10 bug reports from a specific submitter, depending on the page number
+ * @description Retrieves at most 10 bug reports from a specific user, depending on the page number
  * @param {number} page - Page number to return. If the page number exceeds the number of available pages, 0 reports are returned
  * @param {boolean} sortByDate - Sort by date order. True for ascending. False for descending
- * @param {string} submitterId - Id of the submitter
- * @returns {Promise<BugReport[]>} - Promise that will produce an array of bug reports
+ * @param {string} userId - Id of the user
+ * @returns {Promise} - Promise that will produce an array of bug reports and the total count of bug reports submitted by the user
  */
-export function getBugReportsBySubmitter(
+export async function getBugReportsByUser(
     page: number,
     sortByDate: boolean,
-    submitterId: string
+    userId: string
 ) {
-    return useCollection('BugReports', (BugReports) =>
+    const totalCount = await useCollection('BugReports', (BugReports) =>
+        BugReports.countDocuments({
+            'meta.createdBy._id': new ObjectID(userId),
+        })
+    );
+    const bugReports = await useCollection('BugReports', (BugReports) =>
         BugReports.find({
-            'meta.createdBy._id': new ObjectID(submitterId),
+            'meta.createdBy._id': new ObjectID(userId),
         })
             .sort({ date: sortByDate ? 1 : -1 })
             .skip(page > 0 ? numberOfDocumentsPerPage * (page - 1) : 0)
             .limit(numberOfDocumentsPerPage)
             .toArray()
     );
+    return { bugReports, totalCount };
 }
 
 /**
@@ -90,73 +111,67 @@ export function getBugReportById(_id: string) {
 
 /**
  * @description Updates the description of a bug report specified by its unique Id
- * @param {string} _id - Id of the bug report to update
+ * @param {string} reportId - Id of the bug report to update
  * @param {string} newDescription - New description of the bug report
+ * @returns {Promise} Void promise
  * @throws {Error} If unable to update the specified bug report
  */
-export async function updateBugReport(_id: string, newDescription: string) {
+export async function updateBugReport(
+    reportId: string,
+    newDescription: string
+) {
     const { upsertedCount } = await useCollection('BugReports', (BugReports) =>
         BugReports.updateOne(
-            { _id: new ObjectID(_id) },
+            { _id: new ObjectID(reportId) },
             { $set: { description: newDescription } }
         )
     );
-
     if (upsertedCount === 0) throw new Error('Unable to update bug report');
 }
 
 /**
  * @description Deletes a bug report by Id
- * @param {string} _id - Id of the bug report to delete
+ * @param {string} reportId - Id of the feedback report to delete
+ * @returns {Promise} Void promise
+ * @throws {Error} If specified feedback report to delete does not exist
  */
-export function deleteBugReport(_id: string) {
-    return useCollection('BugReports', (BugReports) =>
-        BugReports.deleteOne({ _id: new ObjectID(_id) })
+export async function deleteBugReport(reportId: string) {
+    const { deletedCount } = await useCollection('BugReports', (BugReports) =>
+        BugReports.deleteOne({ _id: new ObjectID(reportId) })
     );
+    if (deletedCount === 0) throw createHttpError(404, 'Bug report not found');
 }
-
-// /**
-//  * @description Returns the total count of reports in the feedback-reports collection
-//  * @param {boolean} resolved Function counts reports that match this resolved status
-//  * @returns total count of feedback reports
-//  */
-// export const getNumberOfFeedbackReports = (
-//     resolved?: boolean
-// ): Promise<number> => {
-//     const resolvedQuery = typeof resolved === 'boolean' ? { resolved } : {};
-//     return Collections.FeedbackReport().countDocuments(resolvedQuery);
-// };
-
-// /**
-//  * @description Returns the count of feedback reports submitted by a specific user
-//  * @param {string} submitterId - Id of user
-//  * @returns count of feedback reports
-//  */
-// export const getNumberOfFeedbackReportsBySubmitter = (
-//     submitterId: string
-// ): Promise<number> => {
-//     return Collections.FeedbackReport().countDocuments({ submitterId });
-// };
 
 /**
  * @description Sets the resolved attribute of a bug report to the new resolved status provided
- * @param {string} _id - Id of the report
+ * @param {string} reportId - Id of the report
  * @param {boolean} newResolvedStatus - new resolved status
- * @returns Mongodb promise
- * @throws {Error} If unable to update the status of the specified bug report
+ * @param {User} user - User object of updater
+ * @returns {Promise} Void promise
+ * @throws {Error} If unable to update the status of the specified feedback report
  */
-
 export async function updateResolvedStatus(
-    _id: string,
-    newResolvedStatus: boolean
+    reportId: string,
+    newResolvedStatus: boolean,
+    user: User
 ) {
+    const {
+        updatedAt,
+        updatedBy: { _id, name },
+    } = makeUpdatedBy(user);
     const { upsertedCount } = await useCollection('BugReports', (BugReports) =>
         BugReports.updateOne(
-            { _id: new ObjectID(_id) },
-            { $set: { resolved: newResolvedStatus } }
+            { _id: new ObjectID(reportId) },
+            {
+                $set: {
+                    resolved: newResolvedStatus,
+                    'meta.updatedAt': updatedAt,
+                    'meta.updatedBy._id': new ObjectID(_id),
+                    'meta.updatedBy.name': name,
+                },
+            }
         )
     );
-
     if (upsertedCount === 0)
         throw new Error('Unable to update resolved status of bug report');
 }
@@ -164,19 +179,19 @@ export async function updateResolvedStatus(
 /**
  * @description Adds a reply to bug a report
  * @param {Object} user - User object of the replier
- * @param {string} _id - Id of the report
+ * @param {string} reportId - Id of the report
  * @param {string} replyContent - Content of the reply
- * @returns Mongodb promise
- * @throws {Error} If unable to push the new reply to the array of replies of the specified report
+ * @returns Void promise
+ * @throws {Error} If unable to add reply to bug report
  */
 export async function replyToBugReport(
     user: User,
-    _id: string,
+    reportId: string,
     replyContent: string
 ) {
     const { upsertedCount } = await useCollection('BugReports', (BugReports) =>
         BugReports.updateOne(
-            { _id: new ObjectID(_id) },
+            { _id: new ObjectID(reportId) },
             {
                 $push: {
                     replies: {
@@ -192,7 +207,6 @@ export async function replyToBugReport(
             }
         )
     );
-
     if (upsertedCount === 0)
         throw new Error('Unable to reply to the bug report');
 }
