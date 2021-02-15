@@ -15,7 +15,7 @@ const addRating = async (
             updatedAt: new Date(),
         },
         ratings: rating.values,
-        feedback: rating.feedback
+        feedback: rating.feedback,
     };
     const doc = await useCollection('Ratings', (Ratings) => {
         // return Ratings.findOneAndUpdate(filter, update, options);
@@ -25,7 +25,7 @@ const addRating = async (
 };
 
 const getRatings = async (townhallId: string): Promise<Rating<ObjectId>> => {
-    const filter = { townhallId: new ObjectId(townhallId) };
+    const filter = { meta: { townhallId: new ObjectId(townhallId) } };
     const doc = await useCollection('Ratings', (Ratings) => {
         return Ratings.findOne(filter);
     });
@@ -35,5 +35,5 @@ const getRatings = async (townhallId: string): Promise<Rating<ObjectId>> => {
 
 export default {
     addRating,
-    getRatings
+    getRatings,
 };
