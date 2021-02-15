@@ -13,8 +13,6 @@ const addRating = async (
             townhallId: new ObjectId(townhallId),
             createdAt: new Date(),
             updatedAt: new Date(),
-            createdBy: rating.userId,
-            updatedBy: rating.userId
         },
         ratings: rating.values,
         feedback: rating.feedback
