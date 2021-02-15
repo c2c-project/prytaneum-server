@@ -1,6 +1,19 @@
-import { MongoClient, Db, Collection, ObjectId, ClientSession, TransactionOptions } from 'mongodb';
+import {
+    MongoClient,
+    Db,
+    Collection,
+    ObjectId,
+    ClientSession,
+    TransactionOptions,
+} from 'mongodb';
 import makeDebug from 'debug';
-import type { User, Townhall, Question, ChatMessage, InviteLink } from 'prytaneum-typings';
+import type {
+    User,
+    Townhall,
+    Question,
+    ChatMessage,
+    InviteLink,
+} from 'prytaneum-typings';
 
 import config from 'config/mongo';
 
@@ -10,12 +23,14 @@ const { url, dbName } = config;
 
 const mongoClient = new MongoClient(url, {
     useUnifiedTopology: true,
-    poolSize: 25,
 });
 
 export async function connect() {
     info(`Attempting database connection to ${url}`);
-    if (!mongoClient.isConnected()) return mongoClient.connect().finally(() => info('Successfully connected'));
+    if (!mongoClient.isConnected())
+        return mongoClient
+            .connect()
+            .finally(() => info('Successfully connected'));
     info('Mongo client is already connected');
     return mongoClient;
 }
@@ -28,7 +43,7 @@ export async function wrapDb<T>(cb: DbCallback<T>) {
     return cb(db);
 }
 
-export interface CollectionMap {
+interface CollectionMap {
     Users: User<ObjectId>;
     Townhalls: Townhall<ObjectId>;
     Questions: Question<ObjectId>;
@@ -40,7 +55,9 @@ export async function useCollection<T extends keyof CollectionMap, U>(
     name: T,
     cb: (c: Collection<CollectionMap[T]>) => U
 ): Promise<U> {
-    const coll = await wrapDb((db): Collection<CollectionMap[T]> => db.collection(name));
+    const coll = await wrapDb(
+        (db): Collection<CollectionMap[T]> => db.collection(name)
+    );
     return cb(coll);
 }
 

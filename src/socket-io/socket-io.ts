@@ -1,14 +1,20 @@
 /* eslint-disable max-classes-per-file */
 import { Server, Namespace, Socket } from 'socket.io';
 import { ObjectId } from 'mongodb';
-import type { Subscriptions as SocketIOEvents } from 'prytaneum-typings';
+import type { SocketIOEvents } from 'prytaneum-typings';
 import env from 'config/env';
 
 type ServerEmits = SocketIOEvents<ObjectId>;
 declare class PrytaneumNamespace extends Namespace {
-    emit<T extends keyof ServerEmits>(event: T, payload: ServerEmits[T]): boolean;
+    emit<T extends keyof ServerEmits>(
+        event: T,
+        payload: ServerEmits[T]
+    ): boolean;
     to(to: string): PrytaneumNamespace;
-    on<T extends keyof ClientEmits, U extends (arg: ClientEmits[T]) => void>(event: T, listener: U): this;
+    on<T extends keyof ClientEmits, U extends (arg: ClientEmits[T]) => void>(
+        event: T,
+        listener: U
+    ): this;
 }
 
 class PrytaneumSocketIO extends Server {
@@ -16,19 +22,31 @@ class PrytaneumSocketIO extends Server {
         return super.emit(event, payload);
     }
 
-    on<T extends keyof ClientEmits, U extends (arg: ClientEmits[T]) => void>(event: T, listener: U) {
+    on<T extends keyof ClientEmits, U extends (arg: ClientEmits[T]) => void>(
+        event: T,
+        listener: U
+    ) {
         return super.on(event, listener);
     }
 
-    once<T extends keyof ClientEmits, U extends (arg: ClientEmits[T]) => void>(event: T, listener: U) {
+    once<T extends keyof ClientEmits, U extends (arg: ClientEmits[T]) => void>(
+        event: T,
+        listener: U
+    ) {
         return super.once(event, listener);
     }
 
-    removeListener<T extends keyof ClientEmits, U extends (arg: ClientEmits[T]) => void>(event: T, listener: U) {
+    removeListener<
+        T extends keyof ClientEmits,
+        U extends (arg: ClientEmits[T]) => void
+    >(event: T, listener: U) {
         return super.removeListener(event, listener);
     }
 
-    addListener<T extends keyof ClientEmits, U extends (arg: ClientEmits[T]) => void>(event: T, listener: U) {
+    addListener<
+        T extends keyof ClientEmits,
+        U extends (arg: ClientEmits[T]) => void
+    >(event: T, listener: U) {
         return super.addListener(event, listener);
     }
 

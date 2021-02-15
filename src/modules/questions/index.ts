@@ -8,14 +8,14 @@ import { makeMeta } from 'modules/common';
 // import isModerator from 'utils/isModerator';
 
 // declaration merging
-// declare module 'lib/events' {
-//     interface EventMap {
-//         'create-question': Question<ObjectId>;
-//         'update-question': Question<ObjectId>;
-//         'delete-question': Question<ObjectId>;
-//         'moderate-question': Question<ObjectId>;
-//     }
-// }
+declare module 'lib/events' {
+    interface EventMap {
+        'create-question': Question<ObjectId>;
+        'update-question': Question<ObjectId>;
+        'delete-question': Question<ObjectId>;
+        'moderate-question': Question<ObjectId>;
+    }
+}
 
 // TODO: replies as a subcollection
 
@@ -45,7 +45,12 @@ export async function getQuestion(questionId: string, townhallId: string) {
     return doc;
 }
 
-export async function updateQuestion(questionId: string, townhallId: string, userId: ObjectId, form: QuestionForm) {
+export async function updateQuestion(
+    questionId: string,
+    townhallId: string,
+    userId: ObjectId,
+    form: QuestionForm
+) {
     const { value } = await useCollection('Questions', (Questions) =>
         Questions.findOneAndUpdate(
             {
@@ -68,10 +73,14 @@ export async function updateQuestion(questionId: string, townhallId: string, use
     );
     // probably fails if the user is not the owner
     if (!value) throw createHttpError(401, 'Unable to update question');
-    else events.emit('Questions', { type: 'update', data: value });
+    else events.emit('update-question', value);
 }
 
-export async function deleteQuestion(questionId: string, townhallId: string, userId: ObjectId) {
+export async function deleteQuestion(
+    questionId: string,
+    townhallId: string,
+    userId: ObjectId
+) {
     const _id = new ObjectId(questionId);
     const { value } = await useCollection('Questions', (Questions) =>
         Questions.findOneAndDelete({
@@ -81,10 +90,14 @@ export async function deleteQuestion(questionId: string, townhallId: string, use
         })
     );
     if (!value) throw createHttpError(401, 'You must be the owner');
-    else events.emit('Questions', { type: 'delete', data: value });
+    else events.emit('delete-question', value);
 }
 
-export async function moderateQuestion(townhallId: string, questionId: string, visibility: VisibilityState) {
+export async function moderateQuestion(
+    townhallId: string,
+    questionId: string,
+    visibility: VisibilityState
+) {
     const { value } = await useCollection('Questions', (Questions) =>
         Questions.findOneAndUpdate(
             {
@@ -93,56 +106,62 @@ export async function moderateQuestion(townhallId: string, questionId: string, v
             },
             {
                 $set: { visibility },
-            },
-            {
-                returnOriginal: false,
             }
         )
     );
     if (!value) throw createHttpError(404, 'Unable to find question');
 }
 
-export async function createQuestion(form: QuestionForm, townhallId: string, user: User<ObjectId>) {
+export async function createQuestion(
+    form: QuestionForm,
+    townhallId: string,
+    user: User<ObjectId>
+) {
     let quote: Question<ObjectId> | null = null;
     if (form.quoteId) quote = await getQuestion(form.quoteId, townhallId);
 
-    const { insertedCount, ops } = await useCollection('Questions', (Questions) =>
-        Questions.insertOne({
-            meta: {
-                townhallId: new ObjectID(townhallId),
-                ...makeMeta(user),
-            },
-            question: form.question,
-            state: '', // initial state is always empty
-            likes: [],
-            aiml: {
-                labels: [],
-            },
-            visibility: 'visible',
-            replies: [],
-            quote,
-        })
+    const { insertedCount, ops } = await useCollection(
+        'Questions',
+        (Questions) =>
+            Questions.insertOne({
+                meta: {
+                    townhallId: new ObjectID(townhallId),
+                    ...makeMeta(user),
+                },
+                question: form.question,
+                state: '', // initial state is always empty
+                likes: [],
+                aiml: {
+                    labels: [],
+                },
+                visibility: 'visible',
+                replies: [],
+                quote,
+            })
     );
     if (insertedCount === 0) throw new Error('Unable to create question');
-    else events.emit('Questions', { type: 'create', data: ops[0] });
+    else events.emit('create-question', ops[0]);
 }
 
-export async function likeQuestion(questionId: string, townhallId: string, userId: ObjectId) {
-    const { value: updatedQuestion } = await useCollection('Questions', (Questions) =>
-        Questions.findOneAndUpdate(
-            {
-                _id: new ObjectID(questionId),
-                'meta.townhallId': new ObjectID(townhallId),
-            },
-            {
-                $addToSet: {
-                    likes: userId,
+export async function likeQuestion(
+    questionId: string,
+    townhallId: string,
+    userId: ObjectId
+) {
+    const { matchedCount, modifiedCount } = await useCollection(
+        'Questions',
+        (Questions) =>
+            Questions.updateOne(
+                {
+                    _id: new ObjectID(questionId),
+                    'meta.townhallId': new ObjectID(townhallId),
                 },
-            },
-            {
-                returnOriginal: false,
-            }
-        )
+                {
+                    $addToSet: {
+                        likes: userId,
+                    },
+                }
+            )
     );
     // TODO: delete this
     await useCollection('Townhalls', (Townhalls) =>
@@ -162,29 +181,36 @@ export async function likeQuestion(questionId: string, townhallId: string, userI
     );
     // DELETE ABOVE
 
-    if (!updatedQuestion) throw createHttpError(404, 'Unable to find question');
-    // if (modifiedCount === 0)
-    // prettier is dumb https://github.com/prettier/prettier/issues/973
-    // throw createHttpError(409, "You've already liked this question!");
-    events.emit('Questions', { type: 'update', data: updatedQuestion });
+    if (matchedCount === 0) throw createHttpError(404);
+    if (modifiedCount === 0)
+        // prettier is dumb https://github.com/prettier/prettier/issues/973
+        throw createHttpError(409, "You've already liked this question!");
+    events.emit('playlist-like-add', {
+        questionId,
+        townhallId,
+        userId: userId.toHexString(),
+    });
 }
 
-export async function deleteLike(questionId: string, townhallId: string, userId: ObjectId) {
-    const { value: updatedQuestion } = await useCollection('Questions', (Questions) =>
-        Questions.findOneAndUpdate(
-            {
-                _id: new ObjectID(questionId),
-                'meta.townhallId': new ObjectID(townhallId),
-            },
-            {
-                $pull: {
-                    likes: userId,
+export async function deleteLike(
+    questionId: string,
+    townhallId: string,
+    userId: ObjectId
+) {
+    const { matchedCount, modifiedCount } = await useCollection(
+        'Questions',
+        (Questions) =>
+            Questions.updateOne(
+                {
+                    _id: new ObjectID(questionId),
+                    'meta.townhallId': new ObjectID(townhallId),
                 },
-            },
-            {
-                returnOriginal: false,
-            }
-        )
+                {
+                    $pull: {
+                        likes: userId,
+                    },
+                }
+            )
     );
 
     // TODO: delete this
@@ -205,12 +231,19 @@ export async function deleteLike(questionId: string, townhallId: string, userId:
     );
     // DELETE ABOVE
 
-    if (!updatedQuestion) throw createHttpError(404);
-    // if (modifiedCount === 0)
-    // prettier is dumb https://github.com/prettier/prettier/issues/973
-    // throw createHttpError(409, "You've already unliked this question! (or never liked it)");
+    if (matchedCount === 0) throw createHttpError(404);
+    if (modifiedCount === 0)
+        // prettier is dumb https://github.com/prettier/prettier/issues/973
+        throw createHttpError(
+            409,
+            "You've already unliked this question! (or never liked it)"
+        );
 
     // TODO: let clients know/emit that there is a new like
     // if (modifiedCount === 1)
-    events.emit('Questions', { type: 'update', data: updatedQuestion });
+    events.emit('playlist-like-remove', {
+        questionId,
+        townhallId,
+        userId: userId.toHexString(),
+    });
 }

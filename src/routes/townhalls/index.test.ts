@@ -2,7 +2,14 @@ import express from 'express';
 import request from 'supertest';
 import faker from 'faker';
 import { ObjectID } from 'mongodb';
-import { TownhallForm, Townhall, makeTownhallForm, makeUser, makeTownhall, User } from 'prytaneum-typings';
+import {
+    TownhallForm,
+    Townhall,
+    makeTownhallForm,
+    makeUser,
+    makeTownhall,
+    User,
+} from 'prytaneum-typings';
 
 import * as DB from 'db/mongo';
 import jwt from 'lib/jwt';
@@ -108,7 +115,6 @@ describe('/townhalls', () => {
             collectionSpy.mockResolvedValueOnce({
                 insertedCount: 1,
                 insertedId: new ObjectID(),
-                ops: [makeTownhall()],
             });
 
             // jwt spy for requireLogin()
@@ -138,7 +144,6 @@ describe('/townhalls', () => {
             collectionSpy.mockResolvedValueOnce({
                 insertedCount: 1,
                 insertedId: new ObjectID(),
-                ops: [makeTownhall()],
             });
 
             // jwt spy for requireLogin()
@@ -209,7 +214,10 @@ describe('/townhalls', () => {
             jwtSpy.mockResolvedValueOnce(user);
 
             // make the request
-            const { status } = await request(app).post('/').type('form').send(townhallForm);
+            const { status } = await request(app)
+                .post('/')
+                .type('form')
+                .send(townhallForm);
 
             // expectations
             expect(status).toStrictEqual(401);
@@ -251,10 +259,9 @@ describe('/townhalls', () => {
             collectionSpy.mockResolvedValueOnce(townhall);
 
             // make the request
-            const { status, body } = (await request(app).get(`/${new ObjectID().toHexString()}`)) as {
-                status: number;
-                body: Townhall;
-            };
+            const { status, body } = (await request(app).get(
+                `/${new ObjectID().toHexString()}`
+            )) as { status: number; body: Townhall };
 
             // expectations
             expect(status).toStrictEqual(200);
@@ -267,10 +274,9 @@ describe('/townhalls', () => {
             collectionSpy.mockResolvedValueOnce(townhall);
 
             // make the request
-            const { status, body } = (await request(app).get(`/${faker.random.alphaNumeric(6)}`)) as {
-                status: number;
-                body: Townhall;
-            };
+            const { status, body } = (await request(app).get(
+                `/${faker.random.alphaNumeric(6)}`
+            )) as { status: number; body: Townhall };
 
             // expectations
             expect(status).toStrictEqual(400);

@@ -36,39 +36,34 @@ chatNamespace.on('connection', (socket: Socket) => {
     void socket.join(townhallId);
 });
 
-events.on('ChatMessages', (payload) => {
-    const { townhallId } = payload.data.meta;
-    chatNamespace.to(townhallId.toHexString()).emit('ChatMessages', { type: payload.type, payload: payload.data });
+events.on('create-chat-message', (chatMessage) => {
+    const { townhallId } = chatMessage.meta;
+    chatNamespace.to(townhallId.toString()).emit('chat-message-state', {
+        type: 'create-chat-message',
+        payload: chatMessage,
+    });
 });
 
-// events.on('create-chat-message', (chatMessage) => {
-//     const { townhallId } = chatMessage.meta;
-//     chatNamespace.to(townhallId.toString()).emit('chat-message-state', {
-//         type: 'create-chat-message',
-//         payload: chatMessage,
-//     });
-// });
+events.on('update-chat-message', (chatMessage) => {
+    const { townhallId } = chatMessage.meta;
+    chatNamespace.to(townhallId.toString()).emit('chat-message-state', {
+        type: 'update-chat-message',
+        payload: chatMessage,
+    });
+});
 
-// events.on('update-chat-message', (chatMessage) => {
-//     const { townhallId } = chatMessage.meta;
-//     chatNamespace.to(townhallId.toString()).emit('chat-message-state', {
-//         type: 'update-chat-message',
-//         payload: chatMessage,
-//     });
-// });
+events.on('delete-chat-message', (chatMessage) => {
+    const { townhallId } = chatMessage.meta;
+    chatNamespace.to(townhallId.toString()).emit('chat-message-state', {
+        type: 'delete-chat-message',
+        payload: chatMessage,
+    });
+});
 
-// events.on('delete-chat-message', (chatMessage) => {
-//     const { townhallId } = chatMessage.meta;
-//     chatNamespace.to(townhallId.toString()).emit('chat-message-state', {
-//         type: 'delete-chat-message',
-//         payload: chatMessage,
-//     });
-// });
-
-// events.on('moderate-chat-message', (chatMessage) => {
-//     const { townhallId } = chatMessage.meta;
-//     chatNamespace.to(townhallId.toString()).emit('chat-message-state', {
-//         type: 'moderate-chat-message',
-//         payload: chatMessage,
-//     });
-// });
+events.on('moderate-chat-message', (chatMessage) => {
+    const { townhallId } = chatMessage.meta;
+    chatNamespace.to(townhallId.toString()).emit('chat-message-state', {
+        type: 'moderate-chat-message',
+        payload: chatMessage,
+    });
+});
