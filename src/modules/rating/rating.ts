@@ -8,11 +8,20 @@ const addRating = async (
     rating: RatingForm,
     townhallId: string
 ): Promise<void> => {
-    const filter = { townhallId: new ObjectId(townhallId) };
-    const update = { $push: { ratings: rating } };
-    const options = { upsert: true, returnOriginal: true };
+    const ratingDoc = {
+        meta: {
+            townhallId: new ObjectId(townhallId),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            createdBy: rating.userId,
+            updatedBy: rating.userId
+        },
+        ratings: rating.values,
+        feedback: rating.feedback
+    };
     const doc = await useCollection('Ratings', (Ratings) => {
-        return Ratings.findOneAndUpdate(filter, update, options);
+        // return Ratings.findOneAndUpdate(filter, update, options);
+        return Ratings.insertOne(ratingDoc);
     });
     if (!doc) throw createHttpError(404, 'Townhall doc not found');
 };
