@@ -87,8 +87,7 @@ export async function nextQuestion(townhallId: string) {
             }
         )
     );
-    if (matchedCount === 0)
-        throw createHttpError(404, 'Unable to find townhall');
+    if (matchedCount === 0) throw createHttpError(404, 'Unable to find townhall');
     events.emit('playlist-queue-next', townhallId);
 }
 
@@ -105,8 +104,7 @@ export async function previousQuestion(townhallId: string) {
             }
         )
     );
-    if (matchedCount === 0)
-        throw createHttpError(404, 'Unable to find townhall');
+    if (matchedCount === 0) throw createHttpError(404, 'Unable to find townhall');
     events.emit('playlist-queue-previous', townhallId);
 }
 
@@ -114,10 +112,7 @@ export async function previousQuestion(townhallId: string) {
  * NOTE: There's a small race condition to where if the user updates the question and the update finishes as
  * the moderator clicks add to queue but w/e
  */
-export async function addQuestionToQueue(
-    townhallId: string,
-    questionId: string
-) {
+export async function addQuestionToQueue(townhallId: string, questionId: string) {
     // TODO: notify the user that there is a duplictae detected on the frontend if there is one
     // $addToSet does not guarantee order when it matters here
     const question = await useCollection('Questions', (Questions) =>
@@ -127,44 +122,30 @@ export async function addQuestionToQueue(
         })
     );
     if (!question) throw createHttpError(404, 'Unable to find question');
-    const { matchedCount, modifiedCount } = await useCollection(
-        'Townhalls',
-        (Townhalls) =>
-            Townhalls.updateOne(
-                { _id: new ObjectID(townhallId) },
-                { $addToSet: { 'state.playlist.queue': question } }
-            )
+    const { matchedCount, modifiedCount } = await useCollection('Townhalls', (Townhalls) =>
+        Townhalls.updateOne({ _id: new ObjectID(townhallId) }, { $addToSet: { 'state.playlist.queue': question } })
     );
-    if (matchedCount === 0)
-        throw createHttpError(404, 'Unable to find townhall');
-    if (modifiedCount === 0)
-        throw createHttpError(409, 'This question is already in the queue');
+    if (matchedCount === 0) throw createHttpError(404, 'Unable to find townhall');
+    if (modifiedCount === 0) throw createHttpError(409, 'This question is already in the queue');
 
     events.emit('playlist-queue-add', question);
 }
 
-export async function removeQuestionFromQueue(
-    townhallId: string,
-    questionId: string
-) {
-    const { matchedCount, modifiedCount } = await useCollection(
-        'Townhalls',
-        (Townhalls) =>
-            Townhalls.updateOne(
-                { _id: new ObjectID(townhallId) },
-                {
-                    $pull: {
-                        'state.playlist.queue': {
-                            _id: { $eq: new ObjectID(questionId) },
-                        },
+export async function removeQuestionFromQueue(townhallId: string, questionId: string) {
+    const { matchedCount, modifiedCount } = await useCollection('Townhalls', (Townhalls) =>
+        Townhalls.updateOne(
+            { _id: new ObjectID(townhallId) },
+            {
+                $pull: {
+                    'state.playlist.queue': {
+                        _id: { $eq: new ObjectID(questionId) },
                     },
-                }
-            )
+                },
+            }
+        )
     );
-    if (matchedCount === 0)
-        throw createHttpError(404, 'Unable to find townhall');
-    if (modifiedCount === 0)
-        throw createHttpError(409, 'This question is not in the queue');
+    if (matchedCount === 0) throw createHttpError(404, 'Unable to find townhall');
+    if (modifiedCount === 0) throw createHttpError(409, 'This question is not in the queue');
 
     events.emit('playlist-queue-remove', { questionId, townhallId });
 }
@@ -173,73 +154,62 @@ export async function removeQuestionFromQueue(
  * changes the queue order
  */
 export async function updateQueue(townhallId: string, queue: Question[]) {
-    const { matchedCount } = await useCollection('Townhalls', (Townhalls) =>
-        Townhalls.updateOne(
+    const { value } = await useCollection('Townhalls', (Townhalls) =>
+        Townhalls.findOneAndUpdate(
             { _id: new ObjectID(townhallId) },
             {
                 $set: {
                     'state.playlist.queue': queue,
                 },
+            },
+            {
+                returnOriginal: false,
             }
         )
     );
-    if (matchedCount === 0)
-        throw createHttpError(404, 'Unable to find townhall');
+    if (!value) throw createHttpError(404, 'Unable to find townhall');
 
     events.emit('playlist-queue-order', queue);
+    return value;
 }
 
-export async function addQuestionToList(
-    townhallId: string,
-    questionId: string
-) {
+export async function addQuestionToList(townhallId: string, questionId: string) {
     const question = await useCollection('Questions', (Questions) =>
         Questions.findOne({ _id: new ObjectID(questionId) })
     );
     if (!question) throw createHttpError(404, 'Unable to find question');
 
-    const { matchedCount, modifiedCount } = await useCollection(
-        'Townhalls',
-        (Townhalls) =>
-            Townhalls.updateOne(
-                { _id: new ObjectID(townhallId) },
-                {
-                    $addToSet: {
-                        'state.playlist.list': question,
-                    },
-                }
-            )
+    const { matchedCount, modifiedCount } = await useCollection('Townhalls', (Townhalls) =>
+        Townhalls.updateOne(
+            { _id: new ObjectID(townhallId) },
+            {
+                $addToSet: {
+                    'state.playlist.list': question,
+                },
+            }
+        )
     );
-    if (matchedCount === 0)
-        throw createHttpError(404, 'Unable to find townhall');
-    if (modifiedCount === 0)
-        throw createHttpError(409, 'This question is already part of the list');
+    if (matchedCount === 0) throw createHttpError(404, 'Unable to find townhall');
+    if (modifiedCount === 0) throw createHttpError(409, 'This question is already part of the list');
 
     events.emit('playlist-add', question);
 }
 
-export async function removeQuestionFromList(
-    townhallId: string,
-    questionId: string
-) {
-    const { matchedCount, modifiedCount } = await useCollection(
-        'Townhalls',
-        (Townhalls) =>
-            Townhalls.updateOne(
-                { _id: new ObjectID(townhallId) },
-                {
-                    $pull: {
-                        'state.playlist.list': {
-                            _id: { $eq: new ObjectID(questionId) },
-                        },
+export async function removeQuestionFromList(townhallId: string, questionId: string) {
+    const { matchedCount, modifiedCount } = await useCollection('Townhalls', (Townhalls) =>
+        Townhalls.updateOne(
+            { _id: new ObjectID(townhallId) },
+            {
+                $pull: {
+                    'state.playlist.list': {
+                        _id: { $eq: new ObjectID(questionId) },
                     },
-                }
-            )
+                },
+            }
+        )
     );
-    if (matchedCount === 0)
-        throw createHttpError(404, 'Unable to find townhall');
-    if (modifiedCount === 0)
-        throw createHttpError(409, 'This question is not in the list');
+    if (matchedCount === 0) throw createHttpError(404, 'Unable to find townhall');
+    if (modifiedCount === 0) throw createHttpError(409, 'This question is not in the list');
 
     events.emit('playlist-remove', { townhallId, questionId });
 }
