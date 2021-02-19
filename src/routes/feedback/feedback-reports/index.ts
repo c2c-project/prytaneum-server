@@ -2,12 +2,15 @@
 import { Router } from 'express';
 import Joi from 'joi';
 import { ObjectId } from 'mongodb';
-import type { FeedbackReportForm, FeedbackReport } from 'prytaneum-typings';
+import type {
+    FeedbackReportForm,
+    FeedbackReport,
+    ReportReplyForm,
+} from 'prytaneum-typings';
 
 import {
     createFeedbackReport,
     deleteFeedbackReport,
-    getFeedbackReportById,
     getFeedbackReports,
     getFeedbackReportsByUser,
     replyToFeedbackReport,
@@ -44,7 +47,7 @@ router.get<
     ReportQueryParams,
     RequireLoginLocals
 >(
-    '/feedback-reports',
+    '/',
     requireLogin(),
     makeJoiMiddleware({ query: Joi.object(getFeedbackReportQueries) }),
     makeEndpoint(async (req, res) => {
@@ -60,7 +63,7 @@ router.get<
 );
 
 /**
- * gets the list of of all feedback reports, caller must have admin permission
+ * gets a list of of all feedback reports, caller must have admin permission
  */
 router.get<
     Express.EmptyParams,
@@ -98,7 +101,8 @@ router.post<
     }),
     makeEndpoint(async (req, res) => {
         const { description } = req.body;
-        await createFeedbackReport(description, req.results.user);
+        const { user } = req.results;
+        await createFeedbackReport(description, user);
         res.sendStatus(200);
     })
 );
@@ -114,11 +118,10 @@ const validateFeedbackReportParams = makeJoiMiddleware({
  * validates all report id params that are exactly /:reportId
  */
 router.use('/:reportId', validateFeedbackReportParams);
-
 router.use('/:reportId/*', validateFeedbackReportParams);
 
 /**
- * updates a particular feedback form (only the form fields)
+ * updates a feedback report (only the form fields)
  */
 router.put<ReportParams, void, FeedbackReportForm, void, RequireLoginLocals>(
     '/:reportId',
@@ -130,25 +133,19 @@ router.put<ReportParams, void, FeedbackReportForm, void, RequireLoginLocals>(
         const { description } = req.body;
         const { reportId } = req.params;
         const { user } = req.results;
-        const feedbackReport = await getFeedbackReportById(reportId);
-        if (feedbackReport && feedbackReport.meta.createdBy._id !== user._id)
-            throw Error('User is not owner of the report');
-        await updateFeedbackReport(reportId, description);
+        await updateFeedbackReport(reportId, description, user);
         res.sendStatus(200);
     })
 );
 
 /**
- * deletes a particular feedback report
+ * deletes a feedback report
  */
 router.delete<ReportParams, void, void, void, RequireLoginLocals>(
     '/:reportId',
+    requireLogin(),
     makeEndpoint(async (req, res) => {
         const { reportId } = req.params;
-        const { user } = req.results;
-        const feedbackReport = await getFeedbackReportById(reportId);
-        if (feedbackReport && feedbackReport.meta.createdBy._id !== user._id)
-            throw Error('User is not owner of the report');
         await deleteFeedbackReport(reportId);
         res.sendStatus(200);
     })
@@ -157,8 +154,6 @@ router.delete<ReportParams, void, void, void, RequireLoginLocals>(
 /**
  * updates the resolved status of a feedback report caller must have admin permission
  */
-
-// TODO: Update the meta object to be updated by admin caller of this endpoint
 router.put<
     ReportParams,
     void,
@@ -166,7 +161,7 @@ router.put<
     void,
     RequireLoginLocals
 >(
-    '/:reportId/update-resolved-status',
+    '/:reportId/resolved-status',
     requireLogin(['admin']),
     makeJoiMiddleware({
         body: Joi.object(updateResolvedStatusValidationObject),
@@ -176,25 +171,25 @@ router.put<
         const { resolvedStatus } = req.body;
         const { user } = req.results;
         await updateResolvedStatus(reportId, resolvedStatus, user);
-        res.status(200);
+        res.sendStatus(200);
     })
 );
 
 /**
- * adds a reply to particular feedback report. Caller must be an admin permission
+ * adds a reply to a feedback report. Caller must be an admin
  */
-router.put<ReportParams, void, { reply: string }, void, RequireLoginLocals>(
-    '/:reportId/reply-to',
+router.put<ReportParams, void, ReportReplyForm, void, RequireLoginLocals>(
+    '/:reportId/reply',
     requireLogin(['admin']),
     makeJoiMiddleware({
         body: Joi.object(replyValidationObject),
     }),
     makeEndpoint(async (req, res) => {
         const { reportId } = req.params;
-        const { reply } = req.body;
+        const { content } = req.body;
         const { user } = req.results;
-        await replyToFeedbackReport(user, reportId, reply);
-        res.status(200);
+        await replyToFeedbackReport(user, reportId, content);
+        res.sendStatus(200);
     })
 );
 
