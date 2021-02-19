@@ -2,6 +2,7 @@ export { default as makeJoiMiddleware } from './makeJoiMiddleware';
 export { default as makeEndpoint } from './makeEndpoint';
 export { default as errorHandler } from './errorHandler';
 export { default as requireLogin } from './requireLogin';
+export { default as requireModerator } from './requireModerator';
 export * from './requireLogin';
 export { default as notFound } from './notFound';
 

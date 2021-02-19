@@ -7,8 +7,11 @@
         "start": "nodemon -e ts,js,json --exec \"babel-node -x \".ts\" src\"",
         "test": "jest --watchAll --runInBand",
         "test:ci": "jest",
+        "typecheck": "tsc -p tsconfig.prod.json --noEmit",
         "prebuild": "tsc -p tsconfig.prod.json --emitDeclarationOnly",
-        "build": "babel src -d build --extensions \".ts\""
+        "build": "babel src -d build --extensions \".ts\"",
+        "lint": "eslint src/ --ext .ts,.tsx,.js,.jsx --max-warnings 0",
+        "initdb": "DEBUG=prytaneum:* babel-node -x \".ts\" src/db/init-db.mock.ts"
     },
     "dependencies": {
         "@babel/runtime": "^7.9.6",
@@ -25,7 +28,7 @@
         "nodemon": "^2.0.3",
         "passport": "^0.4.1",
         "passport-local": "^1.0.0",
-        "socket.io": "^3.0.1"
+        "socket.io": "^3.0.4"
     },
     "devDependencies": {
         "@babel/cli": "^7.10.1",
@@ -45,7 +48,7 @@
         "@types/jest": "^25.2.3",
         "@types/joi": "^14.3.4",
         "@types/jsonwebtoken": "^8.5.0",
-        "@types/mongodb": "^3.5.20",
+        "@types/mongodb": "^3.6.3",
         "@types/morgan": "^1.9.2",
         "@types/passport": "^1.0.4",
         "@types/passport-local": "^1.0.33",
@@ -60,13 +63,13 @@
         "eslint-config-prettier": "^6.4.0",
         "eslint-plugin-import": "^2.18.2",
         "eslint-plugin-jest": "^23.13.1",
-        "faker": "^4.1.0",
+        "faker": "https://github.com/marak/Faker.js#v5.1.0",
         "jest": "^26.0.1",
         "jsdoc": "^3.6.4",
+        "prytaneum-typings": "https://github.com/c2c-project/prytaneum-typings#v1.0.0-alpha.78",
         "socket.io-client": "^3.0.1",
         "superagent": "^5.2.2",
         "supertest": "^4.0.2",
-        "typescript": "^3.9.5",
-        "prytaneum-typings": "https://github.com/johan1505/prytaneum-typings.git#v1.0.0-alpha.78"
+        "typescript": "^3.9.5"
     }
 }

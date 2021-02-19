@@ -16,7 +16,7 @@ declare module 'lib/events' {
 export async function createChatMessage(
     message: string,
     townhallId: string,
-    user: User
+    user: User<ObjectId>
 ) {
     const { insertedCount, ops } = await useCollection(
         'ChatMessages',
@@ -47,7 +47,7 @@ export async function updateChatMessage(
     message: string,
     messageId: string,
     townhallId: string,
-    user: User
+    user: User<ObjectId>
 ) {
     const { value } = await useCollection('ChatMessages', (ChatMessages) =>
         ChatMessages.findOneAndUpdate(
@@ -77,7 +77,7 @@ export async function updateChatMessage(
 export async function deleteChatMessage(
     messageId: string,
     townhallId: string,
-    user: User
+    user: User<ObjectId>
 ) {
     const { value } = await useCollection('ChatMessages', (ChatMessages) =>
         ChatMessages.findOneAndDelete({
@@ -97,9 +97,16 @@ export async function deleteChatMessage(
  */
 export async function getChatMessages(townhallId: string) {
     return useCollection('ChatMessages', (ChatMessages) =>
-        ChatMessages.find({
-            'meta.townhallId': new ObjectID(townhallId),
-        }).toArray()
+        ChatMessages.find(
+            {
+                'meta.townhallId': new ObjectID(townhallId),
+            },
+            {
+                sort: {
+                    'meta.createdAt': 1,
+                },
+            }
+        ).toArray()
     );
 }
 

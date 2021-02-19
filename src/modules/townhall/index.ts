@@ -1,21 +1,27 @@
 import { ObjectID, ObjectId } from 'mongodb';
 import createHttpError from 'http-errors';
-import type { TownhallForm, TownhallSettings, User } from 'prytaneum-typings';
+import type {
+    TownhallForm,
+    TownhallSettings,
+    User,
+    TownhallState,
+} from 'prytaneum-typings';
 
 import events from 'lib/events';
 import { useCollection } from 'db';
 import { makeMeta } from 'modules/common';
-import { defaultSettings } from './defaults';
+import { defaultSettings, defaultState } from './defaults';
 
 declare module 'lib/events' {
     interface EventMap {
         'create-townhall': ObjectId;
         'start-townhall': string;
         'end-townhall': string;
+        'townhall-state': TownhallState<ObjectId>;
     }
 }
 
-export async function createTownhall(form: TownhallForm, user: User) {
+export async function createTownhall(form: TownhallForm, user: User<ObjectId>) {
     const { insertedCount, insertedId } = await useCollection(
         'Townhalls',
         (Townhalls) =>
@@ -23,15 +29,7 @@ export async function createTownhall(form: TownhallForm, user: User) {
                 form,
                 meta: makeMeta(user),
                 settings: defaultSettings,
-                state: {
-                    active: false,
-                    start: null,
-                    end: null,
-                    attendees: {
-                        current: 0,
-                        max: 0,
-                    },
-                },
+                state: defaultState,
             })
     );
 
@@ -40,12 +38,13 @@ export async function createTownhall(form: TownhallForm, user: User) {
     } else {
         throw new Error('Unable to create townhall');
     }
+    return insertedId;
 }
 
 export async function updateTownhall(
     form: TownhallForm,
     townhallId: string,
-    user: User
+    user: User<ObjectId>
 ) {
     if (!ObjectID.isValid(townhallId))
         throw createHttpError(400, 'Invalid townhall id provided');
@@ -75,6 +74,7 @@ export async function updateTownhall(
             401,
             'You must be the creator in order to modify'
         );
+    return townhallId;
 }
 
 // TODO: extend this to write to a trash collection rather than actually delete
@@ -97,9 +97,9 @@ export async function getTownhall(townhallId: string) {
 
 // TODO: limit this so it doesn't show all townhalls?
 // TODO: queries
-export function getTownhalls() {
+export function getTownhalls(userId: ObjectId) {
     return useCollection('Townhalls', (Townhalls) =>
-        Townhalls.find({}).toArray()
+        Townhalls.find({ 'meta.createdBy._id': userId }).toArray()
     );
 }
 
@@ -117,12 +117,13 @@ export async function getBillInfo(townhallId: string) {
 
 export async function configure(
     settings: TownhallSettings,
-    townhallId: string
+    townhallId: string,
+    userId: ObjectId
 ) {
     // TODO: sanity checks ex. enabled must be true within settings for other things to work even if set to true
     const { value } = await useCollection('Townhalls', (Townhalls) =>
         Townhalls.findOneAndUpdate(
-            { _id: new ObjectID(townhallId) },
+            { _id: new ObjectID(townhallId), 'meta.createdBy._id': userId },
             { $set: { settings } },
             { returnOriginal: false }
         )
@@ -130,7 +131,11 @@ export async function configure(
     if (!value) throw createHttpError(404, 'Unable to find townhall');
 }
 
-async function toggleTownhall(townhallId: string, user: User, active: boolean) {
+async function toggleTownhall(
+    townhallId: string,
+    user: User<ObjectId>,
+    active: boolean
+) {
     let startEndUpdate = {};
     if (active) startEndUpdate = { 'state.start': new Date() };
     else startEndUpdate = { 'state.end': new Date() };
@@ -148,14 +153,12 @@ async function toggleTownhall(townhallId: string, user: User, active: boolean) {
     return value;
 }
 
-// TODO: add active field to typings
-export async function startTownhall(townhallId: string, user: User) {
+export async function startTownhall(townhallId: string, user: User<ObjectId>) {
     const { _id } = await toggleTownhall(townhallId, user, true);
     events.emit('start-townhall', _id.toHexString());
 }
 
-// TODO: add active field to typings
-export async function endTownhall(townhallId: string, user: User) {
+export async function endTownhall(townhallId: string, user: User<ObjectId>) {
     const { _id } = await toggleTownhall(townhallId, user, false);
     events.emit('end-townhall', _id.toHexString());
 }

@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import Joi from 'joi';
 import { ErrorRequestHandler } from 'express';
 import createHttpError, { HttpError } from 'http-errors';
 import { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
@@ -7,6 +8,7 @@ import env from 'config/env';
 
 export default function errorHandler(): ErrorRequestHandler {
     return (err: Error | HttpError, req, res, next) => {
+        // error that will get sent to client
         let _err: HttpError;
 
         if (!(err instanceof HttpError)) {
@@ -25,8 +27,14 @@ export default function errorHandler(): ErrorRequestHandler {
                 _err = createHttpError(401, 'Expired token');
             else if (err instanceof JsonWebTokenError)
                 _err = createHttpError(401, 'Invalid token');
+            else if (err instanceof Joi.ValidationError) {
+                const { details } = err;
+                const { message } = details[0];
+                // TODO: more verbose error messages when interfacing with joi
+                _err = createHttpError(400, message);
+            }
         } else _err = err; // else it's already an http error so don't do anything
 
-        res.status(_err.status).send(_err);
+        res.status(_err.status).send(_err.message);
     };
 }
