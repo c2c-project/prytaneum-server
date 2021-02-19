@@ -8,5 +8,6 @@ const router = Router();
 
 router.use('/users', userRoutes);
 router.use('/townhalls', townhallRoutes);
-router.use('/feedback', feedbackRoutes);
+router.use(feedbackRoutes);
+
 export default router;
