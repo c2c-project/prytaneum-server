@@ -67,6 +67,6 @@
         "superagent": "^5.2.2",
         "supertest": "^4.0.2",
         "typescript": "^3.9.5",
-        "prytaneum-typings": "https://github.com/c2c-project/prytaneum-typings#v1.0.0-alpha.45"
+        "prytaneum-typings": "https://github.com/johan1505/prytaneum-typings.git#v1.0.0-alpha.78"
     }
 }
