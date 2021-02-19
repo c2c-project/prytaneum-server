@@ -15,6 +15,7 @@ import type {
     InviteLink,
     FeedbackReport,
     BugReport,
+    Notification
 } from 'prytaneum-typings';
 
 import config from 'config/mongo';
@@ -53,6 +54,7 @@ interface CollectionMap {
     InviteLinks: InviteLink<ObjectId>;
     FeedbackReports: FeedbackReport<ObjectId>;
     BugReports: BugReport<ObjectId>;
+    Notifications: Notification<ObjectId>;
 }
 
 export async function useCollection<T extends keyof CollectionMap, U>(
