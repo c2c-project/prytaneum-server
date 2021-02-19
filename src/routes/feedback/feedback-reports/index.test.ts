@@ -5,8 +5,9 @@ import { ObjectID } from 'mongodb';
 import {
     makeUser,
     makeFeedbackReportForm,
-    makeFeedbackReport,
-    FeedbackReport,
+    FeedbackReportForm,
+    makeReportReplyForm,
+    ReportReplyForm,
     User,
 } from 'prytaneum-typings';
 
@@ -17,7 +18,6 @@ import { errorHandler } from 'middlewares';
 import routes from '../index';
 
 const app = express();
-// jest.mock('mongodb');
 
 beforeAll(() => {
     jest.mock('db');
@@ -26,579 +26,785 @@ beforeAll(() => {
     app.use(errorHandler());
 });
 
-// afterAll(() => {
-//     jest.unmock('mongodb');
-// });
-
 afterEach(() => {
     jest.restoreAllMocks();
 });
 
 const user = makeUser() as User & { _id: string };
 const feedbackReportForm = makeFeedbackReportForm();
-const feedbackReport = makeFeedbackReport() as FeedbackReport & { _id: string };
+const endpoint = '/feedback-reports';
 
-describe('/feedback', () => {
-    describe('GET /feedback-reports', () => {
-        it('should have status 200', async () => {
-            // spy and mock useCollection
+describe('/feedback-reports', () => {
+    describe('GET /', () => {
+        it('should have status 400 since page and sortByDate query parameters are not provided', async () => {
             const collectionSpy = jest.spyOn(DB, 'useCollection');
-            // for the requireLogin middleware
-            collectionSpy.mockResolvedValueOnce({
-                ...user,
-            });
-
-            // for the townhalls query
-            collectionSpy.mockResolvedValueOnce([]);
-
-            // jwt spy for requireLogin()
+            collectionSpy.mockResolvedValueOnce(user);
             const jwtSpy = jest.spyOn(jwt, 'verify');
             jwtSpy.mockResolvedValueOnce(user);
-
-            // make the request
             const { status } = await request(app)
-                .get('/feedback-reports')
+                .get(`${endpoint}`)
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
-
-            // expectations
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 400 since sortByDate query parameter is not provided', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce(user);
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .get(`${endpoint}?page=0&sortByDate=`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 200', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce(user);
+            collectionSpy.mockResolvedValueOnce(0);
+            collectionSpy.mockResolvedValueOnce([]);
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .get(`${endpoint}?page=1&sortByDate=true`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
             expect(status).toStrictEqual(200);
         });
-
-        // it('should have status 401 if there is no login cookie', async () => {
-        //     // spy and mock useCollection
-        //     const collectionSpy = jest.spyOn(DB, 'useCollection');
-        //     // for the requireLogin middleware
-        //     collectionSpy.mockResolvedValueOnce(user);
-
-        //     // jwt spy for requireLogin()
-        //     const jwtSpy = jest.spyOn(jwt, 'verify');
-        //     jwtSpy.mockResolvedValueOnce(user);
-
-        //     // make the request
-        //     const { status } = await request(app).get('/');
-
-        //     // expectations
-        //     expect(status).toStrictEqual(401);
-        // });
-        // it('should have status 403 if organizer role is not present', async () => {
-        //     // spy and mock useCollection
-        //     const collectionSpy = jest.spyOn(DB, 'useCollection');
-        //     // for the requireLogin middleware
-        //     collectionSpy.mockResolvedValueOnce({ ...user, roles: [] });
-
-        //     // jwt spy for requireLogin()
-        //     const jwtSpy = jest.spyOn(jwt, 'verify');
-        //     jwtSpy.mockResolvedValueOnce(user);
-
-        //     // make the request
-        //     const { status } = await request(app)
-        //         .get('/')
-        //         .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
-
-        //     // expectations
-        //     expect(status).toStrictEqual(403);
-        // });
+        it('should have status 400 since negative page number is not allowed', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce(user);
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .get(`${endpoint}?page=-1&sortByDate=true`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 400 since negative big page number is not allowed', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce(user);
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .get(
+                    `${endpoint}?page=-135423652764745672745741235&sortByDate=true`
+                )
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 400 since infinite page number is invalid', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce(user);
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .get(
+                    `${endpoint}?page=${Number.POSITIVE_INFINITY}&sortByDate=false`
+                )
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 400 since string for page number is invalid', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce(user);
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .get(`${endpoint}?page=${faker.random.word()}&sortByDate=true`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 400 since random long string for page number is invalid', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce(user);
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .get(
+                    `${endpoint}?page=${faker.random.words(
+                        80
+                    )}&sortByDate=false`
+                )
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 400 since page number is not sent', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce(user);
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .get(`${endpoint}?page=&sortByDate=false`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 400 since random string for sortByDate parameter is invalid', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce(user);
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .get(`${endpoint}?page=1&sortByDate=${faker.random.word()}`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 401 since there is no login cookie', async () => {
+            const { status } = await request(app).get(
+                `${endpoint}?page=5&sortByDate=false)}`
+            );
+            expect(status).toStrictEqual(401);
+        });
     });
-    // describe('POST /', () => {
-    //     it('should have status 200 for an organizer', async () => {
-    //         // spy and mock useCollection
-    //         const collectionSpy = jest.spyOn(DB, 'useCollection');
-    //         // for the requireLogin middleware
-    //         collectionSpy.mockResolvedValueOnce({
-    //             ...user,
-    //             roles: ['organizer'],
-    //         });
-
-    //         // for the townhall insertion
-    //         collectionSpy.mockResolvedValueOnce({
-    //             insertedCount: 1,
-    //             insertedId: new ObjectID(),
-    //         });
-
-    //         // jwt spy for requireLogin()
-    //         const jwtSpy = jest.spyOn(jwt, 'verify');
-    //         jwtSpy.mockResolvedValueOnce(user);
-
-    //         // make the request
-    //         const { status } = await request(app)
-    //             .post('/')
-    //             .type('form')
-    //             .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
-    //             .send(feedbackReportForm);
-
-    //         // expectations
-    //         expect(status).toStrictEqual(200);
-    //     });
-    // it('should have status 200 for an admin', async () => {
-    //     // spy and mock useCollection
-    //     const collectionSpy = jest.spyOn(DB, 'useCollection');
-    //     // for the requireLogin middleware
-    //     collectionSpy.mockResolvedValueOnce({
-    //         ...user,
-    //         roles: ['admin'],
-    //     });
-
-    //     // for the townhall insertion
-    //     collectionSpy.mockResolvedValueOnce({
-    //         insertedCount: 1,
-    //         insertedId: new ObjectID(),
-    //     });
-
-    //     // jwt spy for requireLogin()
-    //     const jwtSpy = jest.spyOn(jwt, 'verify');
-    //     jwtSpy.mockResolvedValueOnce(user);
-
-    //     // make the request
-    //     const { status } = await request(app)
-    //         .post('/')
-    //         .type('form')
-    //         .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
-    //         .send(townhallForm);
-
-    //     // expectations
-    //     expect(status).toStrictEqual(200);
-    // });
-
-    // it('should have status 400 for an incomplete form', async () => {
-    //     // make form partial
-    //     const copy: Partial<TownhallForm> = { ...townhallForm };
-    //     delete copy.title;
-    //     // spy and mock useCollection
-    //     const collectionSpy = jest.spyOn(DB, 'useCollection');
-    //     // for the requireLogin middleware
-    //     collectionSpy.mockResolvedValueOnce({
-    //         ...user,
-    //         roles: ['admin'],
-    //     });
-
-    //     // for the townhall insertion
-    //     collectionSpy.mockResolvedValueOnce({
-    //         insertedCount: 1,
-    //         insertedId: new ObjectID(),
-    //     });
-
-    //     // jwt spy for requireLogin()
-    //     const jwtSpy = jest.spyOn(jwt, 'verify');
-    //     jwtSpy.mockResolvedValueOnce(user);
-
-    //     // make the request
-    //     const { status } = await request(app)
-    //         .post('/')
-    //         .type('form')
-    //         .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
-    //         .send(copy);
-
-    //     // expectations
-    //     expect(status).toStrictEqual(400);
-    // });
-
-    // it('should have status 401 if login cookie missing', async () => {
-    //     // spy and mock useCollection
-    //     const collectionSpy = jest.spyOn(DB, 'useCollection');
-    //     // for the requireLogin middleware
-    //     collectionSpy.mockResolvedValueOnce({
-    //         ...user,
-    //         roles: ['admin'],
-    //     });
-
-    //     // for the townhall insertion
-    //     collectionSpy.mockResolvedValueOnce({
-    //         insertedCount: 1,
-    //         insertedId: new ObjectID(),
-    //     });
-
-    //     // jwt spy for requireLogin()
-    //     const jwtSpy = jest.spyOn(jwt, 'verify');
-    //     jwtSpy.mockResolvedValueOnce(user);
-
-    //     // make the request
-    //     const { status } = await request(app)
-    //         .post('/')
-    //         .type('form')
-    //         .send(townhallForm);
-
-    //     // expectations
-    //     expect(status).toStrictEqual(401);
-    // });
-
-    // it('should have status 403 if insufficient permissions', async () => {
-    //     // spy and mock useCollection
-    //     const collectionSpy = jest.spyOn(DB, 'useCollection');
-    //     // for the requireLogin middleware
-    //     collectionSpy.mockResolvedValueOnce({ ...user, roles: [] });
-
-    //     // for the townhall insertion although it should never get to this point in this test
-    //     collectionSpy.mockResolvedValueOnce({
-    //         insertedCount: 1,
-    //         insertedId: new ObjectID(),
-    //     });
-
-    //     // jwt spy for requireLogin()
-    //     const jwtSpy = jest.spyOn(jwt, 'verify');
-    //     jwtSpy.mockResolvedValueOnce(user);
-
-    //     // make the request
-    //     const { status } = await request(app)
-    //         .post('/')
-    //         .type('form')
-    //         .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
-    //         .send(townhallForm);
-
-    //     // expectations
-    //     expect(status).toStrictEqual(403);
-    // });
-    // });
-
-    // describe('GET /:townhallId', () => {
-    //     it('should have status 200', async () => {
-    //         // spy and mock useCollection
-    //         const collectionSpy = jest.spyOn(DB, 'useCollection');
-    //         // for the townhall query
-    //         collectionSpy.mockResolvedValueOnce(townhall);
-
-    //         // make the request
-    //         const { status, body } = (await request(app).get(
-    //             `/${new ObjectID().toHexString()}`
-    //         )) as { status: number; body: Townhall };
-
-    //         // expectations
-    //         expect(status).toStrictEqual(200);
-    //         expect(JSON.stringify(body)).toEqual(JSON.stringify(townhall));
-    //     });
-    //     it('should have status 400 for an invalid townhall id', async () => {
-    //         // spy and mock useCollection
-    //         const collectionSpy = jest.spyOn(DB, 'useCollection');
-    //         // for the townhall query
-    //         collectionSpy.mockResolvedValueOnce(townhall);
-
-    //         // make the request
-    //         const { status, body } = (await request(app).get(
-    //             `/${faker.random.alphaNumeric(6)}`
-    //         )) as { status: number; body: Townhall };
-
-    //         // expectations
-    //         expect(status).toStrictEqual(400);
-    //         expect(JSON.stringify(body)).not.toEqual(JSON.stringify(townhall));
-    //     });
-    // });
-    // describe('PUT /:townhallId', () => {
-    //     it('should have status 200 for an admin', async () => {
-    //         // spy and mock useCollection
-    //         const collectionSpy = jest.spyOn(DB, 'useCollection');
-    //         // for the requireLogin middleware
-    //         collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
-    //         // for the townhall modification
-    //         collectionSpy.mockResolvedValueOnce({ modifiedCount: 1 });
-
-    //         // jwt spy for requireLogin()
-    //         const jwtSpy = jest.spyOn(jwt, 'verify');
-    //         jwtSpy.mockResolvedValueOnce(user);
-
-    //         // make the request
-    //         const { status } = await request(app)
-    //             .put(`/${new ObjectID().toHexString()}`)
-    //             .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
-    //             .type('form')
-    //             .send(townhallForm);
-
-    //         // expectations
-    //         expect(status).toStrictEqual(200);
-    //     });
-    //     it('should have status 200 for an organizer', async () => {
-    //         // spy and mock useCollection
-    //         const collectionSpy = jest.spyOn(DB, 'useCollection');
-    //         // for the requireLogin middleware
-    //         collectionSpy.mockResolvedValueOnce({
-    //             ...user,
-    //             roles: ['organizer'],
-    //         });
-    //         // for the townhall modification
-    //         collectionSpy.mockResolvedValueOnce({ modifiedCount: 1 });
-
-    //         // jwt spy for requireLogin()
-    //         const jwtSpy = jest.spyOn(jwt, 'verify');
-    //         jwtSpy.mockResolvedValueOnce(user);
-
-    //         // make the request
-    //         const { status } = await request(app)
-    //             .put(`/${new ObjectID().toHexString()}`)
-    //             .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
-    //             .type('form')
-    //             .send(townhallForm);
-
-    //         // expectations
-    //         expect(status).toStrictEqual(200);
-    //     });
-    //     it('should have status 400 for an incomplete townhall form', async () => {
-    //         // partial townhall
-    //         const partial: Partial<TownhallForm> = { ...townhallForm };
-    //         delete partial.title;
-
-    //         // spy and mock useCollection
-    //         const collectionSpy = jest.spyOn(DB, 'useCollection');
-    //         // for the requireLogin middleware
-    //         collectionSpy.mockResolvedValueOnce({
-    //             ...user,
-    //             roles: ['organizer'],
-    //         });
-
-    //         // jwt spy for requireLogin()
-    //         const jwtSpy = jest.spyOn(jwt, 'verify');
-    //         jwtSpy.mockResolvedValueOnce(user);
-
-    //         // make the request
-    //         const { status } = await request(app)
-    //             .put(`/${new ObjectID().toHexString()}`)
-    //             .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
-    //             .type('form')
-    //             .send(partial);
-
-    //         // expectations
-    //         expect(status).toStrictEqual(400);
-    //     });
-
-    //     it('should have status 400 for an invalid id', async () => {
-    //         // spy and mock useCollection
-    //         const collectionSpy = jest.spyOn(DB, 'useCollection');
-    //         // for the requireLogin middleware
-    //         collectionSpy.mockResolvedValueOnce({
-    //             ...user,
-    //             roles: ['organizer'],
-    //         });
-
-    //         // jwt spy for requireLogin()
-    //         const jwtSpy = jest.spyOn(jwt, 'verify');
-    //         jwtSpy.mockResolvedValueOnce(user);
-
-    //         // make the request
-    //         const { status } = await request(app)
-    //             .put(`/${faker.random.alphaNumeric(6)}`)
-    //             .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
-    //             .type('form')
-    //             .send(townhallForm);
-
-    //         // expectations
-    //         expect(status).toStrictEqual(400);
-    //     });
-    //     it('should have status 401 if the login cookie is missing', async () => {
-    //         // spy and mock useCollection
-    //         const collectionSpy = jest.spyOn(DB, 'useCollection');
-    //         // for the requireLogin middleware
-    //         collectionSpy.mockResolvedValueOnce({
-    //             ...user,
-    //             roles: ['organizer'],
-    //         });
-    //         // for the townhall modification
-    //         collectionSpy.mockResolvedValueOnce({ modifiedCount: 1 });
-
-    //         // jwt spy for requireLogin()
-    //         const jwtSpy = jest.spyOn(jwt, 'verify');
-    //         jwtSpy.mockResolvedValueOnce(user);
-
-    //         // make the request
-    //         const { status } = await request(app)
-    //             .put(`/${new ObjectID().toHexString()}`)
-    //             .type('form')
-    //             .send(townhallForm);
-
-    //         // expectations
-    //         expect(status).toStrictEqual(401);
-    //     });
-    //     it('should have status 401 for a non-owner', async () => {
-    //         // spy and mock useCollection
-    //         const collectionSpy = jest.spyOn(DB, 'useCollection');
-    //         // for the requireLogin middleware
-    //         collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
-    //         // for the townhall modification
-    //         collectionSpy.mockResolvedValueOnce({ modifiedCount: 0 });
-
-    //         // jwt spy for requireLogin()
-    //         const jwtSpy = jest.spyOn(jwt, 'verify');
-    //         jwtSpy.mockResolvedValueOnce(user);
-
-    //         // make the request
-    //         const { status } = await request(app)
-    //             .put(`/${new ObjectID().toHexString()}`)
-    //             .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
-    //             .type('form')
-    //             .send(townhallForm);
-
-    //         // expectations
-    //         expect(status).toStrictEqual(401);
-    //     });
-    //     it('should have status 403 for a user without the necessary roles', async () => {
-    //         // spy and mock useCollection
-    //         const collectionSpy = jest.spyOn(DB, 'useCollection');
-    //         // for the requireLogin middleware
-    //         collectionSpy.mockResolvedValueOnce({ ...user, roles: [] });
-    //         // for the townhall modification
-    //         collectionSpy.mockResolvedValueOnce({ modifiedCount: 1 });
-
-    //         // jwt spy for requireLogin()
-    //         const jwtSpy = jest.spyOn(jwt, 'verify');
-    //         jwtSpy.mockResolvedValueOnce(user);
-
-    //         // make the request
-    //         const { status } = await request(app)
-    //             .put(`/${new ObjectID().toHexString()}`)
-    //             .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
-    //             .type('form')
-    //             .send(townhallForm);
-
-    //         // expectations
-    //         expect(status).toStrictEqual(403);
-    //     });
-    // });
-
-    // describe('DELETE /:townhallId', () => {
-    //     it('should have status 200 for an organizer', async () => {
-    //         // spy and mock useCollection
-    //         const collectionSpy = jest.spyOn(DB, 'useCollection');
-    //         // for the requireLogin middleware
-    //         collectionSpy.mockResolvedValueOnce({
-    //             ...user,
-    //             roles: ['organizer'],
-    //         });
-    //         // for the townhall deletion
-    //         collectionSpy.mockResolvedValueOnce({ deletedCount: 1 });
-
-    //         // jwt spy for requireLogin()
-    //         const jwtSpy = jest.spyOn(jwt, 'verify');
-    //         jwtSpy.mockResolvedValueOnce(user);
-
-    //         // make the request
-    //         const { status } = await request(app)
-    //             .delete(`/${new ObjectID().toHexString()}`)
-    //             .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
-
-    //         // expectations
-    //         expect(status).toStrictEqual(200);
-    //     });
-
-    //     it('should have status 200 for an admin', async () => {
-    //         // spy and mock useCollection
-    //         const collectionSpy = jest.spyOn(DB, 'useCollection');
-    //         // for the requireLogin middleware
-    //         collectionSpy.mockResolvedValueOnce({
-    //             ...user,
-    //             roles: ['admin'],
-    //         });
-    //         // for the townhall deletion
-    //         collectionSpy.mockResolvedValueOnce({ deletedCount: 1 });
-
-    //         // jwt spy for requireLogin()
-    //         const jwtSpy = jest.spyOn(jwt, 'verify');
-    //         jwtSpy.mockResolvedValueOnce(user);
-
-    //         // make the request
-    //         const { status } = await request(app)
-    //             .delete(`/${new ObjectID().toHexString()}`)
-    //             .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
-
-    //         // expectations
-    //         expect(status).toStrictEqual(200);
-    //     });
-
-    //     it('should have status 400 if the id is invalid', async () => {
-    //         // spy and mock useCollection
-    //         const collectionSpy = jest.spyOn(DB, 'useCollection');
-    //         // for the requireLogin middleware
-    //         collectionSpy.mockResolvedValueOnce({
-    //             ...user,
-    //             roles: ['admin'],
-    //         });
-    //         // for the townhall deletion
-    //         collectionSpy.mockResolvedValueOnce({ deletedCount: 1 });
-
-    //         // jwt spy for requireLogin()
-    //         const jwtSpy = jest.spyOn(jwt, 'verify');
-    //         jwtSpy.mockResolvedValueOnce(user);
-
-    //         // make the request
-    //         const { status } = await request(app)
-    //             .delete(`/${faker.random.alphaNumeric(6)}`)
-    //             .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
-
-    //         // expectations
-    //         expect(status).toStrictEqual(400);
-    //     });
-
-    //     it('should have status 404 if the townhall is not found', async () => {
-    //         // spy and mock useCollection
-    //         const collectionSpy = jest.spyOn(DB, 'useCollection');
-    //         // for the requireLogin middleware
-    //         collectionSpy.mockResolvedValueOnce({
-    //             ...user,
-    //             roles: ['admin'],
-    //         });
-    //         // for the townhall deletion
-    //         collectionSpy.mockResolvedValueOnce({ deletedCount: 0 });
-
-    //         // jwt spy for requireLogin()
-    //         const jwtSpy = jest.spyOn(jwt, 'verify');
-    //         jwtSpy.mockResolvedValueOnce(user);
-
-    //         // make the request
-    //         const { status } = await request(app)
-    //             .delete(`/${new ObjectID().toHexString()}`)
-    //             .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
-
-    //         // expectations
-    //         expect(status).toStrictEqual(404);
-    //     });
-    // });
-    // describe('POST /:townhallId/start', () => {
-    //     it('should have status 200', async () => {
-    //         // spy and mock useCollection
-    //         const collectionSpy = jest.spyOn(DB, 'useCollection');
-    //         // for the requireLogin middleware
-    //         collectionSpy.mockResolvedValueOnce({
-    //             ...user,
-    //             roles: ['organizer'],
-    //         });
-
-    //         // for the townhall start modification
-    //         collectionSpy.mockResolvedValueOnce({
-    //             value: { ...townhall, _id: new ObjectID() },
-    //         });
-
-    //         // jwt spy for requireLogin()
-    //         const jwtSpy = jest.spyOn(jwt, 'verify');
-    //         jwtSpy.mockResolvedValueOnce(user);
-
-    //         // make the request
-    //         const { status } = await request(app)
-    //             .post(`/${townhall._id}/start`)
-    //             .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
-
-    //         // expectations
-    //         expect(status).toStrictEqual(200);
-    //     });
-    //     it('should have status 400 for invalid townhallId', async () => {
-    //         // spy and mock useCollection
-    //         const collectionSpy = jest.spyOn(DB, 'useCollection');
-    //         // for the requireLogin middleware
-    //         collectionSpy.mockResolvedValueOnce({
-    //             ...user,
-    //             roles: ['organizer'],
-    //         });
-
-    //         // for the townhall start modification
-    //         collectionSpy.mockResolvedValueOnce({
-    //             value: { ...townhall, _id: new ObjectID() },
-    //         });
-
-    //         // jwt spy for requireLogin()
-    //         const jwtSpy = jest.spyOn(jwt, 'verify');
-    //         jwtSpy.mockResolvedValueOnce(user);
-
-    //         // make the request
-    //         const { status } = await request(app)
-    //             .post(`/${faker.random.alphaNumeric(6)}/start`)
-    //             .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
-
-    //         // expectations
-    //         expect(status).toStrictEqual(400);
-    //     });
-    // });
+    describe(' GET /admin', () => {
+        it('should have status 401 since user object is not admin', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: [] });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app).get(
+                `${endpoint}/admin?page=10&sortByDate=true&resolved=true`
+            );
+            expect(status).toStrictEqual(401);
+        });
+        it('should have status 400 since all query parameters are not provided', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .get(`${endpoint}/admin`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 400 since sortByDate query parameter is not provided', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .get(`${endpoint}/admin?page=0&sortByDate=&resolved=false`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 400 since page query parameter is not provided', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .get(`${endpoint}/admin?page=&sortByDate=false&resolved=false`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 400 since resolved query parameter is not provided', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .get(`${endpoint}/admin?page=1&sortByDate=true&resolved=`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 200 with resolved true', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            collectionSpy.mockResolvedValueOnce(0);
+            collectionSpy.mockResolvedValueOnce([]);
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .get(`${endpoint}/admin?page=1&sortByDate=true&resolved=true`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+            expect(status).toStrictEqual(200);
+        });
+        it('should have status 200 with resolved false', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            collectionSpy.mockResolvedValueOnce(0);
+            collectionSpy.mockResolvedValueOnce([]);
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .get(`${endpoint}/admin?page=1&sortByDate=true&resolved=false`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+            expect(status).toStrictEqual(200);
+        });
+        it('should have status 400 since negative page number is not allowed', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .get(`${endpoint}/admin?page=-1&sortByDate=true&resolved=true`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 400 since negative big page number is not allowed', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .get(
+                    `${endpoint}/admin?page=-135423652764745672745741235&sortByDate=true&resolved=false`
+                )
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 400 since infinite page number is invalid', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .get(
+                    `${endpoint}/admin?page=${Number.POSITIVE_INFINITY}&sortByDate=false&resolved=true`
+                )
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 400 since string for page number is invalid', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .get(
+                    `${endpoint}/admin?page=${faker.random.word()}&sortByDate=true&resolved=true`
+                )
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 400 since random long string for page number is invalid', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .get(
+                    `${endpoint}/admin?page=${faker.random.words(
+                        80
+                    )}&sortByDate=false&resolved=true`
+                )
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 400 since random string for sortByDate parameter is invalid', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .get(
+                    `${endpoint}/admin?page=1&sortByDate=${faker.random.word()}&resolved=false`
+                )
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 400 since random string for resolved parameter is invalid', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .get(
+                    `${endpoint}/admin?page=1&sortByDate=false&resolved=${faker.random.word()}`
+                )
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 401 since there is no login cookie', async () => {
+            const { status } = await request(app).get(
+                `${endpoint}/admin?page=5&sortByDate=false)}`
+            );
+            expect(status).toStrictEqual(401);
+        });
+    });
+    describe('POST /', () => {
+        it('should have status 200', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce(user);
+            collectionSpy.mockResolvedValueOnce({
+                insertedCount: 1,
+            });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .post(endpoint)
+                .type('form')
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
+                .send(feedbackReportForm);
+            expect(status).toStrictEqual(200);
+        });
+        it('should have status 400 if creation of feedback report fails', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce(user);
+            collectionSpy.mockResolvedValueOnce({
+                insertedCount: 0,
+            });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .post(endpoint)
+                .type('form')
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
+                .send(feedbackReportForm);
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 400 for an incomplete form', async () => {
+            const copy: Partial<FeedbackReportForm> = { ...feedbackReportForm };
+            delete copy.description;
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce(user);
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .post(endpoint)
+                .type('form')
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
+                .send(copy);
+            expect(status).toStrictEqual(400);
+        });
+
+        it('should have status 401 since login cookie missing', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce(user);
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .post(endpoint)
+                .type('form')
+                .send(feedbackReportForm);
+            expect(status).toStrictEqual(401);
+        });
+        it('should have status 400 since feedback report data is not sent', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce(user);
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .post(endpoint)
+                .type('form')
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 400 since feedback report description is empty', async () => {
+            const copy: Partial<FeedbackReportForm> = { ...feedbackReportForm };
+            copy.description = '';
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce(user);
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .post(endpoint)
+                .type('form')
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
+                .send(copy);
+            expect(status).toStrictEqual(400);
+        });
+        it('Should have status 400 since number for description is invalid', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce(user);
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .post(endpoint)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
+                .send({ description: faker.random.number() });
+            expect(status).toStrictEqual(400);
+        });
+    });
+    describe('PUT /:reportId', () => {
+        it('should have status 200', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce(user);
+            collectionSpy.mockResolvedValueOnce({ modifiedCount: 1 });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .put(`${endpoint}/${new ObjectID().toHexString()}`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
+                .type('form')
+                .send(feedbackReportForm);
+            expect(status).toStrictEqual(200);
+        });
+        it('should have status 400 for an incomplete feedback report form', async () => {
+            const partial: Partial<FeedbackReportForm> = {
+                ...feedbackReportForm,
+            };
+            delete partial.description;
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce(user);
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .put(`${endpoint}/${new ObjectID().toHexString()}`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
+                .type('form')
+                .send(partial);
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 401 if the login cookie is missing', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce(user);
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .put(`${endpoint}/${new ObjectID().toHexString()}`)
+                .type('form')
+                .send(feedbackReportForm);
+            expect(status).toStrictEqual(401);
+        });
+
+        it('should have status 400 if update data is not sent', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce(user);
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .put(`${endpoint}/${new ObjectID().toHexString()}`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
+                .type('form');
+            expect(status).toStrictEqual(400);
+        });
+
+        it('should have status 400 if empty description is sent', async () => {
+            const partial: Partial<FeedbackReportForm> = {
+                ...feedbackReportForm,
+            };
+            partial.description = '';
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce(user);
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .put(`${endpoint}/${new ObjectID().toHexString()}`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
+                .type('form')
+                .send(partial);
+            expect(status).toStrictEqual(400);
+        });
+
+        it('should have status 400 if reportId provided is invalid', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce(user);
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .put(`${endpoint}/${faker.random.alphaNumeric(6)}`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
+                .type('form')
+                .send(feedbackReportForm);
+            expect(status).toStrictEqual(400);
+        });
+
+        it('should have status 401 if calling user is not owner of the report to update', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce(user);
+            collectionSpy.mockResolvedValueOnce({
+                modifiedCount: 0,
+            });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .put(`${endpoint}/${new ObjectID().toHexString()}`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
+                .type('form')
+                .send(feedbackReportForm);
+            expect(status).toStrictEqual(401);
+        });
+    });
+    describe('DELETE /:reportId', () => {
+        it('should have status 200', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce(user);
+            collectionSpy.mockResolvedValueOnce({ deletedCount: 1 });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .delete(`${endpoint}/${new ObjectID().toHexString()}`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+            expect(status).toStrictEqual(200);
+        });
+        it('should have status 400 if the id is invalid', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce(user);
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .delete(`${endpoint}/${faker.random.alphaNumeric(6)}`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 404 if the feedback report is not found', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce(user);
+            collectionSpy.mockResolvedValueOnce({ deletedCount: 0 });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .delete(`${endpoint}/${new ObjectID().toHexString()}`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+            expect(status).toStrictEqual(404);
+        });
+    });
+    describe('PUT /:reportId/resolved-status', () => {
+        it('should have status 200', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            collectionSpy.mockResolvedValueOnce({ modifiedCount: 1 });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .put(
+                    `${endpoint}/${new ObjectID().toHexString()}/resolved-status`
+                )
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
+                .send({ resolvedStatus: true });
+            expect(status).toStrictEqual(200);
+        });
+        it('should have status 400 for not sending a new resolved status', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .put(
+                    `${endpoint}/${new ObjectID().toHexString()}/resolved-status`
+                )
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 401 if the login cookie is missing', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .put(
+                    `${endpoint}/${new ObjectID().toHexString()}/resolved-status`
+                )
+                .send({ resolvedStatus: false });
+            expect(status).toStrictEqual(401);
+        });
+        it('should have status 403 if insufficient permissions', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: [] });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .put(
+                    `${endpoint}/${new ObjectID().toHexString()}/resolved-status`
+                )
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
+                .send({ resolvedStatus: true });
+            expect(status).toStrictEqual(403);
+        });
+        it('should have status 400 if resolved status is random string', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .put(
+                    `${endpoint}/${new ObjectID().toHexString()}/resolved-status`
+                )
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
+                .send({ resolvedStatus: faker.random.word() });
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 400 if resolved status is random number', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .put(
+                    `${endpoint}/${new ObjectID().toHexString()}/resolved-status`
+                )
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
+                .send({ resolvedStatus: faker.random.number() });
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 400 if resolved status is null', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .put(
+                    `${endpoint}/${new ObjectID().toHexString()}/resolved-status`
+                )
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
+                .send({ resolvedStatus: null });
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 400 if reportId provided is invalid', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .put(
+                    `${endpoint}/${faker.random.alphaNumeric(
+                        6
+                    )}/resolved-status`
+                )
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
+                .send({ resolvedStatus: true });
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 400 is it fails to update resolved status', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            collectionSpy.mockResolvedValueOnce({ modifiedCount: 0 });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .put(
+                    `${endpoint}/${new ObjectID().toHexString()}/resolved-status`
+                )
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
+                .send({ resolvedStatus: false });
+            expect(status).toStrictEqual(400);
+        });
+    });
+    describe('PUT /:reportId/reply', () => {
+        const reportReplyFrom = makeReportReplyForm();
+        it('should have status 200', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            collectionSpy.mockResolvedValueOnce({ modifiedCount: 1 });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .put(`${endpoint}/${new ObjectID().toHexString()}/reply`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
+                .type('form')
+                .send(reportReplyFrom);
+            expect(status).toStrictEqual(200);
+        });
+        it('should have status 400 for not sending a reply content', async () => {
+            const partialReplyForm: Partial<ReportReplyForm> = {
+                ...reportReplyFrom,
+            };
+            delete partialReplyForm.content;
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .put(`${endpoint}/${new ObjectID().toHexString()}/reply`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
+                .type('form')
+                .send(partialReplyForm);
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 400 for not sending a reply object', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .put(`${endpoint}/${new ObjectID().toHexString()}/reply`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
+                .type('form');
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 401 if the login cookie is missing', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .put(`${endpoint}/${new ObjectID().toHexString()}/reply`)
+                .type('form')
+                .send(reportReplyFrom);
+            expect(status).toStrictEqual(401);
+        });
+        it('should have status 403 if insufficient permissions', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: [] });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .put(`${endpoint}/${new ObjectID().toHexString()}/reply`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
+                .type('form')
+                .send(reportReplyFrom);
+            expect(status).toStrictEqual(403);
+        });
+        it('should have status 400 if reply is random boolean', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .put(`${endpoint}/${new ObjectID().toHexString()}/reply`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
+                .send({ content: faker.random.boolean() });
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 400 if reply is random number', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .put(`${endpoint}/${new ObjectID().toHexString()}/reply`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
+                .send({ content: faker.random.number() });
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 400 if reply is null', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .put(`${endpoint}/${new ObjectID().toHexString()}/reply`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
+                .type('form')
+                .send({ content: null });
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 400 if reportId provided is invalid', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .put(`${endpoint}/${faker.random.alphaNumeric(6)}/reply`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
+                .type('form')
+                .send(reportReplyFrom);
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 400 if reply is empty string', async () => {
+            const copyReplyForm = reportReplyFrom;
+            copyReplyForm.content = '';
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .put(`${endpoint}/${new ObjectID().toHexString()}/reply`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
+                .type('form')
+                .send(copyReplyForm);
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 400 is it fails to submit reply to feedback report', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            collectionSpy.mockResolvedValueOnce({ modifiedCount: 0 });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .put(`${endpoint}/${new ObjectID().toHexString()}/reply`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
+                .type('form')
+                .send(reportReplyFrom);
+            expect(status).toStrictEqual(400);
+        });
+    });
 });
