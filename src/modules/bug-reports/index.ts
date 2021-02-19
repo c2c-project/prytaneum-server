@@ -40,7 +40,9 @@ export async function createBugReport(
             },
         })
     );
-    if (insertedCount === 0) throw new Error('Unable to create bug report');
+
+    if (insertedCount === 0)
+        throw createHttpError(400, 'Unable to create bug report');
 }
 
 /**
@@ -66,6 +68,7 @@ export async function getBugReports(
             .limit(numberOfDocumentsPerPage)
             .toArray()
     );
+
     return { bugReports, totalCount };
 }
 
@@ -86,6 +89,7 @@ export async function getBugReportsByUser(
             'meta.createdBy._id': new ObjectID(userId),
         })
     );
+
     const bugReports = await useCollection('BugReports', (BugReports) =>
         BugReports.find({
             'meta.createdBy._id': new ObjectID(userId),
@@ -95,50 +99,67 @@ export async function getBugReportsByUser(
             .limit(numberOfDocumentsPerPage)
             .toArray()
     );
-    return { bugReports, totalCount };
-}
 
-/**
- * @description Retrieves one bug report by Id
- * @param {string} _id - Id of the bug report to return
- * @returns {Promise<BugReport | null>} - Promise that produces a bug report or null if no bug report was found in the collection
- */
-export function getBugReportById(_id: string) {
-    return useCollection('BugReports', (BugReports) =>
-        BugReports.findOne({ _id: new ObjectID(_id) })
-    );
+    return { bugReports, totalCount };
 }
 
 /**
  * @description Updates the description of a bug report specified by its unique Id
  * @param {string} reportId - Id of the bug report to update
  * @param {string} newDescription - New description of the bug report
+ * @param {User} user - User that made the request
  * @returns {Promise} Void promise
- * @throws {Error} If unable to update the specified bug report
+ * @throws {Error} If provided report id is invalid or if unable to update the specified bug report
  */
 export async function updateBugReport(
     reportId: string,
-    newDescription: string
+    newDescription: string,
+    user: User
 ) {
-    const { upsertedCount } = await useCollection('BugReports', (BugReports) =>
+    if (!ObjectID.isValid(reportId))
+        throw createHttpError(400, 'Invalid report id provided');
+
+    const { modifiedCount } = await useCollection('BugReports', (BugReports) =>
         BugReports.updateOne(
-            { _id: new ObjectID(reportId) },
-            { $set: { description: newDescription } }
+            {
+                _id: new ObjectID(reportId),
+                'meta.createdBy._id': new ObjectID(user._id),
+            },
+            {
+                $set: {
+                    'meta.updatedAt': new Date(),
+                    'meta.updatedBy': user,
+                    description: newDescription,
+                },
+            },
+            {
+                upsert: false,
+            }
         )
     );
-    if (upsertedCount === 0) throw new Error('Unable to update bug report');
+
+    if (modifiedCount === 0)
+        throw createHttpError(
+            401,
+            'You must be the creator in order to modify the bug report'
+        );
 }
 
+// TODO: extend this to write to a trash collection rather than actually delete
 /**
  * @description Deletes a bug report by Id
- * @param {string} reportId - Id of the feedback report to delete
+ * @param {string} reportId - Id of the bug report to delete
  * @returns {Promise} Void promise
- * @throws {Error} If specified feedback report to delete does not exist
+ * @throws {Error} If provided report id is invalid or if specified bug report to delete does not exist
  */
 export async function deleteBugReport(reportId: string) {
+    if (!ObjectID.isValid(reportId))
+        throw createHttpError(400, 'Invalid report id provided');
+
     const { deletedCount } = await useCollection('BugReports', (BugReports) =>
         BugReports.deleteOne({ _id: new ObjectID(reportId) })
     );
+
     if (deletedCount === 0) throw createHttpError(404, 'Bug report not found');
 }
 
@@ -148,48 +169,56 @@ export async function deleteBugReport(reportId: string) {
  * @param {boolean} newResolvedStatus - new resolved status
  * @param {User} user - User object of updater
  * @returns {Promise} Void promise
- * @throws {Error} If unable to update the status of the specified feedback report
+ * @throws {Error} If provided report id is invalid or if unable to update the status of the specified bug report
  */
 export async function updateResolvedStatus(
     reportId: string,
     newResolvedStatus: boolean,
     user: User
 ) {
-    const {
-        updatedAt,
-        updatedBy: { _id, name },
-    } = makeUpdatedBy(user);
-    const { upsertedCount } = await useCollection('BugReports', (BugReports) =>
+    if (!ObjectID.isValid(reportId))
+        throw createHttpError(400, 'Invalid report id provided');
+
+    const { modifiedCount } = await useCollection('BugReports', (BugReports) =>
         BugReports.updateOne(
             { _id: new ObjectID(reportId) },
             {
                 $set: {
+                    'meta.updatedAt': new Date(),
+                    'meta.updatedBy.by': user,
                     resolved: newResolvedStatus,
-                    'meta.updatedAt': updatedAt,
-                    'meta.updatedBy._id': new ObjectID(_id),
-                    'meta.updatedBy.name': name,
                 },
+            },
+            {
+                upsert: false,
             }
         )
     );
-    if (upsertedCount === 0)
-        throw new Error('Unable to update resolved status of bug report');
+
+    if (modifiedCount === 0)
+        throw createHttpError(
+            400,
+            'Could not update resolved status of bug report'
+        );
 }
 
 /**
  * @description Adds a reply to bug a report
  * @param {Object} user - User object of the replier
  * @param {string} reportId - Id of the report
- * @param {string} replyContent - Content of the reply
+ * @param {string} content - Content of the reply
  * @returns Void promise
- * @throws {Error} If unable to add reply to bug report
+ * @throws {Error} If provided report id is invalid or if unable to add reply to bug report
  */
 export async function replyToBugReport(
     user: User,
     reportId: string,
-    replyContent: string
+    content: string
 ) {
-    const { upsertedCount } = await useCollection('BugReports', (BugReports) =>
+    if (!ObjectID.isValid(reportId))
+        throw createHttpError(400, 'Invalid report id provided');
+
+    const { modifiedCount } = await useCollection('BugReports', (BugReports) =>
         BugReports.updateOne(
             { _id: new ObjectID(reportId) },
             {
@@ -197,16 +226,24 @@ export async function replyToBugReport(
                     replies: {
                         $each: [
                             {
-                                content: replyContent,
+                                content,
                                 meta: makeMeta(user),
                             },
                         ],
                         $sort: { repliedDate: 1 },
                     },
                 },
+                $set: {
+                    'meta.updatedAt': new Date(),
+                    'meta.updatedBy': user,
+                },
+            },
+            {
+                upsert: false,
             }
         )
     );
-    if (upsertedCount === 0)
-        throw new Error('Unable to reply to the bug report');
+
+    if (modifiedCount === 0)
+        throw createHttpError(400, 'Could not submit reply');
 }
