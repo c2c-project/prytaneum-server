@@ -7,6 +7,5 @@ export type ReportQueryParamsAdmin = ReportQueryParams & {
     resolved: 'true' | 'false';
 };
 
-export type ReportParams = { reportId: string };
-
+export type ReportParams = { reportId: string; townhallId: string };
 export type ReportsResult<T> = { reports: T[]; count: number };
