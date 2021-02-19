@@ -13,16 +13,17 @@ export const updateResolvedStatusValidationObject = {
 };
 
 export const replyValidationObject = {
-    reply: Joi.string().required(),
+    content: Joi.string().required(),
 };
 
-// TODO: Add more robust validation for query params.Right now they receive any strings. Or maybe that could  be handled in a global pagination middleware?
 export const getBugReportQueries = {
-    page: Joi.string().required(),
-    sortByDate: Joi.string().required(),
+    page: Joi.string()
+        .pattern(/^[0-9]+$/)
+        .required(),
+    sortByDate: Joi.string().valid('true', 'false').required(),
 };
 
 export const getBugReportQueriesAdmin = {
     ...getBugReportQueries,
-    resolved: Joi.string().required(),
+    resolved: Joi.string().valid('true', 'false').required(),
 };

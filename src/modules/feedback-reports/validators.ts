@@ -13,16 +13,17 @@ export const updateResolvedStatusValidationObject = {
 };
 
 export const replyValidationObject = {
-    reply: Joi.string().required(),
+    content: Joi.string().required(),
 };
 
-// TODO: Add more robust validation for query params
 export const getFeedbackReportQueries = {
-    page: Joi.string().required(),
-    sortByDate: Joi.string().required(),
+    page: Joi.string()
+        .pattern(/^[0-9]+$/)
+        .required(),
+    sortByDate: Joi.string().valid('true', 'false').required(),
 };
 
 export const getFeedbackReportQueriesAdmin = {
     ...getFeedbackReportQueries,
-    resolved: Joi.string().required(),
+    resolved: Joi.string().valid('true', 'false').required(),
 };
