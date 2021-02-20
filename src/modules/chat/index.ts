@@ -34,6 +34,7 @@ export async function createChatMessage(
                         name: user.name,
                     },
                     townhallId: new ObjectID(townhallId),
+                    isModerator: false
                 },
                 message,
                 visibility: 'visible',
