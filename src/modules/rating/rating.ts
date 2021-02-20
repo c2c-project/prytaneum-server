@@ -1,14 +1,16 @@
 import { ObjectId } from 'mongodb';
 import { useCollection } from 'db';
-import type { RatingForm, Rating } from 'prytaneum-typings';
+import type { RatingForm, Rating, Name } from 'prytaneum-typings';
 
 import createHttpError from 'http-errors';
 
 const addRating = async (
     rating: RatingForm,
-    townhallId: string
+    townhallId: string,
+    userId?: string,
+    userName?: Name
 ): Promise<void> => {
-    const ratingDoc = {
+    const ratingDoc: Pick<Rating<ObjectId>, 'meta' | 'ratings' | 'feedback'> = {
         meta: {
             townhallId: new ObjectId(townhallId),
             createdAt: new Date(),
@@ -17,20 +19,24 @@ const addRating = async (
         ratings: rating.values,
         feedback: rating.feedback,
     };
+    if (userId && userName) {
+        ratingDoc.meta.createdBy = { _id: userId, name: userName };
+        ratingDoc.meta.updatedBy = { _id: userId, name: userName };
+    }
     const doc = await useCollection('Ratings', (Ratings) => {
-        // return Ratings.findOneAndUpdate(filter, update, options);
         return Ratings.insertOne(ratingDoc);
     });
-    if (!doc) throw createHttpError(404, 'Townhall doc not found');
+    if (!doc) throw createHttpError(404, 'Error when adding rating');
 };
 
-const getRatings = async (townhallId: string): Promise<Rating<ObjectId>> => {
-    const filter = { meta: { townhallId: new ObjectId(townhallId) } };
-    const doc = await useCollection('Ratings', (Ratings) => {
-        return Ratings.findOne(filter);
+const getRatings = async (townhallId: string): Promise<Array<Rating<ObjectId>>> => {
+    const filter = { 'meta.townhallId': new ObjectId(townhallId) };
+    const cursor = await useCollection('Ratings', (Ratings) => {
+        return Ratings.find(filter);
     });
-    if (!doc) throw createHttpError(404, 'Townhall doc not found');
-    return doc;
+    if (!cursor || await cursor.count() === 0) throw createHttpError(404, 'Ratings not found');
+    const docs = await cursor.toArray();
+    return docs;
 };
 
 export default {

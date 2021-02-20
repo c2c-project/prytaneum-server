@@ -1,12 +1,16 @@
 import { Router } from 'express';
 import { ObjectId } from 'mongodb';
 import Joi from 'joi';
-import type { RatingForm, Rating } from 'prytaneum-typings';
+import makeDebug from 'debug';
+import type { RatingForm, Rating, User } from 'prytaneum-typings';
 import { ratingValidationObject } from 'modules/townhall/validators';
 import API from 'modules/rating';
+import JWT from 'lib/jwt';
 
-import { makeJoiMiddleware, makeEndpoint } from 'middlewares';
+import { makeJoiMiddleware, makeEndpoint, getCookies } from 'middlewares';
 import { TownhallParams, RatingParams } from '../types';
+
+const info = makeDebug('prytaneum:db');
 
 const router = Router();
 
@@ -17,12 +21,20 @@ router.put<TownhallParams, void, RatingForm, RatingParams>(
     }),
     makeEndpoint(async (req, res) => {
         const { townhallId } = req.params;
-        await API.addRating(req.body, townhallId);
+        const cookies = getCookies(req);
+        if (!cookies.jwt) {
+            await API.addRating(req.body, townhallId);
+        } else {
+            const { jwt } = cookies;
+            const { _id, name } = await JWT.verify<User>(jwt);
+            await API.addRating(req.body, townhallId, _id, name);
+        }
+
         res.status(200).send();
     })
 );
 
-router.get<TownhallParams, Rating<ObjectId>, void, void>(
+router.get<TownhallParams, Array<Rating<ObjectId>>, void, void>(
     '/:townhallId/ratings',
     makeEndpoint(async (req, res) => {
         const { townhallId } = req.params;
