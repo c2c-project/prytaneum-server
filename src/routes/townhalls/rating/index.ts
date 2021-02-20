@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { ObjectId } from 'mongodb';
 import Joi from 'joi';
-import makeDebug from 'debug';
 import type { RatingForm, Rating, User } from 'prytaneum-typings';
 import { ratingValidationObject } from 'modules/townhall/validators';
 import API from 'modules/rating';
@@ -9,8 +8,6 @@ import JWT from 'lib/jwt';
 
 import { makeJoiMiddleware, makeEndpoint, getCookies } from 'middlewares';
 import { TownhallParams, RatingParams } from '../types';
-
-const info = makeDebug('prytaneum:db');
 
 const router = Router();
 
