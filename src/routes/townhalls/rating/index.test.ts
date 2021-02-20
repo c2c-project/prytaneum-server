@@ -31,24 +31,28 @@ const townhall = makeTownhall();
 
 describe('index', () => {
     describe('ratings', () => {
-        describe('put request', () => {
+        describe('post request', () => {
             it('should accept valid data', async () => {
                 // spy and mock useCollection
                 const collectionSpy = jest.spyOn(DB, 'useCollection');
-                collectionSpy.mockResolvedValueOnce({});
+                collectionSpy.mockResolvedValueOnce({
+                    insertedCount: 1
+                });
 
                 const ratingForm = makeRatingForm();
 
                 // make the request
                 const { status } = await request(app)
-                    .put(`/${townhall._id}/ratings`)
+                    .post(`/${townhall._id}/ratings`)
                     .send(ratingForm);
                 expect(status).toStrictEqual(200);
             });
             it('should accept valid data & userId', async () => {
                 // spy and mock useCollection
                 const collectionSpy = jest.spyOn(DB, 'useCollection');
-                collectionSpy.mockResolvedValueOnce({});
+                collectionSpy.mockResolvedValueOnce({
+                    insertedCount: 1
+                });
 
                 const ratingForm = makeRatingForm();
 
@@ -58,7 +62,7 @@ describe('index', () => {
 
                 // make the request
                 const { status } = await request(app)
-                    .put(`/${townhall._id}/ratings`)
+                    .post(`/${townhall._id}/ratings`)
                     .set('Cookie', `jwt=${token}`)
                     .send(ratingForm);
                 expect(status).toStrictEqual(200);
@@ -66,7 +70,7 @@ describe('index', () => {
             it('should reject invalid formatted data', async () => {
                 // make the request
                 const { status } = await request(app)
-                    .put(`/${townhall._id}/ratings`)
+                    .post(`/${townhall._id}/ratings`)
                     .send({ invalid: '' });
                 expect(status).toStrictEqual(400);
             });
@@ -79,7 +83,22 @@ describe('index', () => {
 
                 // make the request
                 const { status } = await request(app)
-                    .put(`/${townhall._id}/ratings`)
+                    .post(`/${townhall._id}/ratings`)
+                    .send(ratingForm);
+                expect(status).toStrictEqual(500);
+            });
+            it('should have status 500 with a 0 db doc inserts', async () => {
+                // spy and mock useCollection
+                const collectionSpy = jest.spyOn(DB, 'useCollection');
+                collectionSpy.mockRejectedValue({
+                    insertedCount: 0
+                });
+
+                const ratingForm = makeRatingForm();
+
+                // make the request
+                const { status } = await request(app)
+                    .post(`/${townhall._id}/ratings`)
                     .send(ratingForm);
                 expect(status).toStrictEqual(500);
             });

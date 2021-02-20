@@ -11,7 +11,7 @@ import { TownhallParams, RatingParams } from '../types';
 
 const router = Router();
 
-router.put<TownhallParams, void, RatingForm, RatingParams>(
+router.post<TownhallParams, void, RatingForm, RatingParams>(
     '/:townhallId/ratings',
     makeJoiMiddleware({
         body: Joi.object(ratingValidationObject),
