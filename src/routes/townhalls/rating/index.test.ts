@@ -107,14 +107,11 @@ describe('index', () => {
             it('should accept valid data', async () => {
                 // spy and mock useCollection
                 const collectionSpy = jest.spyOn(DB, 'useCollection');
-                collectionSpy.mockResolvedValueOnce({
-                    count: () => {
-                        return 2;
-                    },
-                    toArray: () => {
-                        return [makeRating(), makeRating()];
-                    },
-                });
+                collectionSpy.mockResolvedValueOnce([
+                    makeRating(), 
+                    makeRating(),
+                    makeRating()
+                ]);
 
                 // make the request
                 const { status } = await request(app)

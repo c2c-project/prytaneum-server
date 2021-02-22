@@ -29,11 +29,9 @@ const addRating = async (
 
 const getRatings = async (townhallId: string): Promise<Array<Rating<ObjectId>>> => {
     const filter = { 'meta.townhallId': new ObjectId(townhallId) };
-    const cursor = await useCollection('Ratings', (Ratings) => {
-        return Ratings.find(filter);
+    return useCollection('Ratings', (Ratings) => {
+        return Ratings.find(filter).toArray();
     });
-    const docs = await cursor.toArray();
-    return docs;
 };
 
 export default {
