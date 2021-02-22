@@ -3,8 +3,7 @@ import Mailgun from 'mailgun-js';
 import jwt from 'jsonwebtoken';
 import createHttpError from 'http-errors';
 
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { NotificationMetaData } from 'prytaneum-typings/dist/notifications';
+import type { NotificationMetaData } from 'prytaneum-typings';
 import Email from 'lib/emails';
 import env from 'config/env';
 import notifications from 'modules/notifications';
