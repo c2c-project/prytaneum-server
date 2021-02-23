@@ -53,9 +53,6 @@ router.post(
  */
 router.post(
     '/logout',
-    (req, res, next) => {
-        next();
-    },
     makeEndpoint((req, res) => {
         res.clearCookie('jwt');
         res.sendStatus(200);
