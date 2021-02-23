@@ -6,18 +6,8 @@ import debug from 'debug';
 
 import env from 'config/env';
 import jwt from 'lib/jwt';
-import type {
-    User,
-    RegisterForm,
-    ClientSafeUser,
-    Roles,
-} from 'prytaneum-typings';
-import {
-    makeJoiMiddleware,
-    makeEndpoint,
-    requireLogin,
-    RequireLoginLocals,
-} from 'middlewares';
+import type { User, RegisterForm, ClientSafeUser, Roles } from 'prytaneum-typings';
+import { makeJoiMiddleware, makeEndpoint, requireLogin, RequireLoginLocals } from 'middlewares';
 import {
     registerUser,
     filterSensitiveData,
@@ -25,11 +15,7 @@ import {
     sendPasswordResetEmail,
     updatePassword,
 } from 'modules/user';
-import {
-    registerValidationObject,
-    emailValidationObject,
-    passwordValidationObject,
-} from 'modules/user/validators';
+import { registerValidationObject, emailValidationObject, passwordValidationObject } from 'modules/user/validators';
 import { getUsers, getUser, generateInviteLink } from 'modules/admin';
 import { makeObjectIdValidationObject } from 'utils/validators';
 import { ObjectId } from 'mongodb';
@@ -185,8 +171,7 @@ router.post<ResetPasswordParams, void, ResetPasswordBody>(
         const { token } = req.params;
         // TODO: different jwt verifies?
         const decodedJwt = await jwt.verify<Pick<User, '_id'>>(token);
-        if (!decodedJwt._id)
-            throw createHttpError(401, 'Invalid token provided');
+        if (!decodedJwt._id) throw createHttpError(401, 'Invalid token provided');
         await updatePassword(decodedJwt._id, password);
         res.sendStatus(200);
     })
@@ -221,19 +206,11 @@ router.get<Express.EmptyParams, User[], void, void, RequireLoginLocals>(
 );
 
 type UserParams = { userId: string };
-type Unpromise<T extends Promise<unknown>> = T extends Promise<infer U>
-    ? U
-    : never;
+type Unpromise<T extends Promise<unknown>> = T extends Promise<infer U> ? U : never;
 /**
  * gets a specific user
  */
-router.get<
-    UserParams,
-    Unpromise<ReturnType<typeof getUser>>,
-    void,
-    void,
-    RequireLoginLocals
->(
+router.get<UserParams, Unpromise<ReturnType<typeof getUser>>, void, void, RequireLoginLocals>(
     '/:userId',
     requireLogin(['admin']),
     makeJoiMiddleware({
@@ -253,13 +230,7 @@ router.get<
 /**
  * invites a user and allows them to have a particular role
  */
-router.post<
-    Express.EmptyParams,
-    { token: string },
-    { role: Roles },
-    void,
-    RequireLoginLocals
->(
+router.post<Express.EmptyParams, { token: string }, { role: Roles }, void, RequireLoginLocals>(
     '/invite',
     requireLogin(['admin']),
     makeJoiMiddleware({
