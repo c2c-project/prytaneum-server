@@ -13,6 +13,8 @@ declare module 'lib/events' {
         'start-townhall': string;
         'end-townhall': string;
         'townhall-state': TownhallState<ObjectId>;
+        'breakout-start': { townhallId: string; numRooms: number };
+        'breakout-end': { townhallId: string };
     }
 }
 
@@ -135,4 +137,12 @@ export async function startTownhall(townhallId: string, user: User<ObjectId>) {
 export async function endTownhall(townhallId: string, user: User<ObjectId>) {
     const { _id } = await toggleTownhall(townhallId, user, false);
     events.emit('end-townhall', _id.toHexString());
+}
+
+export function startBreakout(townhallId: string, numRooms: number) {
+    events.emit('breakout-start', { townhallId, numRooms });
+}
+
+export function endBreakout(townhallId: string) {
+    events.emit('breakout-end', { townhallId });
 }

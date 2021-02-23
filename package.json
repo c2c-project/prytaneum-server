@@ -66,7 +66,7 @@
         "faker": "https://github.com/DevelopmentByDavid/faker.js#delete-stuff",
         "jest": "^26.0.1",
         "jsdoc": "^3.6.4",
-        "prytaneum-typings": "https://github.com/c2c-project/prytaneum-typings#25e4d32617cccf3e7e2b816845aa19aa956db486",
+        "prytaneum-typings": "https://github.com/c2c-project/prytaneum-typings#692f1c711f4f9e0ef8dfb4d165079a75dce8683c",
         "socket.io-client": "^3.0.1",
         "superagent": "^5.2.2",
         "supertest": "^4.0.2",
