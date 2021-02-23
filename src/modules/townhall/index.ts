@@ -1,11 +1,6 @@
 import { ObjectID, ObjectId } from 'mongodb';
 import createHttpError from 'http-errors';
-import type {
-    TownhallForm,
-    TownhallSettings,
-    User,
-    TownhallState,
-} from 'prytaneum-typings';
+import type { TownhallForm, TownhallSettings, User, TownhallState } from 'prytaneum-typings';
 
 import events from 'lib/events';
 import { useCollection } from 'db';
@@ -22,15 +17,13 @@ declare module 'lib/events' {
 }
 
 export async function createTownhall(form: TownhallForm, user: User<ObjectId>) {
-    const { insertedCount, insertedId } = await useCollection(
-        'Townhalls',
-        (Townhalls) =>
-            Townhalls.insertOne({
-                form,
-                meta: makeMeta(user),
-                settings: defaultSettings,
-                state: defaultState,
-            })
+    const { insertedCount, insertedId } = await useCollection('Townhalls', (Townhalls) =>
+        Townhalls.insertOne({
+            form,
+            meta: makeMeta(user),
+            settings: defaultSettings,
+            state: defaultState,
+        })
     );
 
     if (insertedCount === 1) {
@@ -41,13 +34,8 @@ export async function createTownhall(form: TownhallForm, user: User<ObjectId>) {
     return insertedId;
 }
 
-export async function updateTownhall(
-    form: TownhallForm,
-    townhallId: string,
-    user: User<ObjectId>
-) {
-    if (!ObjectID.isValid(townhallId))
-        throw createHttpError(400, 'Invalid townhall id provided');
+export async function updateTownhall(form: TownhallForm, townhallId: string, user: User<ObjectId>) {
+    if (!ObjectID.isValid(townhallId)) throw createHttpError(400, 'Invalid townhall id provided');
     const { modifiedCount } = await useCollection('Townhalls', (Townhalls) =>
         Townhalls.updateOne(
             {
@@ -69,11 +57,7 @@ export async function updateTownhall(
     // assumption is that there is a valid townhall id, but if the request fails,
     // then it was probably due to the person not owning that townhall
     // but this could still fail due to an invalid townhall id, it is just much less likely
-    if (modifiedCount === 0)
-        throw createHttpError(
-            401,
-            'You must be the creator in order to modify'
-        );
+    if (modifiedCount === 0) throw createHttpError(401, 'You must be the creator in order to modify');
     return townhallId;
 }
 
@@ -98,9 +82,7 @@ export async function getTownhall(townhallId: string) {
 // TODO: limit this so it doesn't show all townhalls?
 // TODO: queries
 export function getTownhalls(userId: ObjectId) {
-    return useCollection('Townhalls', (Townhalls) =>
-        Townhalls.find({ 'meta.createdBy._id': userId }).toArray()
-    );
+    return useCollection('Townhalls', (Townhalls) => Townhalls.find({ 'meta.createdBy._id': userId }).toArray());
 }
 
 export async function getBillInfo(townhallId: string) {
@@ -115,11 +97,7 @@ export async function getBillInfo(townhallId: string) {
     return {};
 }
 
-export async function configure(
-    settings: TownhallSettings,
-    townhallId: string,
-    userId: ObjectId
-) {
+export async function configure(settings: TownhallSettings, townhallId: string, userId: ObjectId) {
     // TODO: sanity checks ex. enabled must be true within settings for other things to work even if set to true
     const { value } = await useCollection('Townhalls', (Townhalls) =>
         Townhalls.findOneAndUpdate(
@@ -131,11 +109,7 @@ export async function configure(
     if (!value) throw createHttpError(404, 'Unable to find townhall');
 }
 
-async function toggleTownhall(
-    townhallId: string,
-    user: User<ObjectId>,
-    active: boolean
-) {
+async function toggleTownhall(townhallId: string, user: User<ObjectId>, active: boolean) {
     let startEndUpdate = {};
     if (active) startEndUpdate = { 'state.start': new Date() };
     else startEndUpdate = { 'state.end': new Date() };
