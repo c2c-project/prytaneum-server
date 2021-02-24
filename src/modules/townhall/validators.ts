@@ -1,6 +1,5 @@
-/* eslint-disable import/prefer-default-export */
 import Joi from 'joi';
-import type { TownhallForm } from 'prytaneum-typings';
+import type { TownhallForm, RatingForm } from 'prytaneum-typings';
 
 type TownhallValidator = Record<keyof TownhallForm, Joi.Schema>;
 export const townhallValidationObject: TownhallValidator = {
@@ -9,4 +8,10 @@ export const townhallValidationObject: TownhallValidator = {
     description: Joi.string().required(),
     private: Joi.bool().required(),
     topic: Joi.string().required(),
+};
+
+type TownhallRatingValidator = Record<keyof RatingForm, Joi.Schema>;
+export const ratingValidationObject: TownhallRatingValidator = {
+    values: Joi.object().required(),
+    feedback: Joi.string().required()
 };

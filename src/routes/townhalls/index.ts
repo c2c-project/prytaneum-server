@@ -24,6 +24,7 @@ import { register } from 'modules/user';
 import { TownhallParams } from './types';
 import questionRoutes from './questions';
 import chatMessageRoutes from './chat-messages';
+import ratingRoutes from './rating';
 import playlistRoutes from './playlist';
 
 const router = Router();
@@ -212,6 +213,7 @@ router.post<
 
 router.use(questionRoutes);
 router.use(chatMessageRoutes);
+router.use(ratingRoutes);
 router.use(playlistRoutes);
 
 export default router;
