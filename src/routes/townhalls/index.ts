@@ -2,7 +2,7 @@
 import { Router } from 'express';
 import Joi from 'joi';
 import { ObjectId } from 'mongodb';
-import type { TownhallForm, Townhall, TownhallSettings, BreakoutForm } from 'prytaneum-typings';
+import type { TownhallForm, Townhall, TownhallSettings, BreakoutForm, RegisterForm } from 'prytaneum-typings';
 
 import {
     createTownhall,
@@ -19,6 +19,7 @@ import {
 import { townhallValidationObject } from 'modules/townhall/validators';
 import { makeJoiMiddleware, makeEndpoint, requireLogin, RequireLoginLocals, requireModerator } from 'middlewares';
 import { makeObjectIdValidationObject } from 'utils/validators';
+import { register } from 'modules/user';
 
 import { TownhallParams } from './types';
 import questionRoutes from './questions';
@@ -183,6 +184,28 @@ router.post<TownhallParams, void, void, void, RequireLoginLocals>(
     makeEndpoint((req, res) => {
         const { townhallId } = req.params;
         endBreakout(townhallId);
+        res.sendStatus(200);
+    })
+);
+
+/**
+ * pre-register a user, this is typically done via an external service
+ * ex. eventbrite webhook to register a user for a townhall
+ * ie this is not a "full" account, although this has no impact during the townhall
+ * FIXME: this is completely insecure, just requires knowing the townhallId, fix ASAP -- but for now it's good enough
+ */
+router.post<
+    Express.EmptyParams,
+    void,
+    Pick<RegisterForm, 'email' | 'firstName' | 'lastName'>,
+    void,
+    RequireLoginLocals
+>(
+    '/:townhallId/pre-register',
+    makeEndpoint(async (req, res) => {
+        // TODO: addresses fixme, but check if the user is an organizer based off the api token
+        const { email, firstName, lastName } = req.body;
+        await register(email, firstName, lastName);
         res.sendStatus(200);
     })
 );
