@@ -3,6 +3,8 @@ import createHttpError from 'http-errors';
 import type { TownhallForm, TownhallSettings, User, TownhallState } from 'prytaneum-typings';
 
 import events from 'lib/events';
+import email from 'lib/emails';
+import jwt from 'lib/jwt';
 import { useCollection } from 'db';
 import { makeMeta } from 'modules/common';
 import { defaultSettings, defaultState } from './defaults';
@@ -145,4 +147,16 @@ export function startBreakout(townhallId: string, numRooms: number) {
 
 export function endBreakout(townhallId: string) {
     events.emit('breakout-end', { townhallId });
+}
+
+export async function inviteToTownhall(townhallId: string, invitee: User<ObjectId>) {
+    const token = await jwt.sign(invitee._id.toHexString());
+    const emailContent = `You've recently registered to attend a Prytaneum Townhall.  Here is your join link for Prytaneum! \n\n https://prytaneum.io/join/${townhallId}?token=${token}`;
+    await email.mg.messages().send({
+        to: invitee.email.address,
+        from: 'Prytaneum <no-reply@prytaneum.io>',
+        subject: 'Prytaneum Invitation',
+        text: emailContent,
+        // TODO: unsubscribe url
+    });
 }
