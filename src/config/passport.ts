@@ -1,20 +1,12 @@
 import passport from 'passport';
-import {
-    Strategy as LocalStrategy,
-    IStrategyOptions,
-    VerifyFunction as LocalVerifyCallback,
-} from 'passport-local';
+import { Strategy as LocalStrategy, IStrategyOptions, VerifyFunction as LocalVerifyCallback } from 'passport-local';
 
 import { verifyPassword } from 'modules/user';
 import { useCollection } from 'db';
 import createHttpError from 'http-errors';
 
 export const localOptions: IStrategyOptions = { usernameField: 'email' };
-export const localCallback: LocalVerifyCallback = (
-    email: string,
-    password: string,
-    done
-) => {
+export const localCallback: LocalVerifyCallback = (email: string, password: string, done) => {
     async function verify(): Promise<void> {
         try {
             // generic error -- we don't want to specifically tell them if the email or password was incorrect
@@ -26,7 +18,7 @@ export const localCallback: LocalVerifyCallback = (
             );
             // user does not exist
             if (!user) throw err;
-
+            if (!user.password) throw createHttpError(401);
             const isVerified = await verifyPassword(password, user.password);
 
             // password does not match
@@ -34,10 +26,7 @@ export const localCallback: LocalVerifyCallback = (
 
             // update last login for this user
             await useCollection('Users', (Users) =>
-                Users.updateOne(
-                    { _id: user._id },
-                    { $set: { 'meta.lastLogin': new Date() } }
-                )
+                Users.updateOne({ _id: user._id }, { $set: { 'meta.lastLogin': new Date() } })
             );
             // password matches and we're good to go
             done(null, user);
