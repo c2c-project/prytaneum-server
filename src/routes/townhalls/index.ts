@@ -13,9 +13,8 @@ import {
     configure,
     startTownhall,
     endTownhall,
-    startBreakout,
-    endBreakout,
 } from 'modules/townhall';
+import { startBreakout, endBreakout } from 'modules/chat';
 import { townhallValidationObject } from 'modules/townhall/validators';
 import { makeJoiMiddleware, makeEndpoint, requireLogin, RequireLoginLocals, requireModerator } from 'middlewares';
 import { makeObjectIdValidationObject } from 'utils/validators';
@@ -194,6 +193,12 @@ router.post<TownhallParams, void, void, void, RequireLoginLocals>(
  * ex. eventbrite webhook to register a user for a townhall
  * ie this is not a "full" account, although this has no impact during the townhall
  * FIXME: this is completely insecure, just requires knowing the townhallId, fix ASAP -- but for now it's good enough
+ * 1. User registers on eventbrite
+ * 2. eventbrite calls this API endpoint
+ * 3. user is registered (note: no password)
+ * 4. user is sent an email containing a url to join this particular townhall of the form /join/:townhallId?token={token} // TODO: test that email is actually sent appropriately
+ * 5. On user clicking user clicking link, on frontend if we see the user has a token, then we call the introspection endpoint // TODO:
+ * 6. On the frontend, there's a little banner at the top that says complete your account
  */
 router.post<
     Express.EmptyParams,

@@ -59,12 +59,19 @@ export async function register(email: string, firstName: string, lastName: strin
             // if the password is null, then this account cannot be logged into, may be overriden
             // password may be null if a user is being "pre-registered"
             password: null,
+            sockets: [],
             ...overrides,
         })
     );
 
     return result;
 }
+
+// TODO: kelton
+// export async function registerForTownhall(regInfo: any, townhallId: string) {
+//     // 1. call register (above)
+//     // 2. if registration succeeds, then send an email with townhall link and token
+// }
 
 /**
  * @description register the user with password
