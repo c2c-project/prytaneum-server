@@ -1,12 +1,7 @@
 import bcrypt from 'bcrypt';
 import { ObjectID, ObjectId } from 'mongodb';
 import createHttpError from 'http-errors';
-import type {
-    RegisterForm,
-    User,
-    ClientSafeUser,
-    Roles,
-} from 'prytaneum-typings';
+import type { RegisterForm, User, ClientSafeUser, Roles } from 'prytaneum-typings';
 
 import jwt from 'lib/jwt';
 import Emails from 'lib/emails';
@@ -22,23 +17,21 @@ declare module 'lib/events' {
     }
 }
 
+type Overrides = Partial<Omit<User, '_id'>>;
+
 export const verifyPassword = bcrypt.compare;
 
-type Overrides = Partial<Omit<User, '_id' | 'password'>>;
 /**
- * @description register the user in the database ONLY
- * @arg form is the registration form submitted to the server
- * @throws E-mail already exists, Passwords do not match
+ * minimally register a user
  */
-export async function registerUser(
-    form: RegisterForm,
-    overrides: Overrides = {}
-) {
-    const encryptedPw = await bcrypt.hash(form.password, SALT_ROUNDS);
-    const match = await useCollection('Users', (Users) =>
-        Users.findOne({ 'user.email': form.email })
-    );
+export async function register(email: string, firstName: string, lastName: string, overrides: Overrides = {}) {
+    // check for any conflicts
+    const match = await useCollection('Users', (Users) => Users.findOne({ 'email.address': email }));
+
+    // throw error if conflict found
     if (match) throw createHttpError(409, errors[409]);
+
+    // insert user if no conflict
     const result = await useCollection('Users', (Users) =>
         Users.insertOne({
             meta: {
@@ -46,15 +39,14 @@ export async function registerUser(
                 lastLogin: new Date().toISOString(),
             },
             email: {
-                address: form.email,
+                address: email,
                 verified: false,
             },
             name: {
-                first: form.firstName,
-                last: form.lastName,
+                first: firstName,
+                last: lastName,
             },
             roles: [], // no roles is a regular user
-            password: encryptedPw,
             settings: {
                 townhall: {
                     anonymous: false,
@@ -64,20 +56,43 @@ export async function registerUser(
                     types: [],
                 },
             },
+            // if the password is null, then this account cannot be logged into, may be overriden
+            // password may be null if a user is being "pre-registered"
+            password: null,
+            sockets: [],
             ...overrides,
         })
     );
-    if (result.insertedCount === 1)
-        emitter.emit('register-user', result.ops[0]);
-    else if (result.insertedCount === 0)
-        throw new Error('Unable to register new user');
+
+    return result;
+}
+
+// TODO: kelton
+// export async function registerForTownhall(regInfo: any, townhallId: string) {
+//     // 1. call register (above)
+//     // 2. if registration succeeds, then send an email with townhall link and token
+// }
+
+/**
+ * @description register the user with password
+ * @arg form is the registration form submitted to the server
+ * @throws E-mail already exists, Passwords do not match
+ */
+export async function registerUser(form: RegisterForm, overrides: Omit<Overrides, 'password'> = {}) {
+    // encrypt password
+    const password = await bcrypt.hash(form.password, SALT_ROUNDS);
+
+    // register the user
+    const result = await register(form.email, form.firstName, form.lastName, { password, ...overrides });
+
+    // operations depending on the result
+    if (result.insertedCount === 1) emitter.emit('register-user', result.ops[0]);
+    else if (result.insertedCount === 0) throw new Error('Unable to register new user');
+
     return result.ops[0];
 }
 
-export const registerUserWithRoles = async (
-    form: RegisterForm,
-    roles: Roles[]
-) => registerUser(form, { roles });
+export const registerUserWithRoles = async (form: RegisterForm, roles: Roles[]) => registerUser(form, { roles });
 
 /**
  * @description verifies the user; expects catch in calling function
@@ -88,10 +103,7 @@ export const registerUserWithRoles = async (
 export const confirmUserEmail = async (userId: string) => {
     const objectUserId = new ObjectID(userId);
     const result = await useCollection('Users', (Users) =>
-        Users.updateOne(
-            { _id: objectUserId },
-            { $set: { 'email.verified': true } }
-        )
+        Users.updateOne({ _id: objectUserId }, { $set: { 'email.verified': true } })
     );
     if (result.modifiedCount === 0) throw createHttpError(404, errors[404]);
 };
@@ -103,9 +115,7 @@ export const confirmUserEmail = async (userId: string) => {
  * @throws Invalid Email or error with signing jwt
  */
 export const sendPasswordResetEmail = async (email: string) => {
-    const doc = await useCollection('Users', (Users) =>
-        Users.findOne({ 'email.address': email })
-    );
+    const doc = await useCollection('Users', (Users) => Users.findOne({ 'email.address': email }));
     if (!doc) throw createHttpError(404, errors[404]);
 
     const { _id } = doc;
@@ -131,10 +141,7 @@ export const updatePassword = async (userId: string, password: string) => {
     );
     if (result.modifiedCount === 0)
         // shouldn't really ever happen, but this isn't a great user experience
-        throw createHttpError(
-            404,
-            `${errors[404]}, try logging in and out again`
-        );
+        throw createHttpError(404, `${errors[404]}, try logging in and out again`);
 };
 
 /**
@@ -143,24 +150,12 @@ export const updatePassword = async (userId: string, password: string) => {
  * @returns resolves to the userDoc with ONLY whitelisted fields
  */
 export const filterSensitiveData = (user: User<ObjectId>): ClientSafeUser => {
-    const whitelist: (keyof ClientSafeUser)[] = [
-        '_id',
-        'email',
-        'name',
-        'roles',
-        'settings',
-    ];
-    function reducer(
-        accum: Partial<ClientSafeUser>,
-        key: keyof ClientSafeUser
-    ): Partial<ClientSafeUser> {
+    const whitelist: (keyof ClientSafeUser)[] = ['_id', 'email', 'name', 'roles', 'settings'];
+    function reducer(accum: Partial<ClientSafeUser>, key: keyof ClientSafeUser): Partial<ClientSafeUser> {
         if (user[key] !== undefined) {
             return { ...accum, [key]: user[key] };
         }
         return accum;
     }
-    return whitelist.reduce<Partial<ClientSafeUser>>(
-        reducer,
-        {}
-    ) as ClientSafeUser;
+    return whitelist.reduce<Partial<ClientSafeUser>>(reducer, {}) as ClientSafeUser;
 };
