@@ -11,6 +11,8 @@ export const defaults = {
     JWT_SECRET: 'secret',
     COOKIE_SECRET: 'secret',
     DEBUG: '*',
+    MAILGUN_API_KEY: 'secret',
+    MAILGUN_DOMAIN: 'localhost'
 } as Readonly<Required<NodeJS.ProcessEnv>>;
 
 function set(key: keyof NodeJS.ProcessEnv): string {
@@ -37,6 +39,8 @@ const resilientEnv = {
     JWT_SECRET: set('JWT_SECRET'),
     COOKIE_SECRET: set('COOKIE_SECRET'),
     DEBUG: set('DEBUG'),
+    MAILGUN_API_KEY: set('MAILGUN_API_KEY'),
+    MAILGUN_DOMAIN: set('MAILGUN_DOMAIN')
 } as Required<NodeJS.ProcessEnv>;
 
 export default resilientEnv as Readonly<Required<NodeJS.ProcessEnv>>;
