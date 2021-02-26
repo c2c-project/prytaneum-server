@@ -80,9 +80,7 @@ playlistNamespace.on('connection', (socket: Socket) => {
 
 events.on('playlist-add', (question) => {
     const { townhallId } = question.meta;
-    playlistNamespace
-        .to(townhallId.toHexString())
-        .emit('playlist-state', { type: 'playlist-add', payload: question });
+    playlistNamespace.to(townhallId.toHexString()).emit('playlist-state', { type: 'playlist-add', payload: question });
 });
 
 events.on('playlist-remove', ({ townhallId, questionId }) => {

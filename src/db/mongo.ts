@@ -1,11 +1,4 @@
-import {
-    MongoClient,
-    Db,
-    Collection,
-    ObjectId,
-    ClientSession,
-    TransactionOptions,
-} from 'mongodb';
+import { MongoClient, Db, Collection, ObjectId, ClientSession, TransactionOptions } from 'mongodb';
 import makeDebug from 'debug';
 import type {
     User,
@@ -15,7 +8,9 @@ import type {
     InviteLink,
     FeedbackReport,
     BugReport,
-    Notification
+    Rating,
+    Notification,
+    Breakout,
 } from 'prytaneum-typings';
 
 import config from 'config/mongo';
@@ -30,10 +25,7 @@ const mongoClient = new MongoClient(url, {
 
 export async function connect() {
     info(`Attempting database connection to ${url}`);
-    if (!mongoClient.isConnected())
-        return mongoClient
-            .connect()
-            .finally(() => info('Successfully connected'));
+    if (!mongoClient.isConnected()) return mongoClient.connect().finally(() => info('Successfully connected'));
     info('Mongo client is already connected');
     return mongoClient;
 }
@@ -55,15 +47,15 @@ interface CollectionMap {
     FeedbackReports: FeedbackReport<ObjectId>;
     BugReports: BugReport<ObjectId>;
     Notifications: Notification<ObjectId>;
+    Ratings: Rating<ObjectId>;
+    BreakoutRooms: Breakout<ObjectId>;
 }
 
 export async function useCollection<T extends keyof CollectionMap, U>(
     name: T,
     cb: (c: Collection<CollectionMap[T]>) => U
 ): Promise<U> {
-    const coll = await wrapDb(
-        (db): Collection<CollectionMap[T]> => db.collection(name)
-    );
+    const coll = await wrapDb((db): Collection<CollectionMap[T]> => db.collection(name));
     return cb(coll);
 }
 

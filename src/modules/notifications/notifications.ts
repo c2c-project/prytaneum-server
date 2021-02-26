@@ -1,6 +1,5 @@
 import { useCollection } from 'db';
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { NotificationMetaData } from 'prytaneum-typings/dist/notifications';
+import type { NotificationMetaData } from 'prytaneum-typings';
 import createHttpError from 'http-errors';
 
 /**

@@ -20,7 +20,7 @@ export const getFeedbackReportQueries = {
     page: Joi.string()
         .pattern(/^[0-9]+$/)
         .required(),
-    sortByDate: Joi.string().valid('true', 'false').required(),
+    sortByDate: Joi.string().valid('true', 'false').optional(),
 };
 
 export const getFeedbackReportQueriesAdmin = {
