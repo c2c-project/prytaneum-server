@@ -1,6 +1,6 @@
 export type ReportQueryParams = {
     page: string;
-    sortByDate: 'true' | 'false';
+    sortByDate?: 'true' | 'false' | '';
 };
 
 export type ReportQueryParamsAdmin = ReportQueryParams & {

@@ -1,4 +1,4 @@
-import { ObjectID } from 'mongodb';
+import { ObjectID, ObjectId } from 'mongodb';
 import type { User } from 'prytaneum-typings';
 import createHttpError from 'http-errors';
 
@@ -14,32 +14,29 @@ const numberOfDocumentsPerPage = 10;
  * @returns {Promise} Void promise
  * @throws {Error} If unable to insert the feedback report
  */
-export async function createFeedbackReport(description: string, user: User) {
+export async function createFeedbackReport(description: string, user: User<ObjectId>) {
     const { createdAt, createdBy, updatedAt, updatedBy } = makeMeta(user);
-    const { insertedCount } = await useCollection(
-        'FeedbackReports',
-        (FeedbackReports) =>
-            FeedbackReports.insertOne({
-                description,
-                resolved: false,
-                replies: [],
-                meta: {
-                    createdAt,
-                    updatedAt,
-                    updatedBy: {
-                        ...updatedBy,
-                        _id: new ObjectID(updatedBy._id),
-                    },
-                    createdBy: {
-                        ...createdBy,
-                        _id: new ObjectID(createdBy._id),
-                    },
+    const { insertedCount } = await useCollection('FeedbackReports', (FeedbackReports) =>
+        FeedbackReports.insertOne({
+            description,
+            resolved: false,
+            replies: [],
+            meta: {
+                createdAt,
+                updatedAt,
+                updatedBy: {
+                    ...updatedBy,
+                    _id: new ObjectID(updatedBy._id),
                 },
-            })
+                createdBy: {
+                    ...createdBy,
+                    _id: new ObjectID(createdBy._id),
+                },
+            },
+        })
     );
 
-    if (insertedCount === 0)
-        throw createHttpError(400, 'Unable to create feedback report');
+    if (insertedCount === 0) throw createHttpError(400, 'Unable to create feedback report');
 }
 
 /**
@@ -49,24 +46,17 @@ export async function createFeedbackReport(description: string, user: User) {
  * @param {boolean} resolved - Resolved status of reports to retrieve
  * @returns {Promise} - Promise that will produce an array of feedback reports and the total count of feedback reports in the database
  */
-export async function getFeedbackReports(
-    page: number,
-    sortByDate: boolean,
-    resolved?: boolean
-) {
+export async function getFeedbackReports(page: number, sortByDate: boolean, resolved?: boolean) {
     const resolvedQuery = typeof resolved === 'boolean' ? { resolved } : {};
-    const totalCount = await useCollection(
-        'FeedbackReports',
-        (FeedbackReports) => FeedbackReports.countDocuments(resolvedQuery)
+    const totalCount = await useCollection('FeedbackReports', (FeedbackReports) =>
+        FeedbackReports.countDocuments(resolvedQuery)
     );
-    const feedbackReports = await useCollection(
-        'FeedbackReports',
-        (FeedbackReports) =>
-            FeedbackReports.find(resolvedQuery)
-                .sort({ date: sortByDate ? 1 : -1 })
-                .skip(page > 0 ? numberOfDocumentsPerPage * (page - 1) : 0)
-                .limit(numberOfDocumentsPerPage)
-                .toArray()
+    const feedbackReports = await useCollection('FeedbackReports', (FeedbackReports) =>
+        FeedbackReports.find(resolvedQuery)
+            .sort({ date: sortByDate ? 1 : -1 })
+            .skip(page > 0 ? numberOfDocumentsPerPage * (page - 1) : 0)
+            .limit(numberOfDocumentsPerPage)
+            .toArray()
     );
 
     return { feedbackReports, totalCount };
@@ -76,32 +66,24 @@ export async function getFeedbackReports(
  * @description Retrieves at most 10  feedback reports from a specific user, depending on the page number
  * @param {number} page - Page number to return. If the page number exceeds the number of available pages, 0 reports are returned
  * @param {boolean} sortByDate - Sort by date order. True for ascending. False for descending
- * @param {string} userId - Id of the user
+ * @param {ObjectId} userId - Id of the user
  * @returns {Promise} - Promise that will produce an array of feedback reports and the total count of feedback reports submitted by the user
  */
-export async function getFeedbackReportsByUser(
-    page: number,
-    sortByDate: boolean,
-    userId: string
-) {
-    const totalCount = await useCollection(
-        'FeedbackReports',
-        (FeedbackReports) =>
-            FeedbackReports.countDocuments({
-                'meta.createdBy._id': new ObjectID(userId),
-            })
+export async function getFeedbackReportsByUser(page: number, sortByDate: boolean, userId: ObjectId) {
+    const totalCount = await useCollection('FeedbackReports', (FeedbackReports) =>
+        FeedbackReports.countDocuments({
+            'meta.createdBy._id': new ObjectID(userId),
+        })
     );
 
-    const feedbackReports = await useCollection(
-        'FeedbackReports',
-        (FeedbackReports) =>
-            FeedbackReports.find({
-                'meta.createdBy._id': new ObjectID(userId),
-            })
-                .sort({ date: sortByDate ? 1 : -1 })
-                .skip(page > 0 ? numberOfDocumentsPerPage * (page - 1) : 0)
-                .limit(numberOfDocumentsPerPage)
-                .toArray()
+    const feedbackReports = await useCollection('FeedbackReports', (FeedbackReports) =>
+        FeedbackReports.find({
+            'meta.createdBy._id': new ObjectID(userId),
+        })
+            .sort({ date: sortByDate ? 1 : -1 })
+            .skip(page > 0 ? numberOfDocumentsPerPage * (page - 1) : 0)
+            .limit(numberOfDocumentsPerPage)
+            .toArray()
     );
 
     return { feedbackReports, totalCount };
@@ -115,40 +97,30 @@ export async function getFeedbackReportsByUser(
  * @returns {Promise} Void promise
  * @throws {Error} If provided report id is invalid or if unable to update the specified feedback report
  */
-export async function updateFeedbackReport(
-    reportId: string,
-    newDescription: string,
-    user: User
-) {
-    if (!ObjectID.isValid(reportId))
-        throw createHttpError(400, 'Invalid report id provided');
+export async function updateFeedbackReport(reportId: string, newDescription: string, user: User<ObjectId>) {
+    if (!ObjectID.isValid(reportId)) throw createHttpError(400, 'Invalid report id provided');
 
-    const { modifiedCount } = await useCollection(
-        'FeedbackReports',
-        (FeedbackReports) =>
-            FeedbackReports.updateOne(
-                {
-                    _id: new ObjectID(reportId),
-                    'meta.createdBy._id': new ObjectID(user._id),
+    const { modifiedCount } = await useCollection('FeedbackReports', (FeedbackReports) =>
+        FeedbackReports.updateOne(
+            {
+                _id: new ObjectID(reportId),
+                'meta.createdBy._id': new ObjectID(user._id),
+            },
+            {
+                $set: {
+                    'meta.updatedAt': new Date(),
+                    'meta.updatedBy': user,
+                    description: newDescription,
                 },
-                {
-                    $set: {
-                        'meta.updatedAt': new Date(),
-                        'meta.updatedBy': user,
-                        description: newDescription,
-                    },
-                },
-                {
-                    upsert: false,
-                }
-            )
+            },
+            {
+                upsert: false,
+            }
+        )
     );
 
     if (modifiedCount === 0)
-        throw createHttpError(
-            401,
-            'You must be the creator in order to modify the feedback report'
-        );
+        throw createHttpError(401, 'You must be the creator in order to modify the feedback report');
 }
 
 // TODO: extend this to write to a trash collection rather than actually delete
@@ -159,17 +131,13 @@ export async function updateFeedbackReport(
  * @throws {Error} If provided report id is invalid or if specified feedback report to delete does not exist
  */
 export async function deleteFeedbackReport(reportId: string) {
-    if (!ObjectID.isValid(reportId))
-        throw createHttpError(400, 'Invalid report id provided');
+    if (!ObjectID.isValid(reportId)) throw createHttpError(400, 'Invalid report id provided');
 
-    const { deletedCount } = await useCollection(
-        'FeedbackReports',
-        (FeedbackReports) =>
-            FeedbackReports.deleteOne({ _id: new ObjectID(reportId) })
+    const { deletedCount } = await useCollection('FeedbackReports', (FeedbackReports) =>
+        FeedbackReports.deleteOne({ _id: new ObjectID(reportId) })
     );
 
-    if (deletedCount === 0)
-        throw createHttpError(404, 'Feedback report not found');
+    if (deletedCount === 0) throw createHttpError(404, 'Feedback report not found');
 }
 
 /**
@@ -180,39 +148,28 @@ export async function deleteFeedbackReport(reportId: string) {
  * @returns {Promise} Void promise
  * @throws {Error} If provided report id is invalid or if unable to update the status of the specified feedback report
  */
-export async function updateResolvedStatus(
-    reportId: string,
-    newResolvedStatus: boolean,
-    user: User
-) {
-    if (!ObjectID.isValid(reportId))
-        throw createHttpError(400, 'Invalid report id provided');
+export async function updateResolvedStatus(reportId: string, newResolvedStatus: boolean, user: User<ObjectId>) {
+    if (!ObjectID.isValid(reportId)) throw createHttpError(400, 'Invalid report id provided');
 
-    const { modifiedCount } = await useCollection(
-        'FeedbackReports',
-        (FeedbackReports) =>
-            FeedbackReports.updateOne(
-                {
-                    _id: new ObjectID(reportId),
+    const { modifiedCount } = await useCollection('FeedbackReports', (FeedbackReports) =>
+        FeedbackReports.updateOne(
+            {
+                _id: new ObjectID(reportId),
+            },
+            {
+                $set: {
+                    'meta.updatedAt': new Date(),
+                    'meta.updatedBy.by': user,
+                    resolved: newResolvedStatus,
                 },
-                {
-                    $set: {
-                        'meta.updatedAt': new Date(),
-                        'meta.updatedBy.by': user,
-                        resolved: newResolvedStatus,
-                    },
-                },
-                {
-                    upsert: false,
-                }
-            )
+            },
+            {
+                upsert: false,
+            }
+        )
     );
 
-    if (modifiedCount === 0)
-        throw createHttpError(
-            400,
-            'Could not update resolved status of feedback report'
-        );
+    if (modifiedCount === 0) throw createHttpError(404, 'Could not update resolved status of feedback report');
 }
 
 /**
@@ -223,42 +180,32 @@ export async function updateResolvedStatus(
  * @returns {Promise} Void promise
  * @throws {Error} If provided report id is invalid or if unable to add reply to feedback report
  */
-export async function replyToFeedbackReport(
-    user: User,
-    reportId: string,
-    content: string
-) {
-    if (!ObjectID.isValid(reportId))
-        throw createHttpError(400, 'Invalid report id provided');
-
-    const { modifiedCount } = await useCollection(
-        'FeedbackReports',
-        (FeedbackReports) =>
-            FeedbackReports.updateOne(
-                { _id: new ObjectID(reportId) },
-                {
-                    $push: {
-                        replies: {
-                            $each: [
-                                {
-                                    content,
-                                    meta: makeMeta(user),
-                                },
-                            ],
-                            $sort: { repliedDate: 1 },
-                        },
-                    },
-                    $set: {
-                        'meta.updatedAt': new Date(),
-                        'meta.updatedBy': user,
+export async function replyToFeedbackReport(user: User<ObjectId>, reportId: string, content: string) {
+    const { modifiedCount } = await useCollection('FeedbackReports', (FeedbackReports) =>
+        FeedbackReports.updateOne(
+            { _id: new ObjectID(reportId) },
+            {
+                $push: {
+                    replies: {
+                        $each: [
+                            {
+                                content,
+                                meta: makeMeta(user),
+                            },
+                        ],
+                        $sort: { repliedDate: 1 },
                     },
                 },
-                {
-                    upsert: false,
-                }
-            )
+                $set: {
+                    'meta.updatedAt': new Date(),
+                    'meta.updatedBy': user,
+                },
+            },
+            {
+                upsert: false,
+            }
+        )
     );
 
-    if (modifiedCount === 0)
-        throw createHttpError(400, 'Could not submit reply');
+    if (modifiedCount === 0) throw createHttpError(400, 'Could not submit reply');
 }

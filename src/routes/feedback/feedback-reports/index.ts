@@ -2,11 +2,7 @@
 import { Router } from 'express';
 import Joi from 'joi';
 import { ObjectId } from 'mongodb';
-import type {
-    FeedbackReportForm,
-    FeedbackReport,
-    ReportReplyForm,
-} from 'prytaneum-typings';
+import type { FeedbackReportForm, FeedbackReport, ReportReplyForm } from 'prytaneum-typings';
 
 import {
     createFeedbackReport,
@@ -24,38 +20,23 @@ import {
     updateResolvedStatusValidationObject,
     replyValidationObject,
 } from 'modules/feedback-reports/validators';
-import {
-    makeJoiMiddleware,
-    makeEndpoint,
-    requireLogin,
-    RequireLoginLocals,
-} from 'middlewares';
+import { makeJoiMiddleware, makeEndpoint, requireLogin, RequireLoginLocals } from 'middlewares';
 import { makeObjectIdValidationObject } from 'utils/validators';
-import {
-    ReportQueryParams,
-    ReportQueryParamsAdmin,
-    ReportParams,
-    ReportsResult,
-} from '../types';
+import { ReportQueryParams, ReportQueryParamsAdmin, ReportParams, ReportsResult } from '../types';
 
 const router = Router();
 
-router.get<
-    Express.EmptyParams,
-    ReportsResult<FeedbackReport<ObjectId>>,
-    void,
-    ReportQueryParams,
-    RequireLoginLocals
->(
+router.get<Express.EmptyParams, ReportsResult<FeedbackReport<ObjectId>>, void, ReportQueryParams, RequireLoginLocals>(
     '/',
     requireLogin(),
     makeJoiMiddleware({ query: Joi.object(getFeedbackReportQueries) }),
     makeEndpoint(async (req, res) => {
         const { page, sortByDate } = req.query;
         const { user } = req.results;
+        const _sortByDate = sortByDate === '' || !sortByDate ? 'true' : sortByDate;
         const { feedbackReports, totalCount } = await getFeedbackReportsByUser(
             parseInt(page, 10),
-            sortByDate === 'true',
+            _sortByDate === 'true',
             user._id
         );
         res.status(200).send({ reports: feedbackReports, count: totalCount });
@@ -65,20 +46,16 @@ router.get<
 /**
  * gets a list of of all feedback reports, caller must have admin permission
  */
-router.get<
-    Express.EmptyParams,
-    ReportsResult<FeedbackReport<ObjectId>>,
-    void,
-    ReportQueryParamsAdmin
->(
+router.get<Express.EmptyParams, ReportsResult<FeedbackReport<ObjectId>>, void, ReportQueryParamsAdmin>(
     '/admin',
     requireLogin(['admin']),
     makeJoiMiddleware({ query: Joi.object(getFeedbackReportQueriesAdmin) }),
     makeEndpoint(async (req, res) => {
         const { page, sortByDate, resolved } = req.query;
+        const _sortByDate = sortByDate === '' || !sortByDate ? 'true' : sortByDate;
         const { feedbackReports, totalCount } = await getFeedbackReports(
             parseInt(page, 10),
-            sortByDate === 'true',
+            _sortByDate === 'true',
             resolved === 'true'
         );
         res.status(200).send({ reports: feedbackReports, count: totalCount });
@@ -87,13 +64,7 @@ router.get<
 /**
  * creates a new feedback report by the user
  */
-router.post<
-    Express.EmptyParams,
-    void,
-    FeedbackReportForm,
-    void,
-    RequireLoginLocals
->(
+router.post<Express.EmptyParams, void, FeedbackReportForm, void, RequireLoginLocals>(
     '/',
     requireLogin(),
     makeJoiMiddleware({
@@ -154,13 +125,7 @@ router.delete<ReportParams, void, void, void, RequireLoginLocals>(
 /**
  * updates the resolved status of a feedback report caller must have admin permission
  */
-router.put<
-    ReportParams,
-    void,
-    { resolvedStatus: boolean },
-    void,
-    RequireLoginLocals
->(
+router.put<ReportParams, void, { resolvedStatus: boolean }, void, RequireLoginLocals>(
     '/:reportId/resolved-status',
     requireLogin(['admin']),
     makeJoiMiddleware({

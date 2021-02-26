@@ -36,25 +36,17 @@ const endpoint = '/feedback-reports';
 
 describe('/feedback-reports', () => {
     describe('GET /', () => {
-        it('should have status 400 since page and sortByDate query parameters are not provided', async () => {
+        it('should have status 200 since undefined sortByDate query parameter defaults to true', async () => {
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             collectionSpy.mockResolvedValueOnce(user);
+            collectionSpy.mockResolvedValueOnce(0);
+            collectionSpy.mockResolvedValueOnce([]);
             const jwtSpy = jest.spyOn(jwt, 'verify');
             jwtSpy.mockResolvedValueOnce(user);
             const { status } = await request(app)
-                .get(`${endpoint}`)
+                .get(`${endpoint}?page=0`)
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
-            expect(status).toStrictEqual(400);
-        });
-        it('should have status 400 since sortByDate query parameter is not provided', async () => {
-            const collectionSpy = jest.spyOn(DB, 'useCollection');
-            collectionSpy.mockResolvedValueOnce(user);
-            const jwtSpy = jest.spyOn(jwt, 'verify');
-            jwtSpy.mockResolvedValueOnce(user);
-            const { status } = await request(app)
-                .get(`${endpoint}?page=0&sortByDate=`)
-                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
-            expect(status).toStrictEqual(400);
+            expect(status).toStrictEqual(200);
         });
         it('should have status 200', async () => {
             const collectionSpy = jest.spyOn(DB, 'useCollection');
@@ -68,7 +60,7 @@ describe('/feedback-reports', () => {
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
             expect(status).toStrictEqual(200);
         });
-        it('should have status 400 since negative page number is not allowed', async () => {
+        it('should have status 400 if page number is negative', async () => {
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             collectionSpy.mockResolvedValueOnce(user);
             const jwtSpy = jest.spyOn(jwt, 'verify');
@@ -78,31 +70,27 @@ describe('/feedback-reports', () => {
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
             expect(status).toStrictEqual(400);
         });
-        it('should have status 400 since negative big page number is not allowed', async () => {
+        it('should have status 400 if page number is big negative number', async () => {
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             collectionSpy.mockResolvedValueOnce(user);
             const jwtSpy = jest.spyOn(jwt, 'verify');
             jwtSpy.mockResolvedValueOnce(user);
             const { status } = await request(app)
-                .get(
-                    `${endpoint}?page=-135423652764745672745741235&sortByDate=true`
-                )
+                .get(`${endpoint}?page=-135423652764745672745741235&sortByDate=true`)
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
             expect(status).toStrictEqual(400);
         });
-        it('should have status 400 since infinite page number is invalid', async () => {
+        it('should have status 400 if page number is infinite', async () => {
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             collectionSpy.mockResolvedValueOnce(user);
             const jwtSpy = jest.spyOn(jwt, 'verify');
             jwtSpy.mockResolvedValueOnce(user);
             const { status } = await request(app)
-                .get(
-                    `${endpoint}?page=${Number.POSITIVE_INFINITY}&sortByDate=false`
-                )
+                .get(`${endpoint}?page=${Number.POSITIVE_INFINITY}&sortByDate=false`)
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
             expect(status).toStrictEqual(400);
         });
-        it('should have status 400 since string for page number is invalid', async () => {
+        it('should have status 400 if page number is string', async () => {
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             collectionSpy.mockResolvedValueOnce(user);
             const jwtSpy = jest.spyOn(jwt, 'verify');
@@ -112,21 +100,17 @@ describe('/feedback-reports', () => {
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
             expect(status).toStrictEqual(400);
         });
-        it('should have status 400 since random long string for page number is invalid', async () => {
+        it('should have status 400 if page number is random long string', async () => {
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             collectionSpy.mockResolvedValueOnce(user);
             const jwtSpy = jest.spyOn(jwt, 'verify');
             jwtSpy.mockResolvedValueOnce(user);
             const { status } = await request(app)
-                .get(
-                    `${endpoint}?page=${faker.random.words(
-                        80
-                    )}&sortByDate=false`
-                )
+                .get(`${endpoint}?page=${faker.random.words(80)}&sortByDate=false`)
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
             expect(status).toStrictEqual(400);
         });
-        it('should have status 400 since page number is not sent', async () => {
+        it('should have status 400 if page number is empty', async () => {
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             collectionSpy.mockResolvedValueOnce(user);
             const jwtSpy = jest.spyOn(jwt, 'verify');
@@ -136,7 +120,17 @@ describe('/feedback-reports', () => {
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
             expect(status).toStrictEqual(400);
         });
-        it('should have status 400 since random string for sortByDate parameter is invalid', async () => {
+        it('should have status 400 if page number is undefined', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce(user);
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .get(`${endpoint}?sortByDate=false`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 400 if sortByDae is random string ', async () => {
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             collectionSpy.mockResolvedValueOnce(user);
             const jwtSpy = jest.spyOn(jwt, 'verify');
@@ -146,25 +140,21 @@ describe('/feedback-reports', () => {
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
             expect(status).toStrictEqual(400);
         });
-        it('should have status 401 since there is no login cookie', async () => {
-            const { status } = await request(app).get(
-                `${endpoint}?page=5&sortByDate=false)}`
-            );
+        it('should have status 401 if there is no login cookie', async () => {
+            const { status } = await request(app).get(`${endpoint}?page=5&sortByDate=false)}`);
             expect(status).toStrictEqual(401);
         });
     });
     describe(' GET /admin', () => {
-        it('should have status 401 since user object is not admin', async () => {
+        it('should have status 401 if user object is not admin', async () => {
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             collectionSpy.mockResolvedValueOnce({ ...user, roles: [] });
             const jwtSpy = jest.spyOn(jwt, 'verify');
             jwtSpy.mockResolvedValueOnce(user);
-            const { status } = await request(app).get(
-                `${endpoint}/admin?page=10&sortByDate=true&resolved=true`
-            );
+            const { status } = await request(app).get(`${endpoint}/admin?page=10&sortByDate=true&resolved=true`);
             expect(status).toStrictEqual(401);
         });
-        it('should have status 400 since all query parameters are not provided', async () => {
+        it('should have status 400 if required query parameters are not provided', async () => {
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
             const jwtSpy = jest.spyOn(jwt, 'verify');
@@ -174,17 +164,31 @@ describe('/feedback-reports', () => {
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
             expect(status).toStrictEqual(400);
         });
-        it('should have status 400 since sortByDate query parameter is not provided', async () => {
+        it('should have status 200 since undefined sortByDate query parameter defaults to true', async () => {
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            collectionSpy.mockResolvedValueOnce(0);
+            collectionSpy.mockResolvedValueOnce([]);
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .get(`${endpoint}/admin?page=0&=&resolved=false`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+            expect(status).toStrictEqual(200);
+        });
+        it('should have status 200 since empty sortByDate defaults to true', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            collectionSpy.mockResolvedValueOnce(0);
+            collectionSpy.mockResolvedValueOnce([]);
             const jwtSpy = jest.spyOn(jwt, 'verify');
             jwtSpy.mockResolvedValueOnce(user);
             const { status } = await request(app)
                 .get(`${endpoint}/admin?page=0&sortByDate=&resolved=false`)
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
-            expect(status).toStrictEqual(400);
+            expect(status).toStrictEqual(200);
         });
-        it('should have status 400 since page query parameter is not provided', async () => {
+        it('should have status 400 if page query parameter is empty', async () => {
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
             const jwtSpy = jest.spyOn(jwt, 'verify');
@@ -194,7 +198,17 @@ describe('/feedback-reports', () => {
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
             expect(status).toStrictEqual(400);
         });
-        it('should have status 400 since resolved query parameter is not provided', async () => {
+        it('should have status 400 if page query parameter is undefined', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .get(`${endpoint}/admin?sortByDate=false&resolved=false`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 400 if resolved query parameter is empty', async () => {
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
             const jwtSpy = jest.spyOn(jwt, 'verify');
@@ -204,7 +218,17 @@ describe('/feedback-reports', () => {
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
             expect(status).toStrictEqual(400);
         });
-        it('should have status 200 with resolved true', async () => {
+        it('should have status 400 if resolved query parameter is undefined', async () => {
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
+            const jwtSpy = jest.spyOn(jwt, 'verify');
+            jwtSpy.mockResolvedValueOnce(user);
+            const { status } = await request(app)
+                .get(`${endpoint}/admin?page=1&sortByDate=true`)
+                .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
+            expect(status).toStrictEqual(400);
+        });
+        it('should have status 200 if resolved query parameter is true', async () => {
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
             collectionSpy.mockResolvedValueOnce(0);
@@ -212,11 +236,11 @@ describe('/feedback-reports', () => {
             const jwtSpy = jest.spyOn(jwt, 'verify');
             jwtSpy.mockResolvedValueOnce(user);
             const { status } = await request(app)
-                .get(`${endpoint}/admin?page=1&sortByDate=true&resolved=true`)
+                .get(`${endpoint}/admin?page=1&sortByDate=false&resolved=true`)
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
             expect(status).toStrictEqual(200);
         });
-        it('should have status 200 with resolved false', async () => {
+        it('should have status 200 if resolved query parameter is false', async () => {
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
             collectionSpy.mockResolvedValueOnce(0);
@@ -228,7 +252,7 @@ describe('/feedback-reports', () => {
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
             expect(status).toStrictEqual(200);
         });
-        it('should have status 400 since negative page number is not allowed', async () => {
+        it('should have status 400 if page number is negative', async () => {
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
             const jwtSpy = jest.spyOn(jwt, 'verify');
@@ -238,84 +262,68 @@ describe('/feedback-reports', () => {
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
             expect(status).toStrictEqual(400);
         });
-        it('should have status 400 since negative big page number is not allowed', async () => {
+        it('should have status 400 if page number is big negative number', async () => {
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
             const jwtSpy = jest.spyOn(jwt, 'verify');
             jwtSpy.mockResolvedValueOnce(user);
             const { status } = await request(app)
-                .get(
-                    `${endpoint}/admin?page=-135423652764745672745741235&sortByDate=true&resolved=false`
-                )
+                .get(`${endpoint}/admin?page=-135423652764745672745741235&sortByDate=true&resolved=false`)
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
             expect(status).toStrictEqual(400);
         });
-        it('should have status 400 since infinite page number is invalid', async () => {
+        it('should have status 400 if page number is infinite', async () => {
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
             const jwtSpy = jest.spyOn(jwt, 'verify');
             jwtSpy.mockResolvedValueOnce(user);
             const { status } = await request(app)
-                .get(
-                    `${endpoint}/admin?page=${Number.POSITIVE_INFINITY}&sortByDate=false&resolved=true`
-                )
+                .get(`${endpoint}/admin?page=${Number.POSITIVE_INFINITY}&sortByDate=false&resolved=true`)
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
             expect(status).toStrictEqual(400);
         });
-        it('should have status 400 since string for page number is invalid', async () => {
+        it('should have status 400 if page number is string', async () => {
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
             const jwtSpy = jest.spyOn(jwt, 'verify');
             jwtSpy.mockResolvedValueOnce(user);
             const { status } = await request(app)
-                .get(
-                    `${endpoint}/admin?page=${faker.random.word()}&sortByDate=true&resolved=true`
-                )
+                .get(`${endpoint}/admin?page=${faker.random.word()}&sortByDate=true&resolved=true`)
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
             expect(status).toStrictEqual(400);
         });
-        it('should have status 400 since random long string for page number is invalid', async () => {
+        it('should have status 400 if page number is random long string', async () => {
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
             const jwtSpy = jest.spyOn(jwt, 'verify');
             jwtSpy.mockResolvedValueOnce(user);
             const { status } = await request(app)
-                .get(
-                    `${endpoint}/admin?page=${faker.random.words(
-                        80
-                    )}&sortByDate=false&resolved=true`
-                )
+                .get(`${endpoint}/admin?page=${faker.random.words(80)}&sortByDate=false&resolved=true`)
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
             expect(status).toStrictEqual(400);
         });
-        it('should have status 400 since random string for sortByDate parameter is invalid', async () => {
+        it('should have status 400 if sortByDate is random string ', async () => {
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
             const jwtSpy = jest.spyOn(jwt, 'verify');
             jwtSpy.mockResolvedValueOnce(user);
             const { status } = await request(app)
-                .get(
-                    `${endpoint}/admin?page=1&sortByDate=${faker.random.word()}&resolved=false`
-                )
+                .get(`${endpoint}/admin?page=1&sortByDate=${faker.random.word()}&resolved=false`)
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
             expect(status).toStrictEqual(400);
         });
-        it('should have status 400 since random string for resolved parameter is invalid', async () => {
+        it('should have status 400 if resolved parameter is random string', async () => {
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
             const jwtSpy = jest.spyOn(jwt, 'verify');
             jwtSpy.mockResolvedValueOnce(user);
             const { status } = await request(app)
-                .get(
-                    `${endpoint}/admin?page=1&sortByDate=false&resolved=${faker.random.word()}`
-                )
+                .get(`${endpoint}/admin?page=1&sortByDate=false&resolved=${faker.random.word()}`)
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
             expect(status).toStrictEqual(400);
         });
-        it('should have status 401 since there is no login cookie', async () => {
-            const { status } = await request(app).get(
-                `${endpoint}/admin?page=5&sortByDate=false)}`
-            );
+        it('should have status 401 if there is no login cookie', async () => {
+            const { status } = await request(app).get(`${endpoint}/admin?page=5&sortByDate=false)}`);
             expect(status).toStrictEqual(401);
         });
     });
@@ -365,18 +373,15 @@ describe('/feedback-reports', () => {
             expect(status).toStrictEqual(400);
         });
 
-        it('should have status 401 since login cookie missing', async () => {
+        it('should have status 401 if login cookie is missing', async () => {
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             collectionSpy.mockResolvedValueOnce(user);
             const jwtSpy = jest.spyOn(jwt, 'verify');
             jwtSpy.mockResolvedValueOnce(user);
-            const { status } = await request(app)
-                .post(endpoint)
-                .type('form')
-                .send(feedbackReportForm);
+            const { status } = await request(app).post(endpoint).type('form').send(feedbackReportForm);
             expect(status).toStrictEqual(401);
         });
-        it('should have status 400 since feedback report data is not sent', async () => {
+        it('should have status 400 if feedback report data is not sent', async () => {
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             collectionSpy.mockResolvedValueOnce(user);
             const jwtSpy = jest.spyOn(jwt, 'verify');
@@ -387,7 +392,7 @@ describe('/feedback-reports', () => {
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
             expect(status).toStrictEqual(400);
         });
-        it('should have status 400 since feedback report description is empty', async () => {
+        it('should have status 400 if feedback report description is empty', async () => {
             const copy: Partial<FeedbackReportForm> = { ...feedbackReportForm };
             copy.description = '';
             const collectionSpy = jest.spyOn(DB, 'useCollection');
@@ -401,7 +406,7 @@ describe('/feedback-reports', () => {
                 .send(copy);
             expect(status).toStrictEqual(400);
         });
-        it('Should have status 400 since number for description is invalid', async () => {
+        it('Should have status 400 if description is random number', async () => {
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             collectionSpy.mockResolvedValueOnce(user);
             const jwtSpy = jest.spyOn(jwt, 'verify');
@@ -555,9 +560,7 @@ describe('/feedback-reports', () => {
             const jwtSpy = jest.spyOn(jwt, 'verify');
             jwtSpy.mockResolvedValueOnce(user);
             const { status } = await request(app)
-                .put(
-                    `${endpoint}/${new ObjectID().toHexString()}/resolved-status`
-                )
+                .put(`${endpoint}/${new ObjectID().toHexString()}/resolved-status`)
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
                 .send({ resolvedStatus: true });
             expect(status).toStrictEqual(200);
@@ -568,9 +571,7 @@ describe('/feedback-reports', () => {
             const jwtSpy = jest.spyOn(jwt, 'verify');
             jwtSpy.mockResolvedValueOnce(user);
             const { status } = await request(app)
-                .put(
-                    `${endpoint}/${new ObjectID().toHexString()}/resolved-status`
-                )
+                .put(`${endpoint}/${new ObjectID().toHexString()}/resolved-status`)
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`]);
             expect(status).toStrictEqual(400);
         });
@@ -580,9 +581,7 @@ describe('/feedback-reports', () => {
             const jwtSpy = jest.spyOn(jwt, 'verify');
             jwtSpy.mockResolvedValueOnce(user);
             const { status } = await request(app)
-                .put(
-                    `${endpoint}/${new ObjectID().toHexString()}/resolved-status`
-                )
+                .put(`${endpoint}/${new ObjectID().toHexString()}/resolved-status`)
                 .send({ resolvedStatus: false });
             expect(status).toStrictEqual(401);
         });
@@ -592,9 +591,7 @@ describe('/feedback-reports', () => {
             const jwtSpy = jest.spyOn(jwt, 'verify');
             jwtSpy.mockResolvedValueOnce(user);
             const { status } = await request(app)
-                .put(
-                    `${endpoint}/${new ObjectID().toHexString()}/resolved-status`
-                )
+                .put(`${endpoint}/${new ObjectID().toHexString()}/resolved-status`)
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
                 .send({ resolvedStatus: true });
             expect(status).toStrictEqual(403);
@@ -605,9 +602,7 @@ describe('/feedback-reports', () => {
             const jwtSpy = jest.spyOn(jwt, 'verify');
             jwtSpy.mockResolvedValueOnce(user);
             const { status } = await request(app)
-                .put(
-                    `${endpoint}/${new ObjectID().toHexString()}/resolved-status`
-                )
+                .put(`${endpoint}/${new ObjectID().toHexString()}/resolved-status`)
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
                 .send({ resolvedStatus: faker.random.word() });
             expect(status).toStrictEqual(400);
@@ -618,9 +613,7 @@ describe('/feedback-reports', () => {
             const jwtSpy = jest.spyOn(jwt, 'verify');
             jwtSpy.mockResolvedValueOnce(user);
             const { status } = await request(app)
-                .put(
-                    `${endpoint}/${new ObjectID().toHexString()}/resolved-status`
-                )
+                .put(`${endpoint}/${new ObjectID().toHexString()}/resolved-status`)
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
                 .send({ resolvedStatus: faker.random.number() });
             expect(status).toStrictEqual(400);
@@ -631,9 +624,7 @@ describe('/feedback-reports', () => {
             const jwtSpy = jest.spyOn(jwt, 'verify');
             jwtSpy.mockResolvedValueOnce(user);
             const { status } = await request(app)
-                .put(
-                    `${endpoint}/${new ObjectID().toHexString()}/resolved-status`
-                )
+                .put(`${endpoint}/${new ObjectID().toHexString()}/resolved-status`)
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
                 .send({ resolvedStatus: null });
             expect(status).toStrictEqual(400);
@@ -644,28 +635,22 @@ describe('/feedback-reports', () => {
             const jwtSpy = jest.spyOn(jwt, 'verify');
             jwtSpy.mockResolvedValueOnce(user);
             const { status } = await request(app)
-                .put(
-                    `${endpoint}/${faker.random.alphaNumeric(
-                        6
-                    )}/resolved-status`
-                )
+                .put(`${endpoint}/${faker.random.alphaNumeric(6)}/resolved-status`)
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
                 .send({ resolvedStatus: true });
             expect(status).toStrictEqual(400);
         });
-        it('should have status 400 is it fails to update resolved status', async () => {
+        it('should have status 404 is it fails to update resolved status', async () => {
             const collectionSpy = jest.spyOn(DB, 'useCollection');
             collectionSpy.mockResolvedValueOnce({ ...user, roles: ['admin'] });
             collectionSpy.mockResolvedValueOnce({ modifiedCount: 0 });
             const jwtSpy = jest.spyOn(jwt, 'verify');
             jwtSpy.mockResolvedValueOnce(user);
             const { status } = await request(app)
-                .put(
-                    `${endpoint}/${new ObjectID().toHexString()}/resolved-status`
-                )
+                .put(`${endpoint}/${new ObjectID().toHexString()}/resolved-status`)
                 .set('Cookie', [`jwt=${faker.random.alphaNumeric()}`])
                 .send({ resolvedStatus: false });
-            expect(status).toStrictEqual(400);
+            expect(status).toStrictEqual(404);
         });
     });
     describe('PUT /:reportId/reply', () => {

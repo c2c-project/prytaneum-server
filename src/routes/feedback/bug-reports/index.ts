@@ -2,11 +2,7 @@
 import { Router } from 'express';
 import Joi from 'joi';
 import { ObjectId } from 'mongodb';
-import type {
-    BugReportForm,
-    BugReport,
-    ReportReplyForm,
-} from 'prytaneum-typings';
+import type { BugReportForm, BugReport, ReportReplyForm } from 'prytaneum-typings';
 
 import {
     createBugReport,
@@ -26,38 +22,23 @@ import {
     replyValidationObject,
 } from 'modules/bug-reports/validators';
 
-import {
-    makeJoiMiddleware,
-    makeEndpoint,
-    requireLogin,
-    RequireLoginLocals,
-} from 'middlewares';
+import { makeJoiMiddleware, makeEndpoint, requireLogin, RequireLoginLocals } from 'middlewares';
 import { makeObjectIdValidationObject } from 'utils/validators';
-import {
-    ReportQueryParams,
-    ReportQueryParamsAdmin,
-    ReportParams,
-    ReportsResult,
-} from '../types';
+import { ReportQueryParams, ReportQueryParamsAdmin, ReportParams, ReportsResult } from '../types';
 
 const router = Router();
 
-router.get<
-    Express.EmptyParams,
-    ReportsResult<BugReport<ObjectId>>,
-    void,
-    ReportQueryParams,
-    RequireLoginLocals
->(
+router.get<Express.EmptyParams, ReportsResult<BugReport<ObjectId>>, void, ReportQueryParams, RequireLoginLocals>(
     '/',
     requireLogin(),
     makeJoiMiddleware({ query: Joi.object(getBugReportQueries) }),
     makeEndpoint(async (req, res) => {
         const { page, sortByDate } = req.query;
         const { user } = req.results;
+        const _sortByDate = sortByDate === '' || !sortByDate ? 'true' : sortByDate;
         const { bugReports, totalCount } = await getBugReportsByUser(
             parseInt(page, 10),
-            sortByDate === 'true',
+            _sortByDate === 'true',
             user._id
         );
         res.status(200).send({ reports: bugReports, count: totalCount });
@@ -67,20 +48,16 @@ router.get<
 /**
  * gets a list of of all bug reports, caller must have admin permission
  */
-router.get<
-    Express.EmptyParams,
-    ReportsResult<BugReport<ObjectId>>,
-    void,
-    ReportQueryParamsAdmin
->(
+router.get<Express.EmptyParams, ReportsResult<BugReport<ObjectId>>, void, ReportQueryParamsAdmin>(
     '/admin',
     requireLogin(['admin']),
     makeJoiMiddleware({ query: Joi.object(getBugReportQueriesAdmin) }),
     makeEndpoint(async (req, res) => {
         const { page, sortByDate, resolved } = req.query;
+        const _sortByDate = sortByDate === '' || !sortByDate ? 'true' : sortByDate;
         const { bugReports, totalCount } = await getBugReports(
             parseInt(page, 10),
-            sortByDate === 'true',
+            _sortByDate === 'true',
             resolved === 'true'
         );
         res.status(200).send({ reports: bugReports, count: totalCount });
@@ -91,9 +68,7 @@ router.get<
  * validator used for validating the townhallId parameter
  */
 const validateBugReportTownHallIdParam = makeJoiMiddleware({
-    params: Joi.object(makeObjectIdValidationObject('townhallId')).unknown(
-        true
-    ),
+    params: Joi.object(makeObjectIdValidationObject('townhallId')).unknown(true),
 });
 router.use('/:townhallId', validateBugReportTownHallIdParam);
 
@@ -162,13 +137,7 @@ router.delete<ReportParams, void, void, void, RequireLoginLocals>(
 /**
  * updates the resolved status of a bug report caller must have admin permission
  */
-router.put<
-    ReportParams,
-    void,
-    { resolvedStatus: boolean },
-    void,
-    RequireLoginLocals
->(
+router.put<ReportParams, void, { resolvedStatus: boolean }, void, RequireLoginLocals>(
     '/:reportId/resolved-status',
     requireLogin(['admin']),
     makeJoiMiddleware({
