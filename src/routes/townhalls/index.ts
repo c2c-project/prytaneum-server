@@ -18,7 +18,7 @@ import { startBreakout, endBreakout } from 'modules/chat';
 import { townhallValidationObject } from 'modules/townhall/validators';
 import { makeJoiMiddleware, makeEndpoint, requireLogin, RequireLoginLocals, requireModerator } from 'middlewares';
 import { makeObjectIdValidationObject } from 'utils/validators';
-import { register } from 'modules/user';
+import { register, registerForTownhall } from 'modules/user';
 
 import { TownhallParams } from './types';
 import questionRoutes from './questions';
@@ -211,7 +211,8 @@ router.post<
     makeEndpoint(async (req, res) => {
         // TODO: addresses fixme, but check if the user is an organizer based off the api token
         const { email, firstName, lastName } = req.body;
-        await register(email, firstName, lastName);
+        const { townhallId } = req.params;
+        await registerForTownhall({ email, firstName, lastName }, townhallId);
         res.sendStatus(200);
     })
 );
