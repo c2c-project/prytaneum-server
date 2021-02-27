@@ -168,8 +168,8 @@ router.post<TownhallParams, void, BreakoutForm, void, RequireLoginLocals>(
         }),
     }),
     makeEndpoint((req, res) => {
-        const { numRooms } = req.body;
-        const { townhallId } = req.params;
+        // const { numRooms } = req.body;
+        // const { townhallId } = req.params;
         // startBreakout(townhallId, numRooms);
         res.sendStatus(200);
     })
@@ -182,7 +182,7 @@ router.post<TownhallParams, void, void, void, RequireLoginLocals>(
     '/:townhallId/breakout-end',
     requireModerator(),
     makeEndpoint((req, res) => {
-        const { townhallId } = req.params;
+        // const { townhallId } = req.params;
         // endBreakout(townhallId);
         res.sendStatus(200);
     })
@@ -196,7 +196,7 @@ router.post<TownhallParams, void, void, void, RequireLoginLocals>(
  * 1. User registers on eventbrite
  * 2. eventbrite calls this API endpoint
  * 3. user is registered (note: no password)
- * 4. user is sent an email containing a url to join this particular townhall of the form /join/:townhallId?token={token} // TODO: test that email is actually sent appropriately
+ * 4. user is sent an email containing a url to join this particular townhall of the form /join/:townhallId?token={token}
  * 5. On user clicking user clicking link, on frontend if we see the user has a token, then we call the introspection endpoint // TODO:
  * 6. On the frontend, there's a little banner at the top that says complete your account
  */
