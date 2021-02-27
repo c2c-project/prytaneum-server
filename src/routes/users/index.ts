@@ -14,6 +14,7 @@ import {
     confirmUserEmail,
     sendPasswordResetEmail,
     updatePassword,
+    getUserWithToken,
 } from 'modules/user';
 import { registerValidationObject, emailValidationObject, passwordValidationObject } from 'modules/user/validators';
 import { getUsers, getUser, generateInviteLink } from 'modules/admin';
@@ -240,6 +241,23 @@ router.post<Express.EmptyParams, { token: string }, { role: Roles }, void, Requi
         const { user } = req.results;
         const token = await generateInviteLink(role, user._id);
         res.status(200).send({ token });
+    })
+);
+
+type IntrospectParams = {
+    token: string;
+}
+
+router.get<IntrospectParams, UserInfo, void, void>(
+    '/introspect/:token',
+    makeEndpoint(async (req, res) => {
+        const { token } = req.params;
+        const user = await getUserWithToken(token);
+        // res.status(200).send();
+        res.status(200).send({
+            ...filterSensitiveData(user),
+            settings: user.settings,
+        });
     })
 );
 
