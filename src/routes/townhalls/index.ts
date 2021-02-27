@@ -14,11 +14,11 @@ import {
     startTownhall,
     endTownhall,
 } from 'modules/townhall';
-import { startBreakout, endBreakout } from 'modules/chat';
+// import { startBreakout, endBreakout } from 'modules/chat';
 import { townhallValidationObject } from 'modules/townhall/validators';
 import { makeJoiMiddleware, makeEndpoint, requireLogin, RequireLoginLocals, requireModerator } from 'middlewares';
 import { makeObjectIdValidationObject } from 'utils/validators';
-import { register, registerForTownhall } from 'modules/user';
+import { registerForTownhall } from 'modules/user';
 
 import { TownhallParams } from './types';
 import questionRoutes from './questions';
@@ -170,7 +170,7 @@ router.post<TownhallParams, void, BreakoutForm, void, RequireLoginLocals>(
     makeEndpoint((req, res) => {
         const { numRooms } = req.body;
         const { townhallId } = req.params;
-        startBreakout(townhallId, numRooms);
+        // startBreakout(townhallId, numRooms);
         res.sendStatus(200);
     })
 );
@@ -183,7 +183,7 @@ router.post<TownhallParams, void, void, void, RequireLoginLocals>(
     requireModerator(),
     makeEndpoint((req, res) => {
         const { townhallId } = req.params;
-        endBreakout(townhallId);
+        // endBreakout(townhallId);
         res.sendStatus(200);
     })
 );
