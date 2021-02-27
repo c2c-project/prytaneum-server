@@ -248,16 +248,24 @@ type IntrospectParams = {
     token: string;
 };
 
-router.get<IntrospectParams, UserInfo, void, void>(
-    '/introspect/:token',
+router.get<Express.EmptyParams, UserInfo, void, IntrospectParams>(
+    '/introspect',
     makeEndpoint(async (req, res) => {
         const { token } = req.params;
         const user = await getUserWithToken(token);
-        // res.status(200).send();
-        res.status(200).send({
-            ...filterSensitiveData(user),
-            settings: user.settings,
-        });
+        const clientUser = filterSensitiveData(user);
+        const userToken = await jwt.sign(clientUser);
+        res.cookie('jwt', userToken, {
+            httpOnly: true,
+            secure: env.NODE_ENV === 'production',
+            signed: env.NODE_ENV === 'production',
+            sameSite: 'strict',
+        })
+            .status(200)
+            .send({
+                ...clientUser,
+                settings: user.settings,
+            });
     })
 );
 
