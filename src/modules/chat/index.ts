@@ -3,6 +3,7 @@ import createHttpError from 'http-errors';
 import events from 'lib/events';
 import { ObjectID, ObjectId } from 'mongodb';
 import type { ChatMessage, User } from 'prytaneum-typings';
+import isModerator from 'utils/isModerator';
 
 declare module 'lib/events' {
     interface EventMap {
@@ -20,7 +21,7 @@ export async function createChatMessage(
 ) {
     const { insertedCount, ops } = await useCollection(
         'ChatMessages',
-        (ChatMessages) =>
+        async (ChatMessages) =>
             ChatMessages.insertOne({
                 meta: {
                     createdAt: new Date(),
@@ -28,6 +29,7 @@ export async function createChatMessage(
                         _id: user._id,
                         name: user.name,
                     },
+                    isModerator: await isModerator(townhallId, user.email.address, user._id),
                     updatedAt: new Date(),
                     updatedBy: {
                         _id: user._id,
