@@ -246,7 +246,7 @@ router.post<Express.EmptyParams, { token: string }, { role: Roles }, void, Requi
 
 type IntrospectParams = {
     token: string;
-}
+};
 
 router.get<IntrospectParams, UserInfo, void, void>(
     '/introspect/:token',
