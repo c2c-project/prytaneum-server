@@ -3,6 +3,7 @@ import { ObjectID, ObjectId } from 'mongodb';
 import createHttpError from 'http-errors';
 import type { RegisterForm, User, ClientSafeUser, Roles } from 'prytaneum-typings';
 
+import { inviteToTownhall } from 'modules/townhall';
 import jwt from 'lib/jwt';
 import Emails from 'lib/emails';
 import emitter from 'lib/events';
@@ -59,7 +60,6 @@ export async function register(email: string, firstName: string, lastName: strin
             // if the password is null, then this account cannot be logged into, may be overriden
             // password may be null if a user is being "pre-registered"
             password: null,
-            sockets: [],
             ...overrides,
         })
     );
@@ -67,11 +67,15 @@ export async function register(email: string, firstName: string, lastName: strin
     return result;
 }
 
-// TODO: kelton
-// export async function registerForTownhall(regInfo: any, townhallId: string) {
-//     // 1. call register (above)
-//     // 2. if registration succeeds, then send an email with townhall link and token
-// }
+export async function registerForTownhall(
+    regInfo: { email: string; firstName: string; lastName: string },
+    townhallId: string
+) {
+    const result = await register(regInfo.email, regInfo.firstName, regInfo.lastName);
+    if (result.ops.length === 0) throw new Error('User could not be registered');
+    const userDoc = result.ops[0];
+    return inviteToTownhall(townhallId, userDoc);
+}
 
 /**
  * @description register the user with password
@@ -158,4 +162,16 @@ export const filterSensitiveData = (user: User<ObjectId>): ClientSafeUser => {
         return accum;
     }
     return whitelist.reduce<Partial<ClientSafeUser>>(reducer, {}) as ClientSafeUser;
+};
+
+export const getUserWithToken = async (token: string) => {
+    // Verify token
+    const userId = await jwt.verify<string>(token);
+    if (!userId) throw createHttpError(401, 'Invalid token provided');
+        
+    const result = await useCollection('Users', (Users) =>
+        Users.findOne({ _id: new ObjectId(userId) })
+    );
+    if (!result) throw new Error('User not found');
+    return result;
 };
