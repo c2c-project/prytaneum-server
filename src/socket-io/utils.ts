@@ -1,7 +1,7 @@
 import http from 'http';
 import type { User } from 'prytaneum-typings';
 import { Socket } from 'socket.io';
-import { ObjectId, ObjectID } from 'mongodb';
+import { ObjectId } from 'mongodb';
 
 import { useCollection } from 'db';
 import { PrytaneumNamespace } from './socket-io';
