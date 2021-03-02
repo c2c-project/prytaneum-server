@@ -49,7 +49,5 @@ events.on('update-question', (question) => {
 
 events.on('delete-question', (question) => {
     const { townhallId } = question.meta;
-    questionNamespace
-        .to(townhallId.toString())
-        .emit('question-state', { type: 'delete-question', payload: question });
+    questionNamespace.to(townhallId.toString()).emit('question-state', { type: 'delete-question', payload: question });
 });
