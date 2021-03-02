@@ -60,6 +60,7 @@ export async function register(email: string, firstName: string, lastName: strin
             // if the password is null, then this account cannot be logged into, may be overriden
             // password may be null if a user is being "pre-registered"
             password: null,
+            sockets: [],
             ...overrides,
         })
     );
@@ -168,10 +169,8 @@ export const getUserWithToken = async (token: string) => {
     // Verify token
     const userId = await jwt.verify<string>(token);
     if (!userId) throw createHttpError(401, 'Invalid token provided');
-        
-    const result = await useCollection('Users', (Users) =>
-        Users.findOne({ _id: new ObjectId(userId) })
-    );
+
+    const result = await useCollection('Users', (Users) => Users.findOne({ _id: new ObjectId(userId) }));
     if (!result) throw new Error('User not found');
     return result;
 };

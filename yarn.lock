@@ -6130,9 +6130,9 @@ proxy-from-env@^1.0.0:
   resolved "https://registry.yarnpkg.com/proxy-from-env/-/proxy-from-env-1.1.0.tgz#e102f16ca355424865755d2c9e8ea4f24d58c3e2"
   integrity sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==
 
-"prytaneum-typings@https://github.com/c2c-project/prytaneum-typings#862dd876312d2b4a88f5fbad48a56d06a3b217bd":
+"prytaneum-typings@https://github.com/c2c-project/prytaneum-typings#c9015a66831830e4f53ce928ac33dd4abd7cbeea":
   version "1.0.0"
-  resolved "https://github.com/c2c-project/prytaneum-typings#862dd876312d2b4a88f5fbad48a56d06a3b217bd"
+  resolved "https://github.com/c2c-project/prytaneum-typings#c9015a66831830e4f53ce928ac33dd4abd7cbeea"
   dependencies:
     "@types/faker" "^4.1.4"
     "@types/mongodb" "^3.5.32"

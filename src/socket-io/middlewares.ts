@@ -9,16 +9,12 @@ import { init as _init, requireLogin as _requireLogin } from 'middlewares';
 import { ioMiddleware } from './socket-io';
 
 const info = debug('prytaneum:ws-middlewares');
-const makeSocketMiddleware = (fn: Express.Middleware): ioMiddleware => (
-    socket,
-    next
-) => {
+const makeSocketMiddleware = (fn: Express.Middleware): ioMiddleware => (socket, next) => {
     function _next(e?: Error | undefined) {
         if (e) {
             info(e);
             socket.disconnect();
-        }
-        next();
+        } else next();
     }
     try {
         fn(
@@ -30,15 +26,13 @@ const makeSocketMiddleware = (fn: Express.Middleware): ioMiddleware => (
             (_next as unknown) as core.NextFunction
         );
     } catch (e) {
+        socket.disconnect();
         info(e);
     }
 };
 
 export const init = makeSocketMiddleware(_init);
 
-export const cookieParser = makeSocketMiddleware(
-    connectCookieParser(env.COOKIE_SECRET)
-);
+export const cookieParser = makeSocketMiddleware(connectCookieParser(env.COOKIE_SECRET));
 
-export const requireLogin = (roles?: Roles[]) =>
-    makeSocketMiddleware(_requireLogin(roles));
+export const requireLogin = (roles?: Roles[]) => makeSocketMiddleware(_requireLogin(roles));
