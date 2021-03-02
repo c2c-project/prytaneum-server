@@ -191,6 +191,32 @@ router.get<Express.EmptyParams, UserInfo, void, void, RequireLoginLocals>(
     })
 );
 
+type IntrospectParams = {
+    token?: string;
+};
+
+router.get<Express.EmptyParams, UserInfo, void, IntrospectParams>(
+    '/introspect',
+    makeEndpoint(async (req, res) => {
+        const { token } = req.query;
+        if (!token) throw createHttpError(401);
+        const user = await getUserWithToken(token);
+        const clientUser = filterSensitiveData(user);
+        const userToken = await jwt.sign(clientUser);
+        res.cookie('jwt', userToken, {
+            httpOnly: true,
+            secure: env.NODE_ENV === 'production',
+            signed: env.NODE_ENV === 'production',
+            sameSite: 'strict',
+        })
+            .status(200)
+            .send({
+                ...clientUser,
+                settings: user.settings,
+            });
+    })
+);
+
 /**
  * gets a list of users
  */
@@ -241,31 +267,6 @@ router.post<Express.EmptyParams, { token: string }, { role: Roles }, void, Requi
         const { user } = req.results;
         const token = await generateInviteLink(role, user._id);
         res.status(200).send({ token });
-    })
-);
-
-type IntrospectParams = {
-    token: string;
-};
-
-router.get<Express.EmptyParams, UserInfo, void, IntrospectParams>(
-    '/introspect',
-    makeEndpoint(async (req, res) => {
-        const { token } = req.params;
-        const user = await getUserWithToken(token);
-        const clientUser = filterSensitiveData(user);
-        const userToken = await jwt.sign(clientUser);
-        res.cookie('jwt', userToken, {
-            httpOnly: true,
-            secure: env.NODE_ENV === 'production',
-            signed: env.NODE_ENV === 'production',
-            sameSite: 'strict',
-        })
-            .status(200)
-            .send({
-                ...clientUser,
-                settings: user.settings,
-            });
     })
 );
 
