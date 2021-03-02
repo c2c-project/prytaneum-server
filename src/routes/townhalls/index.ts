@@ -22,7 +22,7 @@ import { register } from 'modules/user';
 
 import { TownhallParams } from './types';
 import questionRoutes from './questions';
-import chatMessageRoutes from './chat-messages';
+import breakoutRoomRoutes from './breakout-room';
 import ratingRoutes from './rating';
 import playlistRoutes from './playlist';
 
@@ -217,7 +217,7 @@ router.post<
 );
 
 router.use(questionRoutes);
-router.use(chatMessageRoutes);
+router.use(breakoutRoomRoutes);
 router.use(ratingRoutes);
 router.use(playlistRoutes);
 

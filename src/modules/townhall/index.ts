@@ -15,8 +15,6 @@ declare module 'lib/events' {
         'start-townhall': string;
         'end-townhall': string;
         'townhall-state': TownhallState<ObjectId>;
-        'breakout-start': { townhallId: string; numRooms: number };
-        'breakout-end': { townhallId: string };
     }
 }
 

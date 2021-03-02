@@ -16,7 +16,7 @@ export function getCookies(req: Request): Cookies {
 }
 
 /**
- * Require that the user is logged in and optionally require which roles they must have
+ * Require that the user is logged in and optionally require which roles
  */
 export default function requireLogin(roles?: Roles[]): Express.Middleware {
     return async function verify(req, res, next) {

@@ -10,44 +10,42 @@ declare module 'lib/events' {
         'update-chat-message': ChatMessage<ObjectId>;
         'delete-chat-message': ChatMessage<ObjectId>;
         'moderate-chat-message': ChatMessage<ObjectId>;
+        'breakout-start': { townhallId: string; numRooms: number };
+        'breakout-end': { townhallId: string };
+        'breakout-change-room': { townhallId: string; from: string; to: string; sockets: string[] };
     }
 }
 
-export async function createChatMessage(
-    message: string,
-    townhallId: string,
-    user: User<ObjectId>
-) {
-    const { insertedCount, ops } = await useCollection(
-        'ChatMessages',
-        (ChatMessages) =>
-            ChatMessages.insertOne({
-                meta: {
-                    createdAt: new Date(),
-                    createdBy: {
-                        _id: user._id,
-                        name: user.name,
-                    },
-                    updatedAt: new Date(),
-                    updatedBy: {
-                        _id: user._id,
-                        name: user.name,
-                    },
-                    townhallId: new ObjectID(townhallId),
-                    isModerator: false
+export async function createChatMessage(message: string, townhallId: string, breakoutId: string, user: User<ObjectId>) {
+    const { insertedCount, ops } = await useCollection('ChatMessages', (ChatMessages) =>
+        ChatMessages.insertOne({
+            meta: {
+                createdAt: new Date(),
+                createdBy: {
+                    _id: user._id,
+                    name: user.name,
                 },
-                message,
-                visibility: 'visible',
-            })
+                updatedAt: new Date(),
+                updatedBy: {
+                    _id: user._id,
+                    name: user.name,
+                },
+                townhallId: new ObjectID(townhallId),
+                isModerator: false,
+                breakoutId: new ObjectID(breakoutId),
+            },
+            message,
+            visibility: 'visible',
+        })
     );
-    if (insertedCount === 0)
-        throw new Error('Unable to insert new chat message');
+    if (insertedCount === 0) throw new Error('Unable to insert new chat message');
     else events.emit('create-chat-message', ops[0]);
 }
 export async function updateChatMessage(
     message: string,
     messageId: string,
     townhallId: string,
+    breakoutId: string,
     user: User<ObjectId>
 ) {
     const { value } = await useCollection('ChatMessages', (ChatMessages) =>
@@ -56,6 +54,7 @@ export async function updateChatMessage(
                 _id: new ObjectID(messageId),
                 'meta.townhallId': new ObjectID(townhallId),
                 'meta.createdBy._id': user._id,
+                'meta.breakoutId': new ObjectID(breakoutId),
             },
             {
                 $set: { message },
@@ -78,6 +77,7 @@ export async function updateChatMessage(
 export async function deleteChatMessage(
     messageId: string,
     townhallId: string,
+    breakoutId: string,
     user: User<ObjectId>
 ) {
     const { value } = await useCollection('ChatMessages', (ChatMessages) =>
@@ -85,6 +85,7 @@ export async function deleteChatMessage(
             _id: new ObjectID(messageId),
             'meta.townhallId': new ObjectID(townhallId),
             'meta.createdBy._id': user._id,
+            'meta.breakoutId': new ObjectID(breakoutId),
         })
     );
     // this could also error when the message id or townhall id is invalid
@@ -96,11 +97,12 @@ export async function deleteChatMessage(
 /**
  * TODO: filters
  */
-export async function getChatMessages(townhallId: string) {
+export async function getChatMessages(townhallId: string, breakoutId: string) {
     return useCollection('ChatMessages', (ChatMessages) =>
         ChatMessages.find(
             {
                 'meta.townhallId': new ObjectID(townhallId),
+                'meta.breakoutId': new ObjectID(breakoutId),
             },
             {
                 sort: {
@@ -111,11 +113,12 @@ export async function getChatMessages(townhallId: string) {
     );
 }
 
-export async function getChatMessage(townhallId: string, messageId: string) {
+export async function getChatMessage(townhallId: string, messageId: string, breakoutId: string) {
     return useCollection('ChatMessages', (ChatMessages) =>
         ChatMessages.findOne({
             'meta.townhallId': new ObjectID(townhallId),
             _id: new ObjectID(messageId),
+            'meta.breakoutId': new ObjectID(breakoutId),
         })
     );
 }
@@ -123,11 +126,7 @@ export async function getChatMessage(townhallId: string, messageId: string) {
 /**
  * TODO: logs of who moderated the question
  */
-export async function moderateMessage(
-    townhallId: string,
-    messageId: string,
-    visibility: VisibilityState
-) {
+export async function moderateMessage(townhallId: string, messageId: string, visibility: VisibilityState) {
     const { value } = await useCollection('ChatMessages', (ChatMessages) =>
         ChatMessages.findOneAndUpdate(
             {
@@ -141,4 +140,34 @@ export async function moderateMessage(
     );
     if (!value) throw createHttpError(404, 'Unable to find message');
     else events.emit('moderate-chat-message', value);
+}
+
+export async function getBreakoutRooms(townhallId: string) {
+    return useCollection('BreakoutRooms', (BreakoutRooms) =>
+        BreakoutRooms.find({ townhallId: new ObjectID(townhallId), active: true }).toArray()
+    );
+}
+
+export function startBreakout(townhallId: string, numRooms: number) {
+    events.emit('breakout-start', { townhallId, numRooms });
+}
+
+export function endBreakout(townhallId: string) {
+    events.emit('breakout-end', { townhallId });
+}
+
+export async function findMyBreakout(townhallId: string, userId: ObjectId) {
+    const room = await useCollection('BreakoutRooms', (BreakoutRooms) =>
+        BreakoutRooms.findOne({
+            townhallId: new ObjectID(townhallId),
+            sockets: userId.toHexString(),
+            active: true,
+        })
+    );
+    if (!room) throw createHttpError(404, 'No active room found');
+    return room._id;
+}
+
+export function changeBreakoutRoom(townhallId: string, from: string, to: string, user: User<ObjectId>) {
+    events.emit('breakout-change-room', { townhallId, from, to, sockets: user.sockets });
 }
