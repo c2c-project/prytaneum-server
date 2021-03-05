@@ -72,9 +72,15 @@ export async function registerForTownhall(
     regInfo: { email: string; firstName: string; lastName: string },
     townhallId: string
 ) {
-    const result = await register(regInfo.email, regInfo.firstName, regInfo.lastName);
-    if (result.ops.length === 0) throw new Error('User could not be registered');
-    const userDoc = result.ops[0];
+    let userDoc: User<ObjectID> | null = null;
+    const exists = await useCollection('Users', (Users) => Users.findOne({ 'email.address': regInfo.email }));
+    if (exists) userDoc = exists;
+    else {
+        const result = await register(regInfo.email, regInfo.firstName, regInfo.lastName);
+        if (result.ops.length === 0) throw new Error('User could not be registered');
+        // eslint-disable-next-line prefer-destructuring
+        userDoc = result.ops[0];
+    }
     // TODO: once emails are working uncomment this
     // return inviteToTownhall(townhallId, userDoc);
     const token = await jwt.sign(userDoc._id.toHexString());
