@@ -3,7 +3,7 @@ import { ObjectID, ObjectId } from 'mongodb';
 import createHttpError from 'http-errors';
 import type { RegisterForm, User, ClientSafeUser, Roles } from 'prytaneum-typings';
 
-import { inviteToTownhall } from 'modules/townhall';
+// import { inviteToTownhall } from 'modules/townhall';
 import jwt from 'lib/jwt';
 import Emails from 'lib/emails';
 import emitter from 'lib/events';
@@ -75,7 +75,10 @@ export async function registerForTownhall(
     const result = await register(regInfo.email, regInfo.firstName, regInfo.lastName);
     if (result.ops.length === 0) throw new Error('User could not be registered');
     const userDoc = result.ops[0];
-    return inviteToTownhall(townhallId, userDoc);
+    // TODO: once emails are working uncomment this
+    // return inviteToTownhall(townhallId, userDoc);
+    const token = await jwt.sign(userDoc._id.toHexString());
+    return `https://prytaneum.io/join/${townhallId}?token=${token}`;
 }
 
 /**

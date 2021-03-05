@@ -202,7 +202,7 @@ router.post<TownhallParams, void, void, void, RequireLoginLocals>(
  */
 router.post<
     Express.EmptyParams,
-    void,
+    { url: string },
     Pick<RegisterForm, 'email' | 'firstName' | 'lastName'>,
     void,
     RequireLoginLocals
@@ -212,8 +212,8 @@ router.post<
         // TODO: addresses fixme, but check if the user is an organizer based off the api token
         const { email, firstName, lastName } = req.body;
         const { townhallId } = req.params;
-        await registerForTownhall({ email, firstName, lastName }, townhallId);
-        res.sendStatus(200);
+        const inviteUrl = await registerForTownhall({ email, firstName, lastName }, townhallId);
+        res.status(200).send({ url: inviteUrl });
     })
 );
 
