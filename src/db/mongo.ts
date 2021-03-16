@@ -6,6 +6,8 @@ import type {
     Question,
     ChatMessage,
     InviteLink,
+    FeedbackReport,
+    BugReport,
     Rating,
     Notification,
     Breakout,
@@ -42,6 +44,8 @@ interface CollectionMap {
     Questions: Question<ObjectId>;
     ChatMessages: ChatMessage<ObjectId>;
     InviteLinks: InviteLink<ObjectId>;
+    FeedbackReports: FeedbackReport<ObjectId>;
+    BugReports: BugReport<ObjectId>;
     Notifications: Notification<ObjectId>;
     Ratings: Rating<ObjectId>;
     BreakoutRooms: Breakout<ObjectId>;
