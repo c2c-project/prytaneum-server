@@ -15,25 +15,13 @@ const numberOfDocumentsPerPage = 10;
  * @throws {Error} If unable to insert the bug report
  */
 export async function createBugReport(description: string, townhallId: string, user: User<ObjectId>) {
-    const { createdAt, createdBy, updatedAt, updatedBy } = makeMeta(user);
     const { insertedCount } = await useCollection('BugReports', (BugReports) =>
         BugReports.insertOne({
             description,
             resolved: false,
             replies: [],
             townhallId: new ObjectID(townhallId),
-            meta: {
-                createdAt,
-                updatedAt,
-                updatedBy: {
-                    ...updatedBy,
-                    _id: new ObjectID(updatedBy._id),
-                },
-                createdBy: {
-                    ...createdBy,
-                    _id: new ObjectID(createdBy._id),
-                },
-            },
+            meta: makeMeta(user),
         })
     );
 
