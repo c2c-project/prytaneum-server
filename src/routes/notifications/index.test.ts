@@ -36,6 +36,130 @@ afterEach(() => {
 });
 
 describe('index', () => {
+    describe('#invite-limited', () => {
+        it('should accept valid data', async () => {
+            // spy and mock useCollection
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            // for the unsubscribed query
+            collectionSpy.mockResolvedValueOnce({ unsubscribeList: [] });
+            const { status } = await request(app)
+                .post('/invite-limited')
+                .field('MoC', testMoC)
+                .field('topic', testTopic)
+                .field('eventDateTime', testEventDateTime)
+                .field('constituentScope', testConstituentScope)
+                .field('deliveryTimeString', validDeliveryTime.toISOString())
+                .field('region', region)
+                .field('townHallId', testTownHallId)
+                .attach(
+                    'invite-file',
+                    Buffer.from(inviteFileText),
+                    'invite.csv'
+                );
+            expect(status).toStrictEqual(200);
+        });
+        it('should accept valid data with previewEmail', async () => {
+            // spy and mock useCollection
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            // for the unsubscribed query
+            collectionSpy.mockResolvedValueOnce({ unsubscribeList: [] });
+            const { status } = await request(app)
+                .post('/invite-limited')
+                .field('MoC', testMoC)
+                .field('topic', testTopic)
+                .field('eventDateTime', testEventDateTime)
+                .field('constituentScope', testConstituentScope)
+                .field('deliveryTimeString', validDeliveryTime.toISOString())
+                .field('region', region)
+                .field('townHallId', testTownHallId)
+                .field('previewEmail', faker.internet.email())
+                .attach(
+                    'invite-file',
+                    Buffer.from(inviteFileText),
+                    'invite.csv'
+                );
+            expect(status).toStrictEqual(200);
+        });
+        it('should accept valid deliveryTime', async () => {
+            // spy and mock useCollection
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            // for the unsubscribed query
+            collectionSpy.mockResolvedValueOnce({ unsubscribeList: [] });
+            const { status } = await request(app)
+                .post('/invite-limited')
+                .field('MoC', testMoC)
+                .field('topic', testTopic)
+                .field('eventDateTime', testEventDateTime)
+                .field('constituentScope', testConstituentScope)
+                .field('deliveryTimeString', validDeliveryTime.toISOString())
+                .field('region', region)
+                .field('townHallId', testTownHallId)
+                .attach(
+                    'invite-file',
+                    Buffer.from(inviteFileText),
+                    'invite.csv'
+                );
+            expect(status).toStrictEqual(200);
+        });
+        it('should accept undefined deliveryTime & replace with valid deliveryTime', async () => {
+            // spy and mock useCollection
+            const collectionSpy = jest.spyOn(DB, 'useCollection');
+            // for the unsubscribed query
+            collectionSpy.mockResolvedValueOnce({ unsubscribeList: [] });
+            const { status } = await request(app)
+                .post('/invite-limited')
+                .field('MoC', testMoC)
+                .field('topic', testTopic)
+                .field('eventDateTime', testEventDateTime)
+                .field('constituentScope', testConstituentScope)
+                .field('region', region)
+                .field('townHallId', testTownHallId)
+                .attach(
+                    'invite-file',
+                    Buffer.from(inviteFileText),
+                    'invite.csv'
+                );
+            expect(status).toStrictEqual(200);
+        });
+        it('should reject invalid deliveryTime', async () => {
+            const { status } = await request(app)
+                .post('/invite-limited')
+                .field('MoC', testMoC)
+                .field('topic', testTopic)
+                .field('eventDateTime', testEventDateTime)
+                .field('constituentScope', testConstituentScope)
+                .field('deliveryTimeString', 'invalid')
+                .field('region', region)
+                .field('townHallId', testTownHallId)
+                .attach(
+                    'invite-file',
+                    Buffer.from(inviteFileText),
+                    'invite.csv'
+                );
+            expect(status).toStrictEqual(500);
+        });
+        it('should reject invalid filetype', async () => {
+            const { status } = await request(app)
+                .post('/invite-limited')
+                .field('MoC', testMoC)
+                .field('topic', testTopic)
+                .field('eventDateTime', testEventDateTime)
+                .field('constituentScope', testConstituentScope)
+                .field('deliveryTimeString', validDeliveryTime.toISOString())
+                .field('region', region)
+                .field('townHallId', testTownHallId)
+                .attach(
+                    'invite-file',
+                    Buffer.from(inviteFileText),
+                    'invite.txt'
+                );
+            expect(status).toStrictEqual(500);
+        });
+        it('should reject no data', async () => {
+            const { status } = await request(app).post('/invite');
+            expect(status).toStrictEqual(400);
+        });
+    });
     describe('#invite', () => {
         it('should accept valid data', async () => {
             // spy and mock useCollection

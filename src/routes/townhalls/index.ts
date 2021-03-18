@@ -13,17 +13,16 @@ import {
     configure,
     startTownhall,
     endTownhall,
-    startBreakout,
-    endBreakout,
 } from 'modules/townhall';
+// import { startBreakout, endBreakout } from 'modules/chat';
 import { townhallValidationObject } from 'modules/townhall/validators';
 import { makeJoiMiddleware, makeEndpoint, requireLogin, RequireLoginLocals, requireModerator } from 'middlewares';
 import { makeObjectIdValidationObject } from 'utils/validators';
-import { register } from 'modules/user';
+import { registerForTownhall } from 'modules/user';
 
 import { TownhallParams } from './types';
 import questionRoutes from './questions';
-import chatMessageRoutes from './chat-messages';
+import breakoutRoomRoutes from './breakout-room';
 import ratingRoutes from './rating';
 import playlistRoutes from './playlist';
 
@@ -169,9 +168,9 @@ router.post<TownhallParams, void, BreakoutForm, void, RequireLoginLocals>(
         }),
     }),
     makeEndpoint((req, res) => {
-        const { numRooms } = req.body;
-        const { townhallId } = req.params;
-        startBreakout(townhallId, numRooms);
+        // const { numRooms } = req.body;
+        // const { townhallId } = req.params;
+        // startBreakout(townhallId, numRooms);
         res.sendStatus(200);
     })
 );
@@ -183,8 +182,8 @@ router.post<TownhallParams, void, void, void, RequireLoginLocals>(
     '/:townhallId/breakout-end',
     requireModerator(),
     makeEndpoint((req, res) => {
-        const { townhallId } = req.params;
-        endBreakout(townhallId);
+        // const { townhallId } = req.params;
+        // endBreakout(townhallId);
         res.sendStatus(200);
     })
 );
@@ -194,10 +193,16 @@ router.post<TownhallParams, void, void, void, RequireLoginLocals>(
  * ex. eventbrite webhook to register a user for a townhall
  * ie this is not a "full" account, although this has no impact during the townhall
  * FIXME: this is completely insecure, just requires knowing the townhallId, fix ASAP -- but for now it's good enough
+ * 1. User registers on eventbrite
+ * 2. eventbrite calls this API endpoint
+ * 3. user is registered (note: no password)
+ * 4. user is sent an email containing a url to join this particular townhall of the form /join/:townhallId?token={token}
+ * 5. On user clicking user clicking link, on frontend if we see the user has a token, then we call the introspection endpoint // TODO:
+ * 6. On the frontend, there's a little banner at the top that says complete your account
  */
 router.post<
     Express.EmptyParams,
-    void,
+    { url: string },
     Pick<RegisterForm, 'email' | 'firstName' | 'lastName'>,
     void,
     RequireLoginLocals
@@ -206,13 +211,14 @@ router.post<
     makeEndpoint(async (req, res) => {
         // TODO: addresses fixme, but check if the user is an organizer based off the api token
         const { email, firstName, lastName } = req.body;
-        await register(email, firstName, lastName);
-        res.sendStatus(200);
+        const { townhallId } = req.params;
+        const inviteUrl = await registerForTownhall({ email, firstName, lastName }, townhallId);
+        res.status(200).send({ url: inviteUrl });
     })
 );
 
 router.use(questionRoutes);
-router.use(chatMessageRoutes);
+router.use(breakoutRoomRoutes);
 router.use(ratingRoutes);
 router.use(playlistRoutes);
 

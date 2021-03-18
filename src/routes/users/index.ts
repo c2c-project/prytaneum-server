@@ -14,6 +14,7 @@ import {
     confirmUserEmail,
     sendPasswordResetEmail,
     updatePassword,
+    getUserWithToken,
 } from 'modules/user';
 import { registerValidationObject, emailValidationObject, passwordValidationObject } from 'modules/user/validators';
 import { getUsers, getUser, generateInviteLink } from 'modules/admin';
@@ -187,6 +188,32 @@ router.get<Express.EmptyParams, UserInfo, void, void, RequireLoginLocals>(
             ...filterSensitiveData(user),
             settings: user.settings,
         });
+    })
+);
+
+type IntrospectParams = {
+    token?: string;
+};
+
+router.get<Express.EmptyParams, UserInfo, void, IntrospectParams>(
+    '/introspect',
+    makeEndpoint(async (req, res) => {
+        const { token } = req.query;
+        if (!token) throw createHttpError(401);
+        const user = await getUserWithToken(token);
+        const clientUser = filterSensitiveData(user);
+        const userToken = await jwt.sign(clientUser);
+        res.cookie('jwt', userToken, {
+            httpOnly: true,
+            secure: env.NODE_ENV === 'production',
+            signed: env.NODE_ENV === 'production',
+            sameSite: 'strict',
+        })
+            .status(200)
+            .send({
+                ...clientUser,
+                settings: user.settings,
+            });
     })
 );
 
