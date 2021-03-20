@@ -15,24 +15,12 @@ const numberOfDocumentsPerPage = 10;
  * @throws {Error} If unable to insert the feedback report
  */
 export async function createFeedbackReport(description: string, user: User<ObjectId>) {
-    const { createdAt, createdBy, updatedAt, updatedBy } = makeMeta(user);
     const { insertedCount } = await useCollection('FeedbackReports', (FeedbackReports) =>
         FeedbackReports.insertOne({
             description,
             resolved: false,
             replies: [],
-            meta: {
-                createdAt,
-                updatedAt,
-                updatedBy: {
-                    ...updatedBy,
-                    _id: new ObjectID(updatedBy._id),
-                },
-                createdBy: {
-                    ...createdBy,
-                    _id: new ObjectID(createdBy._id),
-                },
-            },
+            meta: makeMeta(user),
         })
     );
 
@@ -193,7 +181,7 @@ export async function replyToFeedbackReport(user: User<ObjectId>, reportId: stri
                                 meta: makeMeta(user),
                             },
                         ],
-                        $sort: { repliedDate: 1 },
+                        $sort: { repliedDate: 1 },  
                     },
                 },
                 $set: {
