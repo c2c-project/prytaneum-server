@@ -225,7 +225,7 @@ router.get<Express.EmptyParams, User[], void, void, RequireLoginLocals>(
     requireLogin(['admin']),
     makeEndpoint(async (req, res) => {
         const users = await getUsers();
-        res.status(200).send(users);
+        res.status(200).send((users as unknown) as User[]);
     }) // TODO: pagination, filters, sorting, etc
 );
 

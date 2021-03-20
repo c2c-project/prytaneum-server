@@ -6,8 +6,8 @@ import env from 'config/env';
 
 type ServerEmits = SocketIOEvents<ObjectId>;
 export declare class PrytaneumNamespace extends Namespace {
-    emit<T extends keyof ServerEmits>(event: T, payload: ServerEmits[T]): boolean;
-    to(to: string): PrytaneumNamespace;
+    // emit<T extends keyof ServerEmits>(event: T, payload: ServerEmits[T]): boolean;
+    // to(to: string): PrytaneumNamespace;
     on<T extends keyof ClientEmits, U extends (arg: ClientEmits[T]) => void>(event: T, listener: U): this;
 }
 
